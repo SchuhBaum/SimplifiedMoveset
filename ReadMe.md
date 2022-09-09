@@ -9,7 +9,7 @@ Various movement changes. The main idea is to remove or simplify timings, making
   Here is a youtube video showing some of the changes: https://www.youtube.com/watch?v=Jp6UyUgoWB0
 
 ### Installation
-1. (ModLoader) BepInEx and BOI can be downloaded from [RainDB](https://www.raindb.net/) under `Tools`.  
+1. (ModLoader) `BepInEx` and `BOI` can be downloaded from [RainDB](https://www.raindb.net/) under `Tools`.  
   **NOTE:** Rain World's BepInEx is a modified version. Don't download it from GitHub.  
 2. (Dependency) The mod `ConfigMachine` can be downloaded from [RainDB](https://www.raindb.net/) under `Tools`.
 3. Place the file `SimplifiedMoveset.dll` in the folder `[Steam]\SteamApps\common\Rain World\Mods`.  
