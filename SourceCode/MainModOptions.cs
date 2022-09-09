@@ -36,7 +36,7 @@ namespace SimplifiedMoveset
 
             // Title
             AddNewLine();
-            AddTextLabel("Simplified Moveset Mod", bigText: true);
+            AddTextLabel("SimplifiedMoveset Mod", bigText: true);
             DrawTextLabels(ref Tabs[0]);
 
             // Subtitle

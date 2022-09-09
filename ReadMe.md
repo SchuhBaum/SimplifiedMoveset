@@ -1,25 +1,27 @@
 ## SimplifiedMoveset
-###### Version: 0.67
+###### Version: 0.68
 
 This is a mod for Rain World v1.5.
 
 ### Description
-Various movement changes. The main idea is to remove or simplify timings, making it easier to perform moves consistently. In addition, includes the ability to breath underwater and crawl on walls (disabled by default).
+Various movement changes. The main idea is to remove or simplify timings, making it easier to perform moves consistently. In addition, includes the ability to breath underwater and crawl on walls (disabled by default).  
+  
+  Here is a youtube video showing some of the changes: https://www.youtube.com/watch?v=Jp6UyUgoWB0
 
 ### Installation
-1. (ModLoader) BepInEx and BOI can be downloaded from "https://www.raindb.net/" under "ModCategory: Tools".  
+1. (ModLoader) BepInEx and BOI can be downloaded from [RainDB](https://www.raindb.net/) under `Tools`.  
   **NOTE:** Rain World's BepInEx is a modified version. Don't download it from GitHub.  
-2. (Dependency) The mod ConfigMachine can be downloaded from "https://www.raindb.net/" under "ModCategory: Tools".
-3. Place the file "SimplifiedMoveset.dll" in the folder "\[Steam\]\SteamApps\common\Rain World\Mods".  
-4. Start "\[Steam\]\SteamApps\common\Rain World\BOI\BlepOutIn.exe".  
-5. Click "Select path" and enter the game's path "\[Steam\]\SteamApps\common\Rain World". Enable the mod "SimplifiedMoveset.dll" and its dependencies. Then launch the game as normal. 
+2. (Dependency) The mod `ConfigMachine` can be downloaded from [RainDB](https://www.raindb.net/) under `Tools`.
+3. Place the file `SimplifiedMoveset.dll` in the folder `[Steam]\SteamApps\common\Rain World\Mods`.  
+4. Start `[Steam]\SteamApps\common\Rain World\BOI\BlepOutIn.exe`.  
+5. Click `Select path` and enter the game's path `[Steam]\SteamApps\common\Rain World`. Enable the mod `SimplifiedMoveset.dll` and its dependencies. Then launch the game as normal. 
 
 ### Contact
-If you have feedback, you can message me on Discord @SchuhBaum#7246 or write an email to SchuhBaum71@gmail.com.  
+If you have feedback, you can message me on Discord `@SchuhBaum#7246` or write an email to SchuhBaum71@gmail.com.  
 
 ### License  
 There are two licenses available - MIT and Unlicense. You can choose which one you want to use.  
-**NOTE:** WeakTables use their own license. This license is included in their folder. Website: https://github.com/Dual-Iron/weak-tables
+**NOTE:** WeakTables use their own license. This license is included in the folder SourceCode/WeakTables. Website: https://github.com/Dual-Iron/weak-tables
 
 ### Bugs
 - Standing next to a wall, the belly slide can fail (not sure why). In this case the body mode index is set to CorridorClimb and goes into crawl afterwards. This bug seems to exist in vanilla as well.
@@ -62,7 +64,7 @@ v0.6:
 - (spear throw) Simplified implementation. Fixed a bug where thrown spears would just fall when starving.
 
 
-v0.67:
+v0.68:
 - (beam climb) When hanging from a horizontal beam and using a tube worm, retracting the tongue has priority when pressing jump (for consistency).
 - (beam climb) Fixed a bug which prevented player from entering corridors during the GetUpToBeamTip animation.
 - (belly slide and crawl) Horizontal momentum gets adjusted when on ceiling slopes (for consistency).
