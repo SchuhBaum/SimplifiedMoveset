@@ -7,25 +7,6 @@ using WeakTables;
 
 namespace SimplifiedMoveset
 {
-    public sealed class playerData_
-    {
-        public bool initializeHands = false;
-        public bool switchingBeam = false;
-
-        public int dontUseTubeWormCounter = 0;
-        public int getUpOnBeamAbortCounter = 0;
-        public int getUpOnBeamDirection = 0;
-        public int grabBeamCooldownCounter = 0;
-
-        public int grabBeamCounter = 0;
-        public int jumpPressedCounter = 0;
-        public int soundCooldown = 0;
-
-        public playerData_() { }
-
-        public override String ToString() => "<playerData_::> initializeHands: " + initializeHands + " switchingBeam: " + switchingBeam + " dontUseTubeWormCounter: " + dontUseTubeWormCounter + " getUpOnBeamAbortCounter: " + getUpOnBeamAbortCounter + " getUpOnBeamDirection: " + getUpOnBeamDirection + " grabBeamCooldownCounter: " + grabBeamCooldownCounter + " grabBeamCounter: " + grabBeamCounter + " jumpPressedCounter: " + jumpPressedCounter + " soundCooldown: " + soundCooldown;
-    }
-
     public static class PlayerMod
     {
         //
@@ -38,7 +19,25 @@ namespace SimplifiedMoveset
         // variables
         //
 
-        public static WeakTable<Player, playerData_> playerData = new WeakTable<Player, playerData_>(_ => new playerData_());
+        public sealed class AttachedFields
+        {
+            public bool initializeHands = false;
+            public bool switchingBeam = false;
+
+            public int dontUseTubeWormCounter = 0;
+            public int getUpOnBeamAbortCounter = 0;
+            public int getUpOnBeamDirection = 0;
+            public int grabBeamCooldownCounter = 0;
+
+            public int grabBeamCounter = 0;
+            public int jumpPressedCounter = 0;
+            public int soundCooldown = 0;
+
+            public AttachedFields() { }
+        }
+
+        private static WeakTable<Player, AttachedFields> attachedFields = new WeakTable<Player, AttachedFields>(_ => new AttachedFields());
+        public static AttachedFields GetAttachedFields(this Player player) => attachedFields[player];
 
         //
         // OnDisable
@@ -138,7 +137,7 @@ namespace SimplifiedMoveset
         }
 
         // direction: up = 1, down = -1
-        public static void PrepareGetUpOnBeamAnimation(Player player, int direction)
+        public static void PrepareGetUpOnBeamAnimation(Player player, int direction, in AttachedFields attachedFields)
         {
             int chunkIndex = direction == 1 ? 0 : 1;
             player.bodyChunks[1 - chunkIndex].pos.x = player.bodyChunks[chunkIndex].pos.x;
@@ -152,7 +151,7 @@ namespace SimplifiedMoveset
 
             player.animation = Player.AnimationIndex.GetUpOnBeam;
             player.upOnHorizontalBeamPos = new Vector2(player.bodyChunks[chunkIndex].pos.x, player.room.MiddleOfTile(player.bodyChunks[chunkIndex].pos).y + direction * 20f);
-            playerData[player].getUpOnBeamDirection = direction;
+            attachedFields.getUpOnBeamDirection = direction;
         }
 
         public static void RocketJump(Player player, float adrenalineModifier, float scale = 1f, SoundID soundID = SoundID.Slugcat_Rocket_Jump)
@@ -172,21 +171,21 @@ namespace SimplifiedMoveset
             }
         }
 
-        public static bool SwitchHorizontalToVerticalBeam(Player player)
+        public static bool SwitchHorizontalToVerticalBeam(Player player, in AttachedFields attachedFields)
         {
             if (player.input[0].y != 0 && player.room.GetTile(player.bodyChunks[0].pos).verticalBeam) // grab vertical beam when possible // && player.room.GetTile(player.bodyChunks[0].pos + new Vector2(0.0f, 20f * player.input[0].y)).verticalBeam
             {
-                if (!playerData[player].switchingBeam)
+                if (!attachedFields.switchingBeam)
                 {
-                    playerData[player].switchingBeam = true;
+                    attachedFields.switchingBeam = true;
                     player.flipDirection = player.bodyChunks[0].pos.x >= player.room.MiddleOfTile(player.bodyChunks[0].pos).x ? 1 : -1;
                     player.animation = Player.AnimationIndex.ClimbOnBeam;
                     return true;
                 }
             }
-            else if (playerData[player].switchingBeam)
+            else if (attachedFields.switchingBeam)
             {
-                playerData[player].switchingBeam = false;
+                attachedFields.switchingBeam = false;
             }
             return false;
         }
@@ -249,28 +248,35 @@ namespace SimplifiedMoveset
         // first IL-Hook yaaaay
         private static void IL_Player_GrabUpdate(ILContext context)
         {
-            ILCursor cursor = new ILCursor(context);
-            if (cursor.TryGotoNext(MoveType.Before,
-                                     instruction => instruction.MatchLdarg(0), // argument0: player
-                                     instruction => instruction.MatchCall<Creature>("get_mainBodyChunk"),
-                                     instruction => instruction.MatchCallvirt<BodyChunk>("get_submersion")))
+            try
             {
-                // remove: player.mainBodyChunk.submersion < 0.5f // but leave goto label intakt
-                cursor.GotoPrev();
-                cursor.RemoveRange(6);
+                ILCursor cursor = new ILCursor(context);
+                if (cursor.TryGotoNext(MoveType.Before,
+                                         instruction => instruction.MatchLdarg(0), // argument0: player
+                                         instruction => instruction.MatchCall<Creature>("get_mainBodyChunk"),
+                                         instruction => instruction.MatchCallvirt<BodyChunk>("get_submersion")))
+                {
+                    // remove: player.mainBodyChunk.submersion < 0.5f // but leave goto label intakt
+                    cursor.GotoPrev();
+                    cursor.RemoveRange(6);
 
-                // not sure why this is what you do // I just changed the code and looked at the generated IL instructions
-                // NOTE: does not work // the changed code gets optimized and has a variable less
-                // make as few changes as possible // less optimized but works
+                    // not sure why this is what you do // I just changed the code and looked at the generated IL instructions
+                    // NOTE: does not work // the changed code gets optimized and has a variable less
+                    // make as few changes as possible // less optimized but works
 
-                // invert input[0].thrw // this is skipped in the original function
-                // now this is saved locally instead of player.mainBodyChunk.submersion < 0.5f 
-                cursor.Emit(OpCodes.Ldc_I4_0);
-                cursor.Emit(OpCodes.Ceq);
+                    // invert input[0].thrw // this is skipped in the original function
+                    // now this is saved locally instead of player.mainBodyChunk.submersion < 0.5f 
+                    cursor.Emit(OpCodes.Ldc_I4_0);
+                    cursor.Emit(OpCodes.Ceq);
+                }
+                else
+                {
+                    Debug.LogException(new Exception("SimplifiedMoveset: IL_Player_GrabUpdate failed."));
+                }
             }
-            else
+            catch (Exception exception)
             {
-                Debug.LogException(new Exception("SimplifiedMoveset: IL_Player_GrabUpdate failed."));
+                Debug.Log("SimplifiedMoveset: " + exception);
             }
         }
 
@@ -413,29 +419,30 @@ namespace SimplifiedMoveset
         // there are cases where this function does not call orig()
         private static void Player_UpdateAnimation(On.Player.orig_UpdateAnimation orig, Player player)
         {
-            if (playerData[player].getUpOnBeamAbortCounter > 0) // beam climb
+            AttachedFields attachedFields = player.GetAttachedFields();
+            if (attachedFields.getUpOnBeamAbortCounter > 0) // beam climb
             {
-                --playerData[player].getUpOnBeamAbortCounter;
+                --attachedFields.getUpOnBeamAbortCounter;
             }
 
-            if (playerData[player].grabBeamCounter > 0)
+            if (attachedFields.grabBeamCounter > 0)
             {
-                --playerData[player].grabBeamCounter;
+                --attachedFields.grabBeamCounter;
             }
 
-            if (playerData[player].grabBeamCooldownCounter > 0)
+            if (attachedFields.grabBeamCooldownCounter > 0)
             {
-                --playerData[player].grabBeamCooldownCounter;
+                --attachedFields.grabBeamCooldownCounter;
             }
 
-            if (playerData[player].soundCooldown > 0)
+            if (attachedFields.soundCooldown > 0)
             {
-                --playerData[player].soundCooldown;
+                --attachedFields.soundCooldown;
             }
 
-            if (playerData[player].jumpPressedCounter > 0) // ledge grab
+            if (attachedFields.jumpPressedCounter > 0) // ledge grab
             {
-                --playerData[player].jumpPressedCounter;
+                --attachedFields.jumpPressedCounter;
             }
 
             if (MainMod.Option_Crawl && player.animation == Player.AnimationIndex.CorridorTurn && player.corridorTurnCounter < 30)
@@ -610,13 +617,13 @@ namespace SimplifiedMoveset
 
                 if (MainMod.Option_LedgeGrab)
                 {
-                    if (player.input[0].jmp && playerData[player].jumpPressedCounter < 20)
+                    if (player.input[0].jmp && attachedFields.jumpPressedCounter < 20)
                     {
-                        playerData[player].jumpPressedCounter = 20;
+                        attachedFields.jumpPressedCounter = 20;
                     }
 
                     // holds the ledge grab animation until jump is pressed
-                    if (playerData[player].jumpPressedCounter == 0 && player.IsTileSolid(0, player.flipDirection, 0) && !player.IsTileSolid(0, player.flipDirection, 1) && player.room?.GetTile(player.abstractCreature.pos.Tile + new IntVector2(player.flipDirection * 2, 0)).Terrain != Room.Tile.TerrainType.ShortcutEntrance && player.room?.GetTile(player.abstractCreature.pos.Tile + new IntVector2(player.flipDirection * 2, 1)).Terrain != Room.Tile.TerrainType.ShortcutEntrance) // dont stay in ledge grab when at a shortcut ledge
+                    if (attachedFields.jumpPressedCounter == 0 && player.IsTileSolid(0, player.flipDirection, 0) && !player.IsTileSolid(0, player.flipDirection, 1) && player.room?.GetTile(player.abstractCreature.pos.Tile + new IntVector2(player.flipDirection * 2, 0)).Terrain != Room.Tile.TerrainType.ShortcutEntrance && player.room?.GetTile(player.abstractCreature.pos.Tile + new IntVector2(player.flipDirection * 2, 1)).Terrain != Room.Tile.TerrainType.ShortcutEntrance) // dont stay in ledge grab when at a shortcut ledge
                     {
                         player.ledgeGrabCounter = 0;
                         player.bodyChunks[0].pos -= new Vector2(0.0f, 4f);
@@ -648,13 +655,13 @@ namespace SimplifiedMoveset
                 }
 
                 // grab beams by holding down // extends some cases when holding up -- forget which ones :/ // don't grab beams while falling inside corridors
-                if (playerData[player].grabBeamCooldownCounter == 0 && (player.input[0].y == -1 || playerData[player].grabBeamCounter > 0) && player.animation == Player.AnimationIndex.None && player.bodyMode == Player.BodyModeIndex.Default && (!player.IsTileSolid(bChunk: 0, -1, 0) || !player.IsTileSolid(bChunk: 0, 1, 0)) && (!player.IsTileSolid(bChunk: 1, -1, 0) || !player.IsTileSolid(bChunk: 1, 1, 0)))
+                if (attachedFields.grabBeamCooldownCounter == 0 && (player.input[0].y == -1 || attachedFields.grabBeamCounter > 0) && player.animation == Player.AnimationIndex.None && player.bodyMode == Player.BodyModeIndex.Default && (!player.IsTileSolid(bChunk: 0, -1, 0) || !player.IsTileSolid(bChunk: 0, 1, 0)) && (!player.IsTileSolid(bChunk: 1, -1, 0) || !player.IsTileSolid(bChunk: 1, 1, 0)))
                 {
                     if (player.room.GetTile(player.bodyChunks[0].pos).verticalBeam)
                     {
-                        if (playerData[player].soundCooldown == 0)
+                        if (attachedFields.soundCooldown == 0)
                         {
-                            playerData[player].soundCooldown = 40;
+                            attachedFields.soundCooldown = 40;
                             player.room.PlaySound(SoundID.Slugcat_Grab_Beam, player.mainBodyChunk, false, 1f, 1f);
                         }
 
@@ -673,10 +680,10 @@ namespace SimplifiedMoveset
                         {
                             if (player.room.GetTile(x, y).horizontalBeam)
                             {
-                                playerData[player].grabBeamCooldownCounter = 8;
-                                if (playerData[player].soundCooldown == 0)
+                                attachedFields.grabBeamCooldownCounter = 8;
+                                if (attachedFields.soundCooldown == 0)
                                 {
-                                    playerData[player].soundCooldown = 40;
+                                    attachedFields.soundCooldown = 40;
                                     player.room.PlaySound(SoundID.Slugcat_Grab_Beam, player.mainBodyChunk, false, 1f, 1f);
                                 }
 
@@ -694,23 +701,23 @@ namespace SimplifiedMoveset
                 {
                     if (player.room.GetTile(player.bodyChunks[0].pos).horizontalBeam && !player.IsTileSolid(bChunk: 0, 0, -1) && !player.IsTileSolid(bChunk: 0, player.input[0].x, 0)) // && player.room.GetTile(player.bodyChunks[0].pos + new Vector2(20f * player.input[0].x, 0.0f)).horizontalBeam // !player.IsTileSolid(bChunk: 0, player.input[0].x, 0) is for consistency with vanilla behavior (which is not that consistent itself -- oh well)
                     {
-                        if (!playerData[player].switchingBeam)
+                        if (!attachedFields.switchingBeam)
                         {
-                            playerData[player].switchingBeam = true;
+                            attachedFields.switchingBeam = true;
                             player.animation = Player.AnimationIndex.HangFromBeam;
                         }
                     }
                     else if (player.room.GetTile(player.bodyChunks[1].pos).horizontalBeam && !player.IsTileSolid(bChunk: 1, player.input[0].x, 0)) //  && player.room.GetTile(player.bodyChunks[1].pos + new Vector2(20f * player.input[0].x, 0.0f)).horizontalBeam
                     {
-                        if (!playerData[player].switchingBeam)
+                        if (!attachedFields.switchingBeam)
                         {
-                            playerData[player].switchingBeam = true;
+                            attachedFields.switchingBeam = true;
                             player.animation = Player.AnimationIndex.StandOnBeam;
                         }
                     }
-                    else if (playerData[player].switchingBeam)
+                    else if (attachedFields.switchingBeam)
                     {
-                        playerData[player].switchingBeam = false;
+                        attachedFields.switchingBeam = false;
                     }
                 }
 
@@ -724,7 +731,7 @@ namespace SimplifiedMoveset
                     // drop when pressing jump
                     if (player.input[0].jmp && !player.input[1].jmp || player.bodyChunks[1].vel.magnitude > 10.0 || player.bodyChunks[0].vel.magnitude > 10.0 || !player.room.GetTile(player.bodyChunks[0].pos + new Vector2(0.0f, 20f)).verticalBeam)
                     {
-                        playerData[player].dontUseTubeWormCounter = 2;
+                        attachedFields.dontUseTubeWormCounter = 2;
                         player.animation = Player.AnimationIndex.None;
                         player.standing = true;
                     }
@@ -802,7 +809,7 @@ namespace SimplifiedMoveset
                     // exits //
                     // ----- //
 
-                    if (SwitchHorizontalToVerticalBeam(player)) // grab vertical beam if possible
+                    if (SwitchHorizontalToVerticalBeam(player, attachedFields)) // grab vertical beam if possible
                     {
                         return;
                     }
@@ -816,18 +823,18 @@ namespace SimplifiedMoveset
 
                         if (player.input[0].y == 1) // only drop when pressing jump without holding up
                         {
-                            PrepareGetUpOnBeamAnimation(player, 1);
+                            PrepareGetUpOnBeamAnimation(player, 1, attachedFields);
                             return;
                         }
 
-                        playerData[player].dontUseTubeWormCounter = 2; // don't drop and shoot tubeWorm at the same time
-                        playerData[player].grabBeamCooldownCounter = 8;
+                        attachedFields.dontUseTubeWormCounter = 2; // don't drop and shoot tubeWorm at the same time
+                        attachedFields.grabBeamCooldownCounter = 8;
                         player.animation = Player.AnimationIndex.None;
                         return;
                     }
                     else if (player.input[0].y == 1 && player.input[1].y == 0)
                     {
-                        PrepareGetUpOnBeamAnimation(player, 1);
+                        PrepareGetUpOnBeamAnimation(player, 1, attachedFields);
                         return;
                     }
 
@@ -841,7 +848,7 @@ namespace SimplifiedMoveset
                 // GetUpOnBeam and GetDownOnBeam
                 if (player.animation == Player.AnimationIndex.GetUpOnBeam)
                 {
-                    int direction = playerData[player].getUpOnBeamDirection; // -1 (down) or 1 (up)
+                    int direction = attachedFields.getUpOnBeamDirection; // -1 (down) or 1 (up)
                     int bodyChunkIndex = direction == 1 ? 1 : 0;
 
                     player.canJump = 0; // otherwise: bugged when pressing jump during this animation => drops slugcat when StandOnBeam animation is reached
@@ -887,24 +894,24 @@ namespace SimplifiedMoveset
                     if (player.input[0].y == -direction)
                     {
                         player.upOnHorizontalBeamPos -= direction * new Vector2(0.0f, 20f);
-                        playerData[player].getUpOnBeamDirection = -direction;
+                        attachedFields.getUpOnBeamDirection = -direction;
                         return;
                     }
                     else if (player.bodyChunks[0].ContactPoint.y == direction || player.bodyChunks[1].ContactPoint.y == direction)
                     {
-                        if (playerData[player].getUpOnBeamAbortCounter > 0) // revert to the original position should always work // abort if stuck in a loop just in case
+                        if (attachedFields.getUpOnBeamAbortCounter > 0) // revert to the original position should always work // abort if stuck in a loop just in case
                         {
-                            playerData[player].grabBeamCounter = 15;
+                            attachedFields.grabBeamCounter = 15;
                             player.animation = Player.AnimationIndex.None;
                             return;
                         }
                         else
                         {
-                            playerData[player].getUpOnBeamAbortCounter = 15;
+                            attachedFields.getUpOnBeamAbortCounter = 15;
                         }
 
                         player.upOnHorizontalBeamPos -= direction * new Vector2(0.0f, 20f);
-                        playerData[player].getUpOnBeamDirection = -direction;
+                        attachedFields.getUpOnBeamDirection = -direction;
                         return;
                     }
 
@@ -975,7 +982,7 @@ namespace SimplifiedMoveset
                     // ----- //
 
                     // grab vertical beam if possible
-                    if (SwitchHorizontalToVerticalBeam(player))
+                    if (SwitchHorizontalToVerticalBeam(player, attachedFields))
                     {
                         return;
                     }
@@ -1005,7 +1012,7 @@ namespace SimplifiedMoveset
                     // move down to HangFromBeam
                     if (player.input[0].y == -1 && (player.input[1].y == 0 || player.input[0].jmp && !player.input[1].jmp))
                     {
-                        PrepareGetUpOnBeamAnimation(player, -1);
+                        PrepareGetUpOnBeamAnimation(player, -1, attachedFields);
                         return;
                     }
 
@@ -1061,8 +1068,8 @@ namespace SimplifiedMoveset
 
                     if (player.input[0].y == -1 && (IsPosXAligned(player) || player.input[0].jmp && !player.input[1].jmp))
                     {
-                        playerData[player].grabBeamCounter = 15;
-                        playerData[player].dontUseTubeWormCounter = 2;
+                        attachedFields.grabBeamCounter = 15;
+                        attachedFields.dontUseTubeWormCounter = 2;
                         player.canJump = 0;
                         player.animation = Player.AnimationIndex.None;
                     }
@@ -1340,9 +1347,9 @@ namespace SimplifiedMoveset
         private static void Player_WallJump(On.Player.orig_WallJump orig, Player player, int direction)
         {
             // I think this was to prevent glitching hands when jumping off walls // hand animation is only used for wall climb
-            if (MainMod.Option_WallClimb && !playerData[player].initializeHands)
+            if (MainMod.Option_WallClimb && !player.GetAttachedFields().initializeHands)
             {
-                playerData[player].initializeHands = true;
+                player.GetAttachedFields().initializeHands = true;
             }
 
             if (!MainMod.Option_WallJump)

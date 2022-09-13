@@ -18,13 +18,14 @@ namespace SimplifiedMoveset
         {
             if (MainMod.Option_WallClimb && slugcatHand.owner.owner is Player player)
             {
+                PlayerMod.AttachedFields attachedFields = player.GetAttachedFields();
                 if (player.bodyMode == Player.BodyModeIndex.WallClimb && player.input[0].y != 0 && player.animation == Player.AnimationIndex.None)
                 {
-                    if (PlayerMod.playerData[player].initializeHands)
+                    if (attachedFields.initializeHands)
                     {
                         if (slugcatHand.limbNumber == 1)
                         {
-                            PlayerMod.playerData[player].initializeHands = false;
+                            attachedFields.initializeHands = false;
                             player.animationFrame = 0; // not pretty
                         }
                         return orig(slugcatHand);
@@ -39,9 +40,9 @@ namespace SimplifiedMoveset
                     return false;
                 }
 
-                if (!PlayerMod.playerData[player].initializeHands)
+                if (!attachedFields.initializeHands)
                 {
-                    PlayerMod.playerData[player].initializeHands = true;
+                    attachedFields.initializeHands = true;
                 }
             }
             return orig(slugcatHand);

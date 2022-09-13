@@ -22,7 +22,7 @@ namespace SimplifiedMoveset
 
         private static bool TubeWorm_JumpButton(On.TubeWorm.orig_JumpButton orig, TubeWorm tubeWorm, Player player)
         {
-            if ((MainMod.Option_WallJump && player.tubeWorm != null && player.canWallJump != 0 && player.input[0].x != -Math.Sign(player.canWallJump)) || PlayerMod.playerData[player].dontUseTubeWormCounter > 0)
+            if ((MainMod.Option_WallJump && player.tubeWorm != null && player.canWallJump != 0 && player.input[0].x != -Math.Sign(player.canWallJump)) || player.GetAttachedFields().dontUseTubeWormCounter > 0)
             {
                 return player.input[0].jmp && !player.input[1].jmp;
             }
@@ -31,9 +31,9 @@ namespace SimplifiedMoveset
 
         private static void TubeWorm_Update(On.TubeWorm.orig_Update orig, TubeWorm tubeWorm, bool eu)
         {
-            if (tubeWorm.grabbedBy.Count == 1 && tubeWorm.grabbedBy[0].grabber is Player player && PlayerMod.playerData[player].dontUseTubeWormCounter > 0)
+            if (tubeWorm.grabbedBy.Count == 1 && tubeWorm.grabbedBy[0].grabber is Player player && player.GetAttachedFields().dontUseTubeWormCounter > 0)
             {
-                --PlayerMod.playerData[player].dontUseTubeWormCounter;
+                --player.GetAttachedFields().dontUseTubeWormCounter;
             }
             orig(tubeWorm, eu);
         }
