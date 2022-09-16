@@ -8,13 +8,10 @@
   </PropertyGroup>
   
   <ItemGroup>
-    <Reference Include="..\references\HOOKS-Assembly-CSharp.dll"/>
-  </ItemGroup>
-  
-  <ItemGroup>
     <Reference Include="..\..\references\Assembly-CSharp.dll"/>
     <Reference Include="..\..\references\BepInEx.dll"/>
     <Reference Include="..\..\references\ConfigMachine.dll"/>  
+    <Reference Include="..\..\references\HOOKS-Assembly-CSharp.dll"/>
     <Reference Include="..\..\references\Mono.Cecil.dll"/>
     <Reference Include="..\..\references\MonoMod.Utils.dll"/>
     <Reference Include="..\..\references\Partiality.dll"/>
