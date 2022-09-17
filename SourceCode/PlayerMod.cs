@@ -1,9 +1,9 @@
 using System;
+using System.Collections.Generic;
 using Mono.Cecil.Cil;
 using MonoMod.Cil;
 using RWCustom;
 using UnityEngine;
-using WeakTables;
 
 namespace SimplifiedMoveset
 {
@@ -19,7 +19,7 @@ namespace SimplifiedMoveset
         // variables
         //
 
-        public sealed class AttachedFields
+        public sealed class AttachedFields // need reference => reference type
         {
             public bool initializeHands = false;
             public bool switchingBeam = false;
@@ -33,10 +33,12 @@ namespace SimplifiedMoveset
             public int jumpPressedCounter = 0;
             public int soundCooldown = 0;
 
-            public AttachedFields() { }
+            public AttachedFields()
+            {
+            }
         }
 
-        private static WeakTable<Player, AttachedFields> attachedFields = new WeakTable<Player, AttachedFields>(_ => new AttachedFields());
+        internal static readonly Dictionary<Player, AttachedFields> attachedFields = new();
         public static AttachedFields GetAttachedFields(this Player player) => attachedFields[player];
 
         //
@@ -60,7 +62,7 @@ namespace SimplifiedMoveset
 
         internal static void OnDisable_Option_Swim()
         {
-            On.Player.ctor -= Player_ctor;
+            On.Player.ctor -= Player_ctor_2;
             IL.Player.GrabUpdate -= IL_Player_GrabUpdate;
         }
 
@@ -75,11 +77,13 @@ namespace SimplifiedMoveset
 
         internal static void OnEnable()
         {
+            On.Player.ctor += Player_ctor_1;
             On.Player.Jump += Player_Jump;
             On.Player.UpdateAnimation += Player_UpdateAnimation;
             On.Player.UpdateBodyMode += Player_UpdateBodyMode;
             On.Player.WallJump += Player_WallJump;
         }
+
         internal static void OnEnable_Option_BellySlide()
         {
             On.Player.ThrowObject += Player_ThrowObject_Option_BellySlide; // remove throw timing
@@ -97,7 +101,7 @@ namespace SimplifiedMoveset
 
         internal static void OnEnable_Option_Swim()
         {
-            On.Player.ctor += Player_ctor; // change stats for swimming
+            On.Player.ctor += Player_ctor_2; // change stats for swimming
             IL.Player.GrabUpdate += IL_Player_GrabUpdate; // can eat stuff underwater
         }
 
@@ -137,7 +141,7 @@ namespace SimplifiedMoveset
         }
 
         // direction: up = 1, down = -1
-        public static void PrepareGetUpOnBeamAnimation(Player player, int direction, in AttachedFields attachedFields)
+        public static void PrepareGetUpOnBeamAnimation(Player player, int direction, AttachedFields attachedFields)
         {
             int chunkIndex = direction == 1 ? 0 : 1;
             player.bodyChunks[1 - chunkIndex].pos.x = player.bodyChunks[chunkIndex].pos.x;
@@ -171,7 +175,7 @@ namespace SimplifiedMoveset
             }
         }
 
-        public static bool SwitchHorizontalToVerticalBeam(Player player, in AttachedFields attachedFields)
+        public static bool SwitchHorizontalToVerticalBeam(Player player, AttachedFields attachedFields)
         {
             if (player.input[0].y != 0 && player.room.GetTile(player.bodyChunks[0].pos).verticalBeam) // grab vertical beam when possible // && player.room.GetTile(player.bodyChunks[0].pos + new Vector2(0.0f, 20f * player.input[0].y)).verticalBeam
             {
@@ -250,7 +254,7 @@ namespace SimplifiedMoveset
         {
             try
             {
-                ILCursor cursor = new ILCursor(context);
+                ILCursor cursor = new(context);
                 if (cursor.TryGotoNext(MoveType.Before,
                                          instruction => instruction.MatchLdarg(0), // argument0: player
                                          instruction => instruction.MatchCall<Creature>("get_mainBodyChunk"),
@@ -294,6 +298,7 @@ namespace SimplifiedMoveset
                 {
                     player.input[0].jmp = true;
                     player.input[1].jmp = false;
+                    player.GetAttachedFields().dontUseTubeWormCounter = 2;
                 }
                 else if (player.input[0].jmp && !player.input[1].jmp)
                 {
@@ -302,10 +307,15 @@ namespace SimplifiedMoveset
             }
         }
 
-        private static void Player_ctor(On.Player.orig_ctor orig, Player player, AbstractCreature abstractCreature, World world)
+        private static void Player_ctor_1(On.Player.orig_ctor orig, Player player, AbstractCreature abstractCreature, World world)
         {
             orig(player, abstractCreature, world);
+            PlayerMod.attachedFields.Add(player, new PlayerMod.AttachedFields());
+        }
 
+        private static void Player_ctor_2(On.Player.orig_ctor orig, Player player, AbstractCreature abstractCreature, World world)
+        {
+            orig(player, abstractCreature, world);
             player.slugcatStats.lungsFac = 0.0f;
             player.buoyancy = 0.9f;
         }
@@ -334,7 +344,7 @@ namespace SimplifiedMoveset
                     player.feetStuckPos = new Vector2?(); // what does this do?
                     float adrenalineModifier = Mathf.Lerp(1f, 1.15f, player.Adrenaline);
 
-                    if (player.grasps[0] != null && player.HeavyCarry(player.grasps[0].grabbed) && !(player.grasps[0].grabbed is Cicada))
+                    if (player.grasps[0] != null && player.HeavyCarry(player.grasps[0].grabbed) && player.grasps[0].grabbed is not Cicada)
                     {
                         adrenalineModifier += Mathf.Min(Mathf.Max(0.0f, player.grasps[0].grabbed.TotalMass - 0.2f) * 1.5f, 1.3f);
                     }
@@ -655,7 +665,7 @@ namespace SimplifiedMoveset
                 }
 
                 // grab beams by holding down // extends some cases when holding up -- forget which ones :/ // don't grab beams while falling inside corridors
-                if (attachedFields.grabBeamCooldownCounter == 0 && (player.input[0].y == -1 || attachedFields.grabBeamCounter > 0) && player.animation == Player.AnimationIndex.None && player.bodyMode == Player.BodyModeIndex.Default && (!player.IsTileSolid(bChunk: 0, -1, 0) || !player.IsTileSolid(bChunk: 0, 1, 0)) && (!player.IsTileSolid(bChunk: 1, -1, 0) || !player.IsTileSolid(bChunk: 1, 1, 0)))
+                if (attachedFields.grabBeamCooldownCounter == 0 && (player.input[0].y != 0 || attachedFields.grabBeamCounter > 0) && player.animation == Player.AnimationIndex.None && player.bodyMode == Player.BodyModeIndex.Default && (!player.IsTileSolid(bChunk: 0, -1, 0) || !player.IsTileSolid(bChunk: 0, 1, 0)) && (!player.IsTileSolid(bChunk: 1, -1, 0) || !player.IsTileSolid(bChunk: 1, 1, 0)))
                 {
                     if (player.room.GetTile(player.bodyChunks[0].pos).verticalBeam)
                     {

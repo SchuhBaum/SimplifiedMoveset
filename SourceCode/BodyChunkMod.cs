@@ -7,9 +7,9 @@ namespace SimplifiedMoveset
     public static class BodyChunkMod
     {
         // variables are initialized in RainWorldGameMod and BodyChunk_ctor()
-        public static readonly Dictionary<BodyChunk, Vector2> bodyChunkConnectionVel = new Dictionary<BodyChunk, Vector2>();
-        public static readonly Dictionary<BodyChunk, int> lastOnSlope = new Dictionary<BodyChunk, int>();
-        public static readonly Dictionary<BodyChunk, IntVector2?> lastOnSlopeTilePos = new Dictionary<BodyChunk, IntVector2?>();
+        public static readonly Dictionary<BodyChunk, Vector2> bodyChunkConnectionVel = new();
+        public static readonly Dictionary<BodyChunk, int> lastOnSlope = new();
+        public static readonly Dictionary<BodyChunk, IntVector2?> lastOnSlopeTilePos = new();
 
         internal static void OnEnable()
         {

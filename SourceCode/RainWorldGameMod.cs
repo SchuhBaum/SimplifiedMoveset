@@ -46,6 +46,7 @@ namespace SimplifiedMoveset
             BodyChunkMod.bodyChunkConnectionVel.Clear();
             BodyChunkMod.lastOnSlope.Clear();
             BodyChunkMod.lastOnSlopeTilePos.Clear();
+            PlayerMod.attachedFields.Clear();
 
             orig(game, manager);
         }
@@ -58,6 +59,7 @@ namespace SimplifiedMoveset
             BodyChunkMod.bodyChunkConnectionVel.Clear();
             BodyChunkMod.lastOnSlope.Clear();
             BodyChunkMod.lastOnSlopeTilePos.Clear();
+            PlayerMod.attachedFields.Clear();
 
             if (MainMod.Option_BellySlide)
             {

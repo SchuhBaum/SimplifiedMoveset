@@ -4,21 +4,21 @@ using UnityEngine;
 
 namespace SimplifiedMoveset
 {
-    public class MainModOptions : OptionalUI.OptionInterface
+    public class MainModOptions : OptionInterface
     {
-        private Vector2 marginX = new Vector2();
-        private Vector2 pos = new Vector2();
+        private Vector2 marginX = new();
+        private Vector2 pos = new();
         private readonly float spacing = 20f;
 
-        private readonly List<float> boxEndPositions = new List<float>();
+        private readonly List<float> boxEndPositions = new();
 
         private readonly int numberOfCheckboxes = 3;
         private readonly float checkBoxSize = 24f;
-        private readonly List<OpCheckBox> checkBoxes = new List<OpCheckBox>();
-        private readonly List<OpLabel> checkBoxesTextLabels = new List<OpLabel>();
+        private readonly List<OpCheckBox> checkBoxes = new();
+        private readonly List<OpLabel> checkBoxesTextLabels = new();
 
         private readonly float fontHeight = 20f;
-        private readonly List<OpLabel> textLabels = new List<OpLabel>();
+        private readonly List<OpLabel> textLabels = new();
 
         private float CheckBoxWithSpacing => checkBoxSize + 0.25f * spacing;
 
@@ -152,7 +152,7 @@ namespace SimplifiedMoveset
 
         private void AddCheckBox(string key, string text, string description, bool? defaultBool = null)
         {
-            OpCheckBox opCheckBox = new OpCheckBox(new Vector2(), key, defaultBool: defaultBool ?? false)
+            OpCheckBox opCheckBox = new(new Vector2(), key, defaultBool: defaultBool ?? false)
             {
                 description = description
             };
@@ -212,7 +212,7 @@ namespace SimplifiedMoveset
                 pos.y -= textHeight;
             }
 
-            OpLabel textLabel = new OpLabel(new Vector2(), new Vector2(20f, textHeight), text, alignment, bigText) // minimal size.x = 20f
+            OpLabel textLabel = new(new Vector2(), new Vector2(20f, textHeight), text, alignment, bigText) // minimal size.x = 20f
             {
                 autoWrap = true
             };
