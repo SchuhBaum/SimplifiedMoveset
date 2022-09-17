@@ -27,18 +27,18 @@ There are two licenses available - MIT and Unlicense. You can choose which one y
 - Pressing jump during the GetUpOnBeam animation will drop you afterwards. Intended is that nothing happens and you can only jump off after this (short) animation is finished.
 
 ### Changelog
-v0.3:
+v0.30:
 - Extended the spear throw option to work with slopes and when hanging from beams.
 - When the wall climb option is enabled, (mid-air) wall jumps have a higher priority than using grapple worms.
 
 
-v0.4:
+v0.40:
 - Added support for AutoUpdate.
 - Extended the climb option. Should be more consistent now.
 - Added a ledge grab option (disabled by default). When enabled, you stay in the ledge grab animation until jump is pressed. Added the ability to mid-air wall jump off a ledge grab.
 
 
-v0.5:
+v0.50:
 - Ledge grab option uses vanilla behaviour when grabbing a shortcut entrance ledge.
 - Extended beam climb option. The main idea is to reduce cases where you accidentally drop from beams.
 - When not in an animation, you can grab beams by holding down.
@@ -49,7 +49,7 @@ v0.5:
 - Restructured code.
 
 
-v0.6:
+v0.60:
 - (beam climb) When hanging from a vertical beam and pressing jump, you drop instead of doing a mini-jump (for consistency).
 - (beam climb) When hanging from a horizontal beam and pressing jump (without holding up), you drop instead of doing nothing (for consistency).
 - (swim) Removed the ability to breath underwater while death rain.
