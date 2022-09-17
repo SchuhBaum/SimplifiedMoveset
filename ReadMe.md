@@ -1,5 +1,5 @@
 ## SimplifiedMoveset
-###### Version: 0.68
+###### Version: 0.69
 
 This is a mod for Rain World v1.5.
 
@@ -20,8 +20,7 @@ Various movement changes. The main idea is to remove or simplify timings, making
 If you have feedback, you can message me on Discord `@SchuhBaum#7246` or write an email to SchuhBaum71@gmail.com.  
 
 ### License  
-There are two licenses available - MIT and Unlicense. You can choose which one you want to use.  
-**NOTE:** WeakTables use their own license. This license is included in the folder SourceCode/WeakTables. Website: https://github.com/Dual-Iron/weak-tables
+There are two licenses available - MIT and Unlicense. You can choose which one you want to use.
 
 ### Bugs
 - Standing next to a wall, the belly slide can fail (not sure why). In this case the body mode index is set to CorridorClimb and goes into crawl afterwards. This bug seems to exist in vanilla as well.
@@ -64,7 +63,7 @@ v0.6:
 - (spear throw) Simplified implementation. Fixed a bug where thrown spears would just fall when starving.
 
 
-v0.68:
+v0.69:
 - (beam climb) When hanging from a horizontal beam and using a tube worm, retracting the tongue has priority when pressing jump (for consistency).
 - (beam climb) Fixed a bug which prevented player from entering corridors during the GetUpToBeamTip animation.
 - (belly slide and crawl) Horizontal momentum gets adjusted when on ceiling slopes (for consistency).
@@ -78,3 +77,4 @@ v0.68:
 - (beam climb) Start wall climbing when touching a wall while walking on horizontal beams.
 - Restructured code.
 - Now a BepInEx plugin.
+- Buffered wall jumps have priority over using tube worms.
