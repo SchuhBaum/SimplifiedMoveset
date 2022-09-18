@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace SimplifiedMoveset
 {
-    [BepInPlugin("SchuhBaum.SimplifiedMoveset", "SimplifiedMoveset", "0.69")]
+    [BepInPlugin("SchuhBaum.SimplifiedMoveset", "SimplifiedMoveset", "0.70")]
     public class MainMod : BaseUnityPlugin
     {
         public string updateURL = "http://beestuff.pythonanywhere.com/audb/api/mods/8/2";
@@ -58,8 +58,13 @@ namespace SimplifiedMoveset
         // public functions //
         // ---------------- //
 
-        public static void LogAllInstructions(ILContext context, int indexStringLength = 9, int opCodeStringLength = 14)
+        public static void LogAllInstructions(ILContext? context, int indexStringLength = 9, int opCodeStringLength = 14)
         {
+            if (context == null)
+            {
+                return;
+            }
+
             Debug.Log("-----------------------------------------------------------------");
             Debug.Log("SimplifiedMoveset: Log all IL-instructions.");
             Debug.Log("Index:" + new string(' ', indexStringLength - 6) + "OpCode:" + new string(' ', opCodeStringLength - 7) + "Operand:");

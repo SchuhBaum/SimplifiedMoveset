@@ -18,8 +18,6 @@ namespace SimplifiedMoveset
         // private functions //
         // ----------------- //
 
-
-
         private static bool TubeWorm_JumpButton(On.TubeWorm.orig_JumpButton orig, TubeWorm tubeWorm, Player player)
         {
             if ((MainMod.Option_WallJump && player.tubeWorm != null && player.canWallJump != 0 && player.input[0].x != -Math.Sign(player.canWallJump)) || player.GetAttachedFields().dontUseTubeWormCounter > 0)

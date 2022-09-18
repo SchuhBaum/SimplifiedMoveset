@@ -1,5 +1,5 @@
 ## SimplifiedMoveset
-###### Version: 0.69
+###### Version: 0.70
 
 This is a mod for Rain World v1.5.
 
@@ -63,7 +63,7 @@ v0.60:
 - (spear throw) Simplified implementation. Fixed a bug where thrown spears would just fall when starving.
 
 
-v0.69:
+v0.70:
 - (beam climb) When hanging from a horizontal beam and using a tube worm, retracting the tongue has priority when pressing jump (for consistency).
 - (beam climb) Fixed a bug which prevented player from entering corridors during the GetUpToBeamTip animation.
 - (belly slide and crawl) Horizontal momentum gets adjusted when on ceiling slopes (for consistency).
@@ -78,3 +78,5 @@ v0.69:
 - Restructured code.
 - Now a BepInEx plugin.
 - Buffered wall jumps have priority over using tube worms.
+- (beam climb) GetUpToBeamTip should not be canceled anymore by holding left or right. Fixed a bug where canceling beam climb would be spammed when climbing into a corner.
+- Restructered code.
