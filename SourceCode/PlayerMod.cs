@@ -47,6 +47,7 @@ namespace SimplifiedMoveset
         internal static void OnDisable_Option_BeamClimb()
         {
             IL.Player.MovementUpdate -= IL_Player_MovementUpdate;
+            IL.Player.UpdateAnimation -= IL_Player_UpdateAnimation;
         }
 
         internal static void OnDisable_Option_BellySlide()
@@ -90,7 +91,14 @@ namespace SimplifiedMoveset
 
         internal static void OnEnable_Option_BeamClimb()
         {
+            // removes lifting your booty when being in a corner with your upper bodyChunk / head
+            // usually this happens in one tile horizontal holes
+            // but this can also happen when climbing beams and bumping your head into a corner
+            // in this situation canceling beam climbing can be spammed
             IL.Player.MovementUpdate += IL_Player_MovementUpdate;
+
+            // removes the ability to jump during ClimbUpToBeamTip
+            IL.Player.UpdateAnimation += IL_Player_UpdateAnimation;
         }
 
         internal static void OnEnable_Option_BellySlide()
@@ -138,7 +146,7 @@ namespace SimplifiedMoveset
             player.bodyChunks[0].vel.y += player.dynamicRunSpeed[0];
         }
 
-        public static bool IsPosXAligned(Player? player) => player != null && Math.Abs(player.bodyChunks[0].pos.x - player.bodyChunks[1].pos.x) + Math.Abs(player.bodyChunks[0].vel.x) + Math.Abs(player.bodyChunks[1].vel.x) < 5f; // before: 10f
+        // public static bool IsPosXAligned(Player? player) => player != null && Math.Abs(player.bodyChunks[0].pos.x - player.bodyChunks[1].pos.x) + Math.Abs(player.bodyChunks[0].vel.x) + Math.Abs(player.bodyChunks[1].vel.x) < 5f; // before: 10f
 
         public static bool IsTileSolidOrSlope(Player? player, int chunkIndex, int relativeX, int relativeY)
         {
@@ -316,16 +324,8 @@ namespace SimplifiedMoveset
 
         private static void IL_Player_MovementUpdate(ILContext context)
         {
-            // 615      ldarg.0
-            // 616      callvirt Player/ InputPackage[] Player::get_input()
-            // 617      ldc.i4.0
-            // 618      ldelema Player/ InputPackage
-            // 619      ldfld System.Int32 Player/ InputPackage::y
-            // 620      ldc.i4.1
-            // 621      bne.un Label >>> 703
-
             ILCursor cursor = new(context);
-            if (cursor.TryGotoNext(MoveType.AfterLabel,
+            if (cursor.TryGotoNext(
                 instruction => instruction.MatchLdarg(0),
                 instruction => instruction.MatchCallvirt("Player", "get_input"),
                 instruction => instruction.MatchLdcI4(0),
@@ -333,31 +333,65 @@ namespace SimplifiedMoveset
                 instruction => instruction.MatchLdfld("Player/InputPackage", "y"),
                 instruction => instruction.MatchLdcI4(1)))
             {
-                Instruction instruction = cursor.Next;
-                cursor.GotoNext();
-                cursor.Emit(OpCodes.Ldarg_0); // duplicate first instruction // labels still point to the original
-
-                if (cursor.TryGotoNext(instruction => instruction.MatchBneUn(out ILLabel _))) // why can't I use this ILLabel?
+                int index = cursor.Index;
+                if (cursor.TryGotoNext(instruction => instruction.MatchBneUn(out _))) // out label is not accessible => discard
                 {
-                    // change directly or otherwise labels pointing to this would skip the new instruction
-                    instruction.OpCode = OpCodes.Br;
-                    instruction.Operand = cursor.Next.Operand; // label
+                    ILLabel label = (ILLabel)cursor.Next.Operand;
+                    cursor.Goto(index, MoveType.AfterLabel); // incoming labels will point to the emmited instruction // cursor.MoveAfterLabels() is called
+                    cursor.Emit(OpCodes.Br, label);
                 }
             }
             else
             {
                 Debug.LogException(new Exception("SimplifiedMoveset: IL_Player_MovementUpdate failed."));
             }
-
             // MainMod.LogAllInstructions(context);
-            // 615      br Label >>> 704
-            // 616      ldarg.0
-            // 617      callvirt Player/ InputPackage[] Player::get_input()
-            // 618      ldc.i4.0
-            // 619      ldelema Player/ InputPackage
-            // 620      ldfld System.Int32 Player/ InputPackage::y
-            // 621      ldc.i4.1
-            // 622      bne.un Label >>> 704
+        }
+
+        private static void IL_Player_UpdateAnimation(ILContext context)
+        {
+            ILCursor cursor = new(context);
+
+            // case Player.AnimationIndex.StandOnBeam:
+            cursor.TryGotoNext(
+                instruction => instruction.MatchLdarg(0),
+                instruction => instruction.MatchLdcI4(6),
+                instruction => instruction.MatchStfld("Player", "bodyMode"),
+                instruction => instruction.MatchLdarg(0),
+                instruction => instruction.MatchLdcI4(1),
+                instruction => instruction.MatchStfld("Player", "standing"),
+                instruction => instruction.MatchLdarg(0),
+                instruction => instruction.MatchLdcI4(5),
+                instruction => instruction.MatchStfld("Player", "canJump"));
+
+            //case Player.AnimationIndex.GetUpToBeamTip:
+            if (cursor.TryGotoNext(MoveType.After,
+                instruction => instruction.MatchLdarg(0),
+                instruction => instruction.MatchLdcI4(6),
+                instruction => instruction.MatchStfld("Player", "bodyMode"),
+                instruction => instruction.MatchLdarg(0),
+                instruction => instruction.MatchLdcI4(1),
+                instruction => instruction.MatchStfld("Player", "standing"),
+                instruction => instruction.MatchLdarg(0),
+                instruction => instruction.MatchLdcI4(5),
+                instruction => instruction.MatchStfld("Player", "canJump")))
+            {
+                // it seems that GotoPrev() and GotoNext() are messed up
+                // Debug.Log(cursor.Index); // 2381
+
+                // player.canJump = 0
+                // cursor.GotoPrev(); // 2379 // why???
+                // cursor.Next.OpCode = OpCodes.Ldc_I4_0; // why does this work?? // should GotoPrev() and Next not cancel out??
+
+                // player.canJump = 0
+                cursor.Goto(cursor.Index - 1); // 2380
+                cursor.Prev.OpCode = OpCodes.Ldc_I4_0;
+            }
+            else
+            {
+                Debug.LogException(new Exception("SimplifiedMoveset: IL_Player_UpdateAnimation failed."));
+            }
+            // MainMod.LogAllInstructions(context);
         }
 
         private static void Player_CheckInput(On.Player.orig_checkInput orig, Player player)
@@ -1119,10 +1153,41 @@ namespace SimplifiedMoveset
                 }
 
                 // GetUpToBeamTip // don't let go of beam while climbing to the top // don't prevent player from entering corridors
-                if (player.animation == Player.AnimationIndex.GetUpToBeamTip && player.input[0].x != 0 && !player.IsTileSolid(bChunk: 0, player.input[0].x, 0) && !player.IsTileSolid(bChunk: 1, player.input[0].x, 0)) // player.bodyChunks[0].contactPoint.x == 0 && player.bodyChunks[1].contactPoint.x == 0
+                if (player.animation == Player.AnimationIndex.GetUpToBeamTip) // player.bodyChunks[0].contactPoint.x == 0 && player.bodyChunks[1].contactPoint.x == 0
                 {
-                    player.bodyChunks[0].vel.x -= player.input[0].x * velXGain;
-                    player.bodyChunks[1].vel.x -= (player.input[0].x + 0.5f * player.flipDirection) * velXGain;
+                    Vector2 middleOfTile = new();
+                    foreach (BodyChunk bodyChunk in player.bodyChunks)
+                    {
+                        if (player.room.GetTile(bodyChunk.pos).verticalBeam)
+                        {
+                            middleOfTile = player.room.MiddleOfTile(bodyChunk.pos);
+                            break;
+                        }
+                    }
+
+                    if (middleOfTile.x != 0.0f)
+                    {
+                        player.bodyChunks[0].pos.x += Mathf.Clamp(middleOfTile.x - player.bodyChunks[0].pos.x, -velXGain, velXGain);
+                        player.bodyChunks[1].pos.x += Mathf.Clamp(middleOfTile.x - player.bodyChunks[1].pos.x, -velXGain, velXGain);
+                    }
+
+                    if (player.input[0].x != 0 && !player.IsTileSolid(bChunk: 0, player.input[0].x, 0) && !player.IsTileSolid(bChunk: 1, player.input[0].x, 0))
+                    {
+                        player.bodyChunks[0].vel.x -= player.input[0].x * velXGain;
+                        player.bodyChunks[1].vel.x -= player.input[0].x * velXGain;
+                    }
+
+                    float velYGain = player.gravity + Mathf.Lerp(1f, 1.4f, player.Adrenaline) * player.slugcatStats.poleClimbSpeedFac * Custom.LerpMap(player.slowMovementStun, 0f, 10f, 1f, 0.2f);
+                    if (player.input[0].x == 0 && player.input[0].y == 1)
+                    {
+                        foreach (BodyChunk bodyChunk in player.bodyChunks)
+                        {
+                            if (bodyChunk.vel.y > velYGain)
+                            {
+                                bodyChunk.vel.y -= Mathf.Min(velYGain, bodyChunk.vel.y - velYGain);
+                            }
+                        }
+                    }
                 }
 
                 // BeamTip // don't drop off beam tip by leaning too much
@@ -1141,6 +1206,10 @@ namespace SimplifiedMoveset
                         player.bodyChunks[0].vel.x += player.input[0].x * velXGain;
                         player.bodyChunks[1].vel.x += player.input[0].x * velXGain;
                     }
+                    else if (player.input[0].x == 0 && player.input[0].y == -1)
+                    {
+                        player.bodyChunks[0].pos.x += Mathf.Clamp(player.bodyChunks[1].pos.x - player.bodyChunks[0].pos.x, -velXGain, velXGain);
+                    }
                     else
                     {
                         player.bodyChunks[0].vel.x -= player.input[0].x * (velXGain - leanFactor);
@@ -1158,7 +1227,7 @@ namespace SimplifiedMoveset
                         player.animation = Player.AnimationIndex.None;
                     }
 
-                    if (player.input[0].y == -1 && (IsPosXAligned(player) || player.input[0].jmp && !player.input[1].jmp))
+                    if (player.input[0].y == -1 && (player.bodyChunks[0].pos.x == player.bodyChunks[1].pos.x || player.input[0].jmp && !player.input[1].jmp)) // IsPosXAligned(player)
                     {
                         attachedFields.grabBeamCounter = 15;
                         attachedFields.dontUseTubeWormCounter = 2;
