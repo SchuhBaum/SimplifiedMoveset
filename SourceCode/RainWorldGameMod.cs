@@ -18,6 +18,11 @@ namespace SimplifiedMoveset
         {
             Debug.Log("SimplifiedMoveset: Initialize. Add option specific hooks.");
 
+            if (MainMod.Option_BeamClimb)
+            {
+                PlayerMod.OnEnable_Option_BeamClimb();
+            }
+
             if (MainMod.Option_BellySlide)
             {
                 PlayerMod.OnEnable_Option_BellySlide();
@@ -60,6 +65,11 @@ namespace SimplifiedMoveset
             BodyChunkMod.lastOnSlope.Clear();
             BodyChunkMod.lastOnSlopeTilePos.Clear();
             PlayerMod.attachedFields.Clear();
+
+            if (MainMod.Option_BeamClimb)
+            {
+                PlayerMod.OnDisable_Option_BeamClimb();
+            }
 
             if (MainMod.Option_BellySlide)
             {
