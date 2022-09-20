@@ -539,10 +539,6 @@ namespace SimplifiedMoveset
         // there are cases where this function does not call orig()
         private static void Player_UpdateAnimation(On.Player.orig_UpdateAnimation orig, Player player)
         {
-            // Debug.Log("Player_UpdateAnimation");
-            // Debug.Log(player.animation);
-            // Debug.Log(player.bodyMode);
-
             AttachedFields attachedFields = player.GetAttachedFields();
             Room room = player.room;
 
