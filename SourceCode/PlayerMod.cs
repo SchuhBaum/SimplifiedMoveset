@@ -146,8 +146,6 @@ namespace SimplifiedMoveset
             player.bodyChunks[0].vel.y += player.dynamicRunSpeed[0];
         }
 
-        // public static bool IsPosXAligned(Player? player) => player != null && Math.Abs(player.bodyChunks[0].pos.x - player.bodyChunks[1].pos.x) + Math.Abs(player.bodyChunks[0].vel.x) + Math.Abs(player.bodyChunks[1].vel.x) < 5f; // before: 10f
-
         public static bool IsTileSolidOrSlope(Player? player, int chunkIndex, int relativeX, int relativeY)
         {
             if (player?.room == null)
@@ -540,7 +538,7 @@ namespace SimplifiedMoveset
         private static void Player_UpdateAnimation(On.Player.orig_UpdateAnimation orig, Player player)
         {
             AttachedFields attachedFields = player.GetAttachedFields();
-            Room room = player.room;
+            Room? room = player.room;
 
             if (attachedFields.getUpOnBeamAbortCounter > 0) // beam climb
             {
@@ -578,7 +576,7 @@ namespace SimplifiedMoveset
             }
 
             // belly slide // backflip always possible // do a longer version by default
-            if (MainMod.Option_BellySlide && player.animation == Player.AnimationIndex.BellySlide && player.room != null)
+            if (MainMod.Option_BellySlide && player.animation == Player.AnimationIndex.BellySlide && room != null)
             {
                 UpdateAnimationCounter(player);
                 if (player.slideCounter > 0) // no backflips after belly slide
@@ -737,7 +735,7 @@ namespace SimplifiedMoveset
                     player.canWallJump = player.flipDirection * -15; // you can do a (mid-air) wall jump off a ledge grab
                 }
 
-                if (MainMod.Option_LedgeGrab && player.room != null)
+                if (MainMod.Option_LedgeGrab && room != null)
                 {
                     if (player.input[0].jmp && attachedFields.jumpPressedCounter < 20)
                     {
@@ -767,7 +765,7 @@ namespace SimplifiedMoveset
             }
 
             // beam climb 
-            if (MainMod.Option_BeamClimb && player.room != null)
+            if (MainMod.Option_BeamClimb && room != null)
             {
                 // velocity gained in x direction each frame (if no slowmovementstun, and bodyMode is default)
                 float velXGain = 2.4f * Mathf.Lerp(1f, 1.2f, player.Adrenaline) * player.surfaceFriction * room.gravity;
@@ -1153,10 +1151,10 @@ namespace SimplifiedMoveset
                 {
                     foreach (BodyChunk bodyChunk in player.bodyChunks)
                     {
-                        Room.Tile tile = player.room.GetTile(bodyChunk.pos);
-                        if (!tile.verticalBeam && player.room.GetTile(tile.X, tile.Y - 1).verticalBeam)
+                        Room.Tile tile = room.GetTile(bodyChunk.pos);
+                        if (!tile.verticalBeam && room.GetTile(tile.X, tile.Y - 1).verticalBeam)
                         {
-                            float middleOfTileX = player.room.MiddleOfTile(tile.X, tile.Y).x;
+                            float middleOfTileX = room.MiddleOfTile(tile.X, tile.Y).x;
                             BodyChunk bodyChunk0 = player.bodyChunks[0];
                             BodyChunk bodyChunk1 = player.bodyChunks[1];
 
