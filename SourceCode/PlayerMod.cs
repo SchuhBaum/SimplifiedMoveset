@@ -1155,37 +1155,26 @@ namespace SimplifiedMoveset
                 // GetUpToBeamTip // don't let go of beam while climbing to the top // don't prevent player from entering corridors
                 if (player.animation == Player.AnimationIndex.GetUpToBeamTip) // player.bodyChunks[0].contactPoint.x == 0 && player.bodyChunks[1].contactPoint.x == 0
                 {
-                    Vector2 middleOfTile = new();
                     foreach (BodyChunk bodyChunk in player.bodyChunks)
                     {
-                        if (player.room.GetTile(bodyChunk.pos).verticalBeam)
+                        Room.Tile tile = player.room.GetTile(bodyChunk.pos);
+                        if (!tile.verticalBeam && player.room.GetTile(tile.X, tile.Y - 1).verticalBeam)
                         {
-                            middleOfTile = player.room.MiddleOfTile(bodyChunk.pos);
-                            break;
-                        }
-                    }
+                            float middleOfTileX = player.room.MiddleOfTile(tile.X, tile.Y).x;
+                            BodyChunk bodyChunk0 = player.bodyChunks[0];
+                            BodyChunk bodyChunk1 = player.bodyChunks[1];
 
-                    if (middleOfTile.x != 0.0f)
-                    {
-                        player.bodyChunks[0].pos.x += Mathf.Clamp(middleOfTile.x - player.bodyChunks[0].pos.x, -velXGain, velXGain);
-                        player.bodyChunks[1].pos.x += Mathf.Clamp(middleOfTile.x - player.bodyChunks[1].pos.x, -velXGain, velXGain);
-                    }
+                            // give a bit of protection against wind and horizontal momentum
+                            bodyChunk0.pos.x += Mathf.Clamp(middleOfTileX - bodyChunk0.pos.x, -2f * velXGain, 2f * velXGain);
+                            bodyChunk1.pos.x += Mathf.Clamp(middleOfTileX - bodyChunk1.pos.x, -2f * velXGain, 2f * velXGain);
 
-                    if (player.input[0].x != 0 && !player.IsTileSolid(bChunk: 0, player.input[0].x, 0) && !player.IsTileSolid(bChunk: 1, player.input[0].x, 0))
-                    {
-                        player.bodyChunks[0].vel.x -= player.input[0].x * velXGain;
-                        player.bodyChunks[1].vel.x -= player.input[0].x * velXGain;
-                    }
-
-                    float velYGain = player.gravity + Mathf.Lerp(1f, 1.4f, player.Adrenaline) * player.slugcatStats.poleClimbSpeedFac * Custom.LerpMap(player.slowMovementStun, 0f, 10f, 1f, 0.2f);
-                    if (player.input[0].x == 0 && player.input[0].y == 1)
-                    {
-                        foreach (BodyChunk bodyChunk in player.bodyChunks)
-                        {
-                            if (bodyChunk.vel.y > velYGain)
+                            // ignore x input
+                            if (player.input[0].x != 0 && !player.IsTileSolid(bChunk: 0, player.input[0].x, 0) && !player.IsTileSolid(bChunk: 1, player.input[0].x, 0))
                             {
-                                bodyChunk.vel.y -= Mathf.Min(velYGain, bodyChunk.vel.y - velYGain);
+                                bodyChunk0.vel.x -= player.input[0].x * velXGain;
+                                bodyChunk1.vel.x -= player.input[0].x * velXGain;
                             }
+                            break;
                         }
                     }
                 }
@@ -1208,6 +1197,7 @@ namespace SimplifiedMoveset
                     }
                     else if (player.input[0].x == 0 && player.input[0].y == -1)
                     {
+                        // wind can make lining yourself up more difficult // on the other hand, wind makes catching the beam below also harder => leave it as is
                         player.bodyChunks[0].pos.x += Mathf.Clamp(player.bodyChunks[1].pos.x - player.bodyChunks[0].pos.x, -velXGain, velXGain);
                     }
                     else
