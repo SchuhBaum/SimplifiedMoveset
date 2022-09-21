@@ -1,5 +1,5 @@
 ## SimplifiedMoveset
-###### Version: 0.71
+###### Version: 0.72
 
 This is a mod for Rain World v1.5.
 
@@ -82,5 +82,5 @@ v0.70:
 - Restructered code.
 
 
-v0.71:
-- (grab) Added this option (enabled by default). You can only grab dead large creatures when crouching.
+v0.72:
+- (grab) Added this option (enabled by default). You can only grab dead large creatures when crouching. Fixed a bug where you could not grab them in vertical corridors.
