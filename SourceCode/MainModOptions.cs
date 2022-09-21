@@ -54,17 +54,18 @@ namespace SimplifiedMoveset
             AddCheckBox("crawl", "Crawl", "Crawl turns can be used to initiate rolls and on slopes. Increases turn rate in corridors. Removes slowdown when holding down.", defaultBool: true);
 
             AddCheckBox("crouchJump", "Crouch Jump", "Stand up during crouch jumps. Decreases charge time for super launch jumps.", defaultBool: true);
+            AddCheckBox("grab", "Grab", "Grab dead large creatures only when crouching.", defaultBool: true);
             AddCheckBox("ledgeGrab", "Ledge Grab", "Slugcat stays in the ledge grab animation until jump is pressed.", defaultBool: false);
-            AddCheckBox("rocketJump", "Rocket Jump", "When disabled, you can only perform normal jumps during rolls.", defaultBool: true);
 
-            AddCheckBox("roll", "Roll", "Stand up after rolls, and rocket jumps (same effect as with the option Belly Slide). Removes timing / variable height for rocket jumps from rolls.\nThe changes for rocket jumps are only in effect if the option Rocket Jump is enabled as well.", defaultBool: true);
+            AddCheckBox("roll_1", "Roll 1", "Stand up after rolls, and rocket jumps (same effect as with the option Belly Slide). Removes timing / variable height for rocket jumps from rolls.\nThe changes for rocket jumps are only in effect if the option \"Roll 2\" is enabled as well.", defaultBool: true);
+            AddCheckBox("roll_2", "Roll 2", "When disabled, you can only perform normal jumps during rolls.", defaultBool: true);
             AddCheckBox("slideTurn", "Slide Turn", "Reduces the requirements for slide turns. Backflips are possible earlier.", defaultBool: false);
-            AddCheckBox("spearThrow", "Spear Throw", "The throw momentum does not affect slugcat on the ground. The momentum while climbing beams is reduced. Throw boosting in the air is still possible.", defaultBool: true);
 
+            AddCheckBox("spearThrow", "Spear Throw", "The throw momentum does not affect slugcat on the ground. The momentum while climbing beams is reduced. Throw boosting in the air is still possible.", defaultBool: true);
             AddCheckBox("swim", "Swim", "Removes breath limit underwater. You can eat underwater. Increases swim speed. Adjusts buoyancy.", defaultBool: false);
             AddCheckBox("tubeWorm", "Tube Worm", "Adds auto - aim grappling to beams.", defaultBool: true);
-            AddCheckBox("wallClimb", "Wall Climb", "Adds crawling on walls. Removes wall sliding. Normal jumps are prioritized for small obstacles instead of wall climbing / jumping.", defaultBool: false);
 
+            AddCheckBox("wallClimb", "Wall Climb", "Adds crawling on walls. Removes wall sliding. Normal jumps are prioritized for small obstacles instead of wall climbing / jumping.", defaultBool: false);
             AddCheckBox("wallJump", "Wall Jump", "Only wall jump when facing away from the wall.  Wall jumps are prioritized over using tube worms. Removes wall sliding when not holding down. Normal jumps are prioritized for small obstacles instead of wall climbing / jumping.", defaultBool: true);
             // AddCheckBox("slopes", "Slopes", "Makes moving down slopes at higher speed possible. Animations might still slow you down. Changes collision with slopes to be identical with solid tiles. These changes only affect player bodyChunks.", defaultBool: true);
 
@@ -84,17 +85,18 @@ namespace SimplifiedMoveset
             MainMod.Option_Crawl = bool.Parse(config["crawl"]);
 
             MainMod.Option_CrouchJump = bool.Parse(config["crouchJump"]);
+            MainMod.Option_Grab = bool.Parse(config["grab"]);
             MainMod.Option_LedgeGrab = bool.Parse(config["ledgeGrab"]);
-            MainMod.Option_RocketJump = bool.Parse(config["rocketJump"]);
 
-            MainMod.Option_Roll = bool.Parse(config["roll"]);
+            MainMod.Option_Roll_1 = bool.Parse(config["roll_1"]);
+            MainMod.Option_Roll_2 = bool.Parse(config["roll_2"]);
             MainMod.Option_SlideTurn = bool.Parse(config["slideTurn"]);
-            MainMod.Option_SpearThrow = bool.Parse(config["spearThrow"]);
 
+            MainMod.Option_SpearThrow = bool.Parse(config["spearThrow"]);
             MainMod.Option_Swim = bool.Parse(config["swim"]);
             MainMod.Option_TubeWorm = bool.Parse(config["tubeWorm"]);
-            MainMod.Option_WallClimb = bool.Parse(config["wallClimb"]);
 
+            MainMod.Option_WallClimb = bool.Parse(config["wallClimb"]);
             MainMod.Option_WallJump = bool.Parse(config["wallJump"]);
 
             Debug.Log("SimplifiedMoveset: Option_BeamClimb " + MainMod.Option_BeamClimb);
@@ -102,17 +104,18 @@ namespace SimplifiedMoveset
             Debug.Log("SimplifiedMoveset: Option_Crawl " + MainMod.Option_Crawl);
 
             Debug.Log("SimplifiedMoveset: Option_CrouchJump " + MainMod.Option_CrouchJump);
+            Debug.Log("SimplifiedMoveset: Option_Grab " + MainMod.Option_Grab);
             Debug.Log("SimplifiedMoveset: Option_LedgeGrab " + MainMod.Option_LedgeGrab);
-            Debug.Log("SimplifiedMoveset: Option_RocketJump " + MainMod.Option_RocketJump);
 
-            Debug.Log("SimplifiedMoveset: Option_Roll " + MainMod.Option_Roll);
+            Debug.Log("SimplifiedMoveset: Option_Roll_1 " + MainMod.Option_Roll_1);
+            Debug.Log("SimplifiedMoveset: Option_Roll_2 " + MainMod.Option_Roll_2);
             Debug.Log("SimplifiedMoveset: Option_SlideTurn " + MainMod.Option_SlideTurn);
-            Debug.Log("SimplifiedMoveset: Option_SpearThrow " + MainMod.Option_SpearThrow);
 
+            Debug.Log("SimplifiedMoveset: Option_SpearThrow " + MainMod.Option_SpearThrow);
             Debug.Log("SimplifiedMoveset: Option_Swim " + MainMod.Option_Swim);
             Debug.Log("SimplifiedMoveset: Option_TubeWorm " + MainMod.Option_TubeWorm);
-            Debug.Log("SimplifiedMoveset: Option_WallClimb " + MainMod.Option_WallClimb);
 
+            Debug.Log("SimplifiedMoveset: Option_WallClimb " + MainMod.Option_WallClimb);
             Debug.Log("SimplifiedMoveset: Option_WallJump " + MainMod.Option_WallJump);
         }
 

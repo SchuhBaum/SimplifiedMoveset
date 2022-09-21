@@ -60,6 +60,11 @@ namespace SimplifiedMoveset
             On.Player.TerrainImpact -= Player_TerrainImpact;
         }
 
+        internal static void OnDisable_Option_Grab()
+        {
+            On.Player.Grabability -= Player_Grabability;
+        }
+
         internal static void OnDisable_Option_SpearThrow()
         {
             On.Player.ThrowObject -= Player_ThrowObject_Option_SpearThrow;
@@ -89,6 +94,15 @@ namespace SimplifiedMoveset
             On.Player.WallJump += Player_WallJump;
         }
 
+        private static int Player_Grabability(On.Player.orig_Grabability orig, Player player, PhysicalObject physicalObject)
+        {
+            if (player.standing && physicalObject is Creature creature && !creature.Template.smallCreature && creature.dead)
+            {
+                return (int)Player.ObjectGrabability.CantGrab;
+            }
+            return orig(player, physicalObject);
+        }
+
         internal static void OnEnable_Option_BeamClimb()
         {
             // removes lifting your booty when being in a corner with your upper bodyChunk / head
@@ -110,6 +124,12 @@ namespace SimplifiedMoveset
         {
             On.Player.TerrainImpact += Player_TerrainImpact; // initiate rolls from crawl turns
         }
+
+        internal static void OnEnable_Option_Grab()
+        {
+            On.Player.Grabability += Player_Grabability; // only grab dead large creatures when crouching
+        }
+
 
         internal static void OnEnable_Option_SpearThrow()
         {
@@ -431,7 +451,7 @@ namespace SimplifiedMoveset
         // there are cases where this function does not call orig()
         private static void Player_Jump(On.Player.orig_Jump orig, Player player)
         {
-            if (!MainMod.Option_RocketJump && player.animation == Player.AnimationIndex.Roll)
+            if (!MainMod.Option_Roll_2 && player.animation == Player.AnimationIndex.Roll)
             {
                 player.animation = Player.AnimationIndex.None;
                 player.standing = true;
@@ -446,7 +466,7 @@ namespace SimplifiedMoveset
             if (player.bodyMode != Player.BodyModeIndex.CorridorClimb && player.bodyMode != Player.BodyModeIndex.WallClimb)
             {
                 // roll jumps // two types of jumps // timing scaling removed
-                if (MainMod.Option_Roll && player.animation == Player.AnimationIndex.Roll)
+                if (MainMod.Option_Roll_1 && player.animation == Player.AnimationIndex.Roll)
                 {
                     // before switch statement // vanilla code
                     player.feetStuckPos = new Vector2?(); // what does this do?
@@ -1227,7 +1247,7 @@ namespace SimplifiedMoveset
             }
 
             // finish
-            if ((MainMod.Option_BellySlide || MainMod.Option_Roll) && player.animation == Player.AnimationIndex.RocketJump)
+            if ((MainMod.Option_BellySlide || MainMod.Option_Roll_1) && player.animation == Player.AnimationIndex.RocketJump)
             {
                 orig(player);
                 if (player.animation == Player.AnimationIndex.None && (player.IsTileSolid(0, 0, -1) || player.IsTileSolid(1, 0, -1))) // stand up after rocket jump
@@ -1273,7 +1293,7 @@ namespace SimplifiedMoveset
                     }
                 }
             }
-            else if (MainMod.Option_Roll && player.animation == Player.AnimationIndex.Roll && (player.IsTileSolid(0, 0, -1) || player.IsTileSolid(1, 0, -1))) // stand up after rolls
+            else if (MainMod.Option_Roll_1 && player.animation == Player.AnimationIndex.Roll && (player.IsTileSolid(0, 0, -1) || player.IsTileSolid(1, 0, -1))) // stand up after rolls
             {
                 Player.AnimationIndex animationIndex = player.animation;
                 orig(player);

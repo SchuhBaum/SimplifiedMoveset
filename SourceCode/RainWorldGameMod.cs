@@ -33,6 +33,11 @@ namespace SimplifiedMoveset
                 PlayerMod.OnEnable_Option_Crawl();
             }
 
+            if (MainMod.Option_Grab)
+            {
+                PlayerMod.OnEnable_Option_Grab();
+            }
+
             if (MainMod.Option_SpearThrow)
             {
                 PlayerMod.OnEnable_Option_SpearThrow();
@@ -79,6 +84,11 @@ namespace SimplifiedMoveset
             if (MainMod.Option_Crawl)
             {
                 PlayerMod.OnDisable_Option_Crawl();
+            }
+
+            if (MainMod.Option_Grab)
+            {
+                PlayerMod.OnDisable_Option_Grab();
             }
 
             if (MainMod.Option_SpearThrow)
