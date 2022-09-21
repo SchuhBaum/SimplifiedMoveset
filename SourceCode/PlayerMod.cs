@@ -440,9 +440,11 @@ namespace SimplifiedMoveset
 
         private static int Player_Grabability(On.Player.orig_Grabability orig, Player player, PhysicalObject physicalObject)
         {
-            // Default is during jumps for example
-            // player.standing is also true when in vertical corridors => use Stand instead
-            if ((player.bodyMode == Player.BodyModeIndex.Stand || player.bodyMode == Player.BodyModeIndex.Default) && physicalObject is Creature creature && !creature.Template.smallCreature && creature.dead)
+            // you can stand in vertical corridors => exclude
+            // you can stand when surface swimming => exclude
+            // you can stand during beam climbing => exclude
+            if (physicalObject is Creature creature && !creature.Template.smallCreature && creature.dead &&
+                player.standing && player.bodyMode != Player.BodyModeIndex.CorridorClimb && player.bodyMode != Player.BodyModeIndex.Swimming && player.bodyMode != Player.BodyModeIndex.ZeroG && (player.animation < Player.AnimationIndex.HangFromBeam || player.animation > Player.AnimationIndex.BeamTip))
             {
                 return (int)Player.ObjectGrabability.CantGrab;
             }
