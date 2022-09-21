@@ -1,5 +1,5 @@
 ## SimplifiedMoveset
-###### Version: 0.70
+###### Version: 0.71
 
 This is a mod for Rain World v1.5.
 
@@ -80,3 +80,7 @@ v0.70:
 - Buffered wall jumps have priority over using tube worms.
 - (beam climb) GetUpToBeamTip should not be canceled anymore by holding left or right. Fixed a bug where canceling beam climb would be spammed when climbing into a corner.
 - Restructered code.
+
+
+v0.71:
+- (grab) Added this option (enabled by default). You can only grab dead large creatures when crouching.
