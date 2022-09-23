@@ -54,7 +54,7 @@ namespace SimplifiedMoveset
             AddCheckBox("crawl", "Crawl", "Crawl turns can be used to initiate rolls and on slopes. Increases turn rate in corridors. Removes slowdown when holding down.", defaultBool: true);
 
             AddCheckBox("crouchJump", "Crouch Jump", "Stand up during crouch jumps. Decreases charge time for super launch jumps.", defaultBool: true);
-            AddCheckBox("grab", "Grab", "Grab dead large creatures only when crouching.", defaultBool: true);
+            AddCheckBox("grab", "Grab", "Grab dead creatures only when crouching.", defaultBool: false);
             AddCheckBox("ledgeGrab", "Ledge Grab", "Slugcat stays in the ledge grab animation until jump is pressed.", defaultBool: false);
 
             AddCheckBox("roll_1", "Roll 1", "Stand up after rolls, and rocket jumps (same effect as with the option Belly Slide). Removes timing / variable height for rocket jumps from rolls.\nThe changes for rocket jumps are only in effect if the option \"Roll 2\" is enabled as well.", defaultBool: true);
