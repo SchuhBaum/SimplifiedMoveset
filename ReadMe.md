@@ -1,5 +1,5 @@
 ## SimplifiedMoveset
-###### Version: 0.73
+###### Version: 0.74
 
 This is a mod for Rain World v1.5.
 
@@ -82,5 +82,8 @@ v0.70:
 - Restructered code.
 
 
-v0.73:
+v0.74:
 - (grab) Added this option (enabled by default). You can only grab dead large creatures when crouching. Fixed a bug where you could not grab them in vertical corridors. Fixed a bug where you could not grab when lying on top of the creature.
+- (beam climb) Fixed a bug where bumping your head would be considered wall climbing and cancel the StandOnBeam animation.
+- (beam climb) Reworked switching beams from horizontal to vertical and vice versa. Excluded some cases.
+- Restructured code.
