@@ -1,12 +1,12 @@
 ## SimplifiedMoveset
-###### Version: 0.74
+###### Version: 0.75
 
 This is a mod for Rain World v1.5.
 
 ### Description
 Various movement changes. The main idea is to remove or simplify timings, making it easier to perform moves consistently. In addition, includes the ability to breath underwater and crawl on walls (disabled by default).  
   
-  Here is a youtube video showing some of the changes: https://www.youtube.com/watch?v=Jp6UyUgoWB0
+Here is a youtube video showing some of the changes: https://www.youtube.com/watch?v=Jp6UyUgoWB0
 
 ### Installation
 1. (ModLoader) `BepInEx` and `BOI` can be downloaded from [RainDB](https://www.raindb.net/) under `Tools`.  
@@ -82,8 +82,13 @@ v0.70:
 - Restructered code.
 
 
-v0.74:
+v0.75:
 - (grab) Added this option (disabled by default). You can only grab dead large creatures when crouching. Fixed a bug where you could not grab them in vertical corridors. Fixed a bug where you could not grab when lying on top of the creature.
 - (beam climb) Fixed a bug where bumping your head would be considered wall climbing and cancel the StandOnBeam animation.
 - (beam climb) Reworked switching beams from horizontal to vertical and vice versa. Excluded some cases.
 - Restructured code.
+- (crouch jump) Don't stand up when jumping while in the transition animation to crouching. Otherwise this can mess up preparing a super launch jump from crouching.
+- (wall jump) Don't wall jump when jumping into a wall from beam climbing.
+- (roll_1) End a roll always standing. Otherwise you can sometimes chain rolls on slopes when using the crawl option.
+- (wall jump / climb) Fixed a bug where cicadas would slowly lift the player up during wall climbs.
+- (beam climb) Fixed a bug where you would regrab the same horizontal beam when using a cicada while holding down + jump.
