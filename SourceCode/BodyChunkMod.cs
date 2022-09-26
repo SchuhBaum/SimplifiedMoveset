@@ -6,10 +6,8 @@ namespace SimplifiedMoveset
 {
     public static class BodyChunkMod
     {
-        // variables are initialized in RainWorldGameMod and BodyChunk_ctor()
-        public static readonly Dictionary<BodyChunk, Vector2> bodyChunkConnectionVel = new();
-        public static readonly Dictionary<BodyChunk, int> lastOnSlope = new();
-        public static readonly Dictionary<BodyChunk, IntVector2?> lastOnSlopeTilePos = new();
+        internal static readonly Dictionary<BodyChunk, AttachedFields> allAttachedFields = new();
+        public static AttachedFields GetAttachedFields(this BodyChunk bodyChunk) => allAttachedFields[bodyChunk];
 
         internal static void OnEnable()
         {
@@ -29,19 +27,17 @@ namespace SimplifiedMoveset
                 IntVector2 tilePosition = room.GetTilePosition(bodyChunk.pos);
                 Vector2 middleOfTile = room.MiddleOfTile(tilePosition);
                 Room.SlopeDirection slopeDirection = room.IdentifySlope(tilePosition);
-
-                int lastOnSlope_ = lastOnSlope[bodyChunk];
-                Vector2 bodyChunkConnectionVel_ = bodyChunkConnectionVel[bodyChunk];
+                AttachedFields attachedFields = bodyChunk.GetAttachedFields();
 
                 // smooth moving down slopes
-                if (slopeDirection == Room.SlopeDirection.Broken && lastOnSlopeTilePos[bodyChunk] is IntVector2 lastOnSlopeTilePos_ && lastOnSlope_ * (bodyChunk.vel.x - bodyChunkConnectionVel_.x) > 0.0f && bodyChunk.vel.y - bodyChunkConnectionVel_.y < -player.gravity)
+                if (slopeDirection == Room.SlopeDirection.Broken && attachedFields.lastOnSlopeTilePos is IntVector2 lastOnSlopeTilePos && attachedFields.lastOnSlope * (bodyChunk.vel.x - attachedFields.bodyChunkConnectionVel.x) > 0.0f && bodyChunk.vel.y - attachedFields.bodyChunkConnectionVel.y < -player.gravity)
                 {
-                    tilePosition.y = lastOnSlopeTilePos_.y + lastOnSlope_ * (lastOnSlopeTilePos_.x - tilePosition.x); // project tilePosition.y down to the slope surface line // check later at this position a slope tile exists and do some other checks
+                    tilePosition.y = lastOnSlopeTilePos.y + attachedFields.lastOnSlope * (lastOnSlopeTilePos.x - tilePosition.x); // project tilePosition.y down to the slope surface line // check later at this position a slope tile exists and do some other checks
                     Room.Tile? nonAirTileBelow = RoomMod.GetNonAirTileBelow(room, tilePosition);
 
                     if (nonAirTileBelow == null || nonAirTileBelow.Y < tilePosition.y) // enough air tiles available // can project down to the slope surface line
                     {
-                        tilePosition = lastOnSlopeTilePos_;
+                        tilePosition = lastOnSlopeTilePos;
                     }
                     else if (nonAirTileBelow.Terrain == Room.Tile.TerrainType.Slope) // slope // project down to this slope surface line instead // can be a differenct one and closer in distance
                     {
@@ -88,7 +84,7 @@ namespace SimplifiedMoveset
                     }
                 }
 
-                lastOnSlopeTilePos[bodyChunk] = null;
+                attachedFields.lastOnSlopeTilePos = null;
                 if (slopeDirection == Room.SlopeDirection.Broken)
                 {
                     return;
@@ -138,7 +134,7 @@ namespace SimplifiedMoveset
 
                     bodyChunk.contactPoint.y = -1;
                     bodyChunk.onSlope = onSlope;
-                    lastOnSlopeTilePos[bodyChunk] = tilePosition;
+                    attachedFields.lastOnSlopeTilePos = tilePosition;
                 }
                 else if (slopeVerticalPosition == 1 && bodyChunk.pos.y >= posYFromX - bodyChunk.slopeRad - bodyChunk.slopeRad)
                 {
@@ -169,20 +165,7 @@ namespace SimplifiedMoveset
             orig(bodyChunk, owner, index, pos, rad, mass);
             if (owner is Player)
             {
-                if (!bodyChunkConnectionVel.ContainsKey(bodyChunk))
-                {
-                    bodyChunkConnectionVel.Add(bodyChunk, new Vector2(0.0f, 0.0f));
-                }
-
-                if (!lastOnSlope.ContainsKey(bodyChunk))
-                {
-                    lastOnSlope.Add(bodyChunk, 0);
-                }
-
-                if (!lastOnSlopeTilePos.ContainsKey(bodyChunk))
-                {
-                    lastOnSlopeTilePos.Add(bodyChunk, null);
-                }
+                allAttachedFields.Add(bodyChunk, new AttachedFields());
             }
         }
 
@@ -190,9 +173,21 @@ namespace SimplifiedMoveset
         {
             if (bodyChunk.owner is Player)
             {
-                lastOnSlope[bodyChunk] = bodyChunk.onSlope;
+                bodyChunk.GetAttachedFields().lastOnSlope = bodyChunk.onSlope;
             }
             orig(bodyChunk);
+        }
+
+        //
+        //
+        //
+
+        public sealed class AttachedFields
+        {
+            // variables are initialized in BodyChunk_ctor() and cleared in RainWorldGameMod
+            public int lastOnSlope = 0;
+            public IntVector2? lastOnSlopeTilePos = null;
+            public Vector2 bodyChunkConnectionVel = new();
         }
     }
 }

@@ -19,122 +19,117 @@ namespace SimplifiedMoveset
         // variables
         //
 
-        public sealed class AttachedFields // need reference => reference type
-        {
-            public bool initializeHands = false;
-            public bool isSwitchingBeams = false;
-
-            public int dontUseTubeWormCounter = 0;
-            public int getUpOnBeamAbortCounter = 0;
-            public int getUpOnBeamDirection = 0;
-            public int grabBeamCooldownCounter = 0;
-
-            public int grabBeamCounter = 0;
-            public int jumpPressedCounter = 0;
-            public int soundCooldown = 0;
-
-            public AttachedFields()
-            {
-            }
-        }
         internal static readonly Dictionary<Player, AttachedFields> attachedFields = new();
         public static AttachedFields GetAttachedFields(this Player player) => attachedFields[player];
 
         //
-        // OnDisable
+        //
         //
 
-        internal static void OnDisable_Option_BeamClimb()
+        internal static void OnDisable_()
         {
-            IL.Player.MovementUpdate -= IL_Player_MovementUpdate;
             IL.Player.UpdateAnimation -= IL_Player_UpdateAnimation;
-        }
+            if (MainMod.Option_BeamClimb)
+            {
+                IL.Player.MovementUpdate -= IL_Player_MovementUpdate;
+            }
 
-        internal static void OnDisable_Option_BellySlide()
-        {
-            On.Player.ThrowObject -= Player_ThrowObject_Option_BellySlide;
-        }
+            if (MainMod.Option_BellySlide)
+            {
+                On.Player.ThrowObject -= Player_ThrowObject_Option_BellySlide;
+            }
 
-        internal static void OnDisable_Option_Crawl()
-        {
-            On.Player.TerrainImpact -= Player_TerrainImpact;
-        }
+            if (MainMod.Option_Crawl)
+            {
+                On.Player.TerrainImpact -= Player_TerrainImpact;
+            }
 
-        internal static void OnDisable_Option_Grab()
-        {
-            On.Player.Grabability -= Player_Grabability;
-        }
+            if (MainMod.Option_Grab)
+            {
+                On.Player.Grabability -= Player_Grabability;
+            }
 
-        internal static void OnDisable_Option_SpearThrow()
-        {
-            On.Player.ThrowObject -= Player_ThrowObject_Option_SpearThrow;
-        }
+            if (MainMod.Option_SpearThrow)
+            {
+                On.Player.ThrowObject -= Player_ThrowObject_Option_SpearThrow;
+            }
 
-        internal static void OnDisable_Option_Swim()
-        {
-            On.Player.ctor -= Player_ctor_2;
-            IL.Player.GrabUpdate -= IL_Player_GrabUpdate;
-        }
+            if (MainMod.Option_Swim)
+            {
+                IL.Player.GrabUpdate -= IL_Player_GrabUpdate;
+            }
 
-        internal static void OnDisable_Option_WallJump()
-        {
-            On.Player.checkInput -= Player_CheckInput;
+            if (MainMod.Option_WallJump)
+            {
+                On.Player.checkInput -= Player_CheckInput;
+            }
+
+            if (MainMod.Option_WallJump || MainMod.Option_WallClimb)
+            {
+                On.Player.GraphicsModuleUpdated -= Player_GraphicsModuleUpdated;
+            }
         }
 
         //
-        // OnEnable
+        //
         //
 
         internal static void OnEnable()
         {
-            On.Player.ctor += Player_ctor_1;
+            On.Player.ctor += Player_ctor; // change stats for swimming
             On.Player.Jump += Player_Jump;
             On.Player.UpdateAnimation += Player_UpdateAnimation;
+
             On.Player.UpdateBodyMode += Player_UpdateBodyMode;
             On.Player.WallJump += Player_WallJump;
         }
 
-        internal static void OnEnable_Option_BeamClimb()
+        internal static void OnEnable_()
         {
-            // removes lifting your booty when being in a corner with your upper bodyChunk / head
-            // usually this happens in one tile horizontal holes
-            // but this can also happen when climbing beams and bumping your head into a corner
-            // in this situation canceling beam climbing can be spammed
-            IL.Player.MovementUpdate += IL_Player_MovementUpdate;
-
-            // removes the ability to jump during ClimbUpToBeamTip
             IL.Player.UpdateAnimation += IL_Player_UpdateAnimation;
-        }
+            if (MainMod.Option_BeamClimb)
+            {
+                // removes lifting your booty when being in a corner with your upper bodyChunk / head
+                // usually this happens in one tile horizontal holes
+                // but this can also happen when climbing beams and bumping your head into a corner
+                // in this situation canceling beam climbing can be spammed
+                IL.Player.MovementUpdate += IL_Player_MovementUpdate;
+            }
 
-        internal static void OnEnable_Option_BellySlide()
-        {
-            On.Player.ThrowObject += Player_ThrowObject_Option_BellySlide; // remove throw timing
-        }
+            if (MainMod.Option_BellySlide)
+            {
+                On.Player.ThrowObject += Player_ThrowObject_Option_BellySlide; // remove throw timing
+            }
 
-        internal static void OnEnable_Option_Crawl()
-        {
-            On.Player.TerrainImpact += Player_TerrainImpact; // initiate rolls from crawl turns
-        }
+            if (MainMod.Option_Crawl)
+            {
+                On.Player.TerrainImpact += Player_TerrainImpact; // initiate rolls from crawl turns
+            }
 
-        internal static void OnEnable_Option_Grab()
-        {
-            On.Player.Grabability += Player_Grabability; // only grab dead large creatures when crouching
-        }
+            if (MainMod.Option_Grab)
+            {
+                On.Player.Grabability += Player_Grabability; // only grab dead large creatures when crouching
+            }
 
-        internal static void OnEnable_Option_SpearThrow()
-        {
-            On.Player.ThrowObject += Player_ThrowObject_Option_SpearThrow; // momentum adjustment
-        }
+            if (MainMod.Option_SpearThrow)
+            {
+                On.Player.ThrowObject += Player_ThrowObject_Option_SpearThrow; // momentum adjustment
+            }
 
-        internal static void OnEnable_Option_Swim()
-        {
-            On.Player.ctor += Player_ctor_2; // change stats for swimming
-            IL.Player.GrabUpdate += IL_Player_GrabUpdate; // can eat stuff underwater
-        }
+            if (MainMod.Option_Swim)
+            {
+                IL.Player.GrabUpdate += IL_Player_GrabUpdate; // can eat stuff underwater
+            }
 
-        internal static void OnEnable_Option_WallJump()
-        {
-            On.Player.checkInput += Player_CheckInput; // input "buffer" for wall jumping
+            if (MainMod.Option_WallJump)
+            {
+                On.Player.checkInput += Player_CheckInput; // input "buffer" for wall jumping
+            }
+
+            if (MainMod.Option_WallJump || MainMod.Option_WallClimb)
+            {
+                On.Player.GraphicsModuleUpdated += Player_GraphicsModuleUpdated; // fix cicade lifting up while wall climbing
+            }
         }
 
         // ---------------- //
@@ -352,52 +347,43 @@ namespace SimplifiedMoveset
         // private functions //
         // ----------------- //
 
-        // first IL-Hook yaaaay
         private static void IL_Player_GrabUpdate(ILContext context)
         {
             ILCursor cursor = new(context);
-            if (cursor.TryGotoNext(MoveType.Before,
-                                     instruction => instruction.MatchLdarg(0), // argument0: player
-                                     instruction => instruction.MatchCall<Creature>("get_mainBodyChunk"),
-                                     instruction => instruction.MatchCallvirt<BodyChunk>("get_submersion")))
+
+            // allow to eat underwater
+            // change player.mainBodyChunk.submersion < 0.5f to < 2f => always true
+
+            if (cursor.TryGotoNext(MoveType.After, instruction => instruction.MatchCallvirt<BodyChunk>("get_submersion"))) // 33
             {
-                // remove: player.mainBodyChunk.submersion < 0.5f // but leave goto label intakt
-                cursor.GotoPrev();
-                cursor.RemoveRange(6);
-
-                // not sure why this is what you do // I just changed the code and looked at the generated IL instructions
-                // NOTE: does not work // the changed code gets optimized and has a variable less
-                // make as few changes as possible // less optimized but works
-
-                // invert input[0].thrw // this is skipped in the original function
-                // now this is saved locally instead of player.mainBodyChunk.submersion < 0.5f 
-                cursor.Emit(OpCodes.Ldc_I4_0);
-                cursor.Emit(OpCodes.Ceq);
+                Debug.Log("SimplifiedMoveset: IL_Player_GrabUpdate: Index " + cursor.Index);
+                cursor.Next.OpCode = OpCodes.Ldc_R4;
+                cursor.Next.Operand = 2f;
             }
             else
             {
                 Debug.LogException(new Exception("SimplifiedMoveset: IL_Player_GrabUpdate failed."));
             }
+            // MainMod.LogAllInstructions(context);
         }
 
         private static void IL_Player_MovementUpdate(ILContext context)
         {
             ILCursor cursor = new(context);
-            if (cursor.TryGotoNext(
-                instruction => instruction.MatchLdarg(0),
-                instruction => instruction.MatchCallvirt("Player", "get_input"),
-                instruction => instruction.MatchLdcI4(0),
-                instruction => instruction.MatchLdelema("Player/InputPackage"),
-                instruction => instruction.MatchLdfld("Player/InputPackage", "y"),
-                instruction => instruction.MatchLdcI4(1)))
+            cursor.Goto(519);
+
+            // prevents spamming when in a corner while beam climbing
+            // skip whole if statement
+
+            if (cursor.TryGotoNext(instruction => instruction.MatchLdfld<Player.InputPackage>("y"))) // 619
             {
-                int index = cursor.Index;
-                if (cursor.TryGotoNext(instruction => instruction.MatchBneUn(out _))) // out label is not accessible => discard
-                {
-                    ILLabel label = (ILLabel)cursor.Next.Operand;
-                    cursor.Goto(index, MoveType.AfterLabel); // incoming labels will point to the emmited instruction // cursor.MoveAfterLabels() is called
-                    cursor.Emit(OpCodes.Br, label);
-                }
+                Debug.Log("SimplifiedMoveset: IL_Player_MovementUpdate: Index " + cursor.Index);
+                cursor.Goto(cursor.Index + 2); // 621
+                object label = cursor.Next.Operand;
+                cursor.Goto(cursor.Index - 6); // 615
+
+                cursor.Next.OpCode = OpCodes.Br;
+                cursor.Next.Operand = label;
             }
             else
             {
@@ -409,48 +395,46 @@ namespace SimplifiedMoveset
         private static void IL_Player_UpdateAnimation(ILContext context)
         {
             ILCursor cursor = new(context);
-
-            // case Player.AnimationIndex.StandOnBeam:
-            cursor.TryGotoNext(
-                instruction => instruction.MatchLdarg(0),
-                instruction => instruction.MatchLdcI4(6),
-                instruction => instruction.MatchStfld("Player", "bodyMode"),
-                instruction => instruction.MatchLdarg(0),
-                instruction => instruction.MatchLdcI4(1),
-                instruction => instruction.MatchStfld("Player", "standing"),
-                instruction => instruction.MatchLdarg(0),
-                instruction => instruction.MatchLdcI4(5),
-                instruction => instruction.MatchStfld("Player", "canJump"));
-
-            //case Player.AnimationIndex.GetUpToBeamTip:
-            if (cursor.TryGotoNext(MoveType.After,
-                instruction => instruction.MatchLdarg(0),
-                instruction => instruction.MatchLdcI4(6),
-                instruction => instruction.MatchStfld("Player", "bodyMode"),
-                instruction => instruction.MatchLdarg(0),
-                instruction => instruction.MatchLdcI4(1),
-                instruction => instruction.MatchStfld("Player", "standing"),
-                instruction => instruction.MatchLdarg(0),
-                instruction => instruction.MatchLdcI4(5),
-                instruction => instruction.MatchStfld("Player", "canJump")))
+            if (MainMod.Option_BeamClimb)
             {
-                // it seems that GotoPrev() and GotoNext() are messed up
-                // Debug.Log(cursor.Index); // 2381
+                cursor.Goto(2280);
 
-                // player.canJump = 0
-                // cursor.GotoPrev(); // 2379 // why???
-                // cursor.Next.OpCode = OpCodes.Ldc_I4_0; // why does this work?? // should GotoPrev() and Next not cancel out??
-
-                // player.canJump = 0
-                cursor.Goto(cursor.Index - 1); // 2380
-                cursor.Prev.OpCode = OpCodes.Ldc_I4_0;
+                // case Player.AnimationIndex.GetUpToBeamTip:
+                // prevent jumping during animation
+                if (cursor.TryGotoNext(instruction => instruction.MatchStfld<Player>("canJump"))) // 2380
+                {
+                    Debug.Log("SimplifiedMoveset: IL_Player_UpdateAnimation_1: Index " + cursor.Index);
+                    cursor.Prev.OpCode = OpCodes.Ldc_I4_0; // player.canJump = 0
+                }
+                else
+                {
+                    Debug.LogException(new Exception("SimplifiedMoveset: IL_Player_UpdateAnimation_1 failed."));
+                }
             }
-            else
+
+            if (MainMod.Option_Roll_1)
             {
-                Debug.LogException(new Exception("SimplifiedMoveset: IL_Player_UpdateAnimation failed."));
+                cursor.Goto(4217);
+
+                // always stand up when roll has finished
+                // prevent chain rolling on slopes
+                if (cursor.TryGotoNext(instruction => instruction.MatchStfld<Player>("standing"))) // 4317
+                {
+                    Debug.Log("SimplifiedMoveset: IL_Player_UpdateAnimation_2: Index " + cursor.Index);
+                    cursor.Prev.Previous.OpCode = OpCodes.Pop;
+                    cursor.Prev.OpCode = OpCodes.Ldc_I4_1;
+                }
+                else
+                {
+                    Debug.LogException(new Exception("SimplifiedMoveset: IL_Player_UpdateAnimation_2 failed."));
+                }
             }
             // MainMod.LogAllInstructions(context);
         }
+
+        //
+        //
+        //
 
         private static void Player_CheckInput(On.Player.orig_checkInput orig, Player player)
         {
@@ -475,17 +459,16 @@ namespace SimplifiedMoveset
             }
         }
 
-        private static void Player_ctor_1(On.Player.orig_ctor orig, Player player, AbstractCreature abstractCreature, World world)
+        private static void Player_ctor(On.Player.orig_ctor orig, Player player, AbstractCreature abstractCreature, World world)
         {
             orig(player, abstractCreature, world);
-            PlayerMod.attachedFields.Add(player, new PlayerMod.AttachedFields());
-        }
+            attachedFields.Add(player, new AttachedFields());
 
-        private static void Player_ctor_2(On.Player.orig_ctor orig, Player player, AbstractCreature abstractCreature, World world)
-        {
-            orig(player, abstractCreature, world);
-            player.slugcatStats.lungsFac = 0.0f;
-            player.buoyancy = 0.9f;
+            if (MainMod.Option_Swim)
+            {
+                player.slugcatStats.lungsFac = 0.0f;
+                player.buoyancy = 0.9f;
+            }
         }
 
         private static int Player_Grabability(On.Player.orig_Grabability orig, Player player, PhysicalObject physicalObject)
@@ -499,6 +482,28 @@ namespace SimplifiedMoveset
                 return (int)Player.ObjectGrabability.CantGrab;
             }
             return orig(player, physicalObject);
+        }
+
+        private static void Player_GraphicsModuleUpdated(On.Player.orig_GraphicsModuleUpdated orig, Player player, bool actuallyViewed, bool eu)
+        {
+            // prevent cicadas from slowly lifing player while wall climbing
+            if (player.bodyMode == Player.BodyModeIndex.WallClimb)
+            {
+                foreach (Creature.Grasp grasp in player.grasps)
+                {
+                    if (grasp?.grabbed is Cicada cicada && cicada.LiftPlayerPower > 0.01f)
+                    {
+                        Vector2 pos = player.mainBodyChunk.pos;
+                        Vector2 vel = player.mainBodyChunk.vel;
+                        orig(player, actuallyViewed, eu);
+
+                        player.mainBodyChunk.pos = pos;
+                        player.mainBodyChunk.vel = vel;
+                        return;
+                    }
+                }
+            }
+            orig(player, actuallyViewed, eu);
         }
 
         // there are cases where this function does not call orig()
@@ -515,6 +520,11 @@ namespace SimplifiedMoveset
                 return;
             }
 
+            // don't instantly regrab vertical beams
+            if (player.animation == Player.AnimationIndex.ClimbOnBeam)
+            {
+                player.GetAttachedFields().grabBeamCooldownPosY = player.bodyChunks[0].pos.y;
+            }
 
             if (player.bodyMode != Player.BodyModeIndex.CorridorClimb && player.bodyMode != Player.BodyModeIndex.WallClimb)
             {
@@ -544,11 +554,19 @@ namespace SimplifiedMoveset
                         player.bodyChunks[1].pos.y -= 10f;
                     }
 
+                    // don't jump in the wrong direction when beam climbing
+                    if (MainMod.Option_WallJump && player.animation == Player.AnimationIndex.ClimbOnBeam && player.input[0].x != 0)
+                    {
+                        player.flipDirection = player.input[0].x;
+                    }
+
                     bool superLaunchJump = player.superLaunchJump >= 20;
                     orig(player);
 
-                    // crouch jump // stand up during jump
-                    if (MainMod.Option_CrouchJump && player.animation != Player.AnimationIndex.BellySlide && player.animation != Player.AnimationIndex.AntlerClimb && player.animation != Player.AnimationIndex.ZeroGSwim && player.animation != Player.AnimationIndex.ZeroGPoleGrab && player.animation != Player.AnimationIndex.LedgeGrab && player.animation != Player.AnimationIndex.ClimbOnBeam && (player.animation != Player.AnimationIndex.DownOnFours || player.bodyChunks[1].ContactPoint.y >= 0 || player.input[0].downDiagonal != player.flipDirection) && !player.standing && !superLaunchJump)
+                    // crouch jump
+                    // stand up when pressing jump / jumping
+                    // not during superLaunchJump => possible to bump your head otherwise and mess up jumps
+                    if (MainMod.Option_CrouchJump && !superLaunchJump && player.bodyMode == Player.BodyModeIndex.Crawl)
                     {
                         player.standing = true;
                     }
@@ -625,9 +643,9 @@ namespace SimplifiedMoveset
                 --attachedFields.grabBeamCounter;
             }
 
-            if (attachedFields.grabBeamCooldownCounter > 0)
+            if (attachedFields.grabBeamCooldownPosY != null && (player.animation != Player.AnimationIndex.None || player.bodyMode != Player.BodyModeIndex.Default))
             {
-                --attachedFields.grabBeamCooldownCounter;
+                attachedFields.grabBeamCooldownPosY = null;
             }
 
             if (attachedFields.soundCooldown > 0)
@@ -850,9 +868,9 @@ namespace SimplifiedMoveset
                 }
 
                 // grab beams by holding down // extends some cases when holding up -- forget which ones :/ // don't grab beams while falling inside corridors
-                if (attachedFields.grabBeamCooldownCounter == 0 && (player.input[0].y != 0 || attachedFields.grabBeamCounter > 0) && player.animation == Player.AnimationIndex.None && player.bodyMode == Player.BodyModeIndex.Default && (!player.IsTileSolid(bChunk: 0, -1, 0) || !player.IsTileSolid(bChunk: 0, 1, 0)) && (!player.IsTileSolid(bChunk: 1, -1, 0) || !player.IsTileSolid(bChunk: 1, 1, 0)))
+                if ((player.input[0].y != 0 || attachedFields.grabBeamCounter > 0) && player.animation == Player.AnimationIndex.None && player.bodyMode == Player.BodyModeIndex.Default && (!player.IsTileSolid(bChunk: 0, -1, 0) || !player.IsTileSolid(bChunk: 0, 1, 0)) && (!player.IsTileSolid(bChunk: 1, -1, 0) || !player.IsTileSolid(bChunk: 1, 1, 0)))
                 {
-                    if (room.GetTile(bodyChunk0.pos).verticalBeam)
+                    if (room.GetTile(bodyChunk0.pos).verticalBeam && (attachedFields.grabBeamCooldownPosY == null || attachedFields.grabBeamCooldownPosY - bodyChunk0.pos.y >= 20f))
                     {
                         if (attachedFields.soundCooldown == 0)
                         {
@@ -863,8 +881,8 @@ namespace SimplifiedMoveset
                         float middleOfTileX = room.MiddleOfTile(bodyChunk0.pos).x;
                         player.flipDirection = Mathf.Abs(bodyChunk0.vel.x) <= 5f ? (bodyChunk0.pos.x >= middleOfTileX ? 1 : -1) : (bodyChunk0.vel.x >= 0.0f ? 1 : -1);
 
-                        bodyChunk0.vel = new Vector2(0.0f, 0.0f);
                         bodyChunk0.pos.x = middleOfTileX;
+                        bodyChunk0.vel = new Vector2(0.0f, 0.0f);
                         bodyChunk1.vel.y = 0.0f;
                         player.animation = Player.AnimationIndex.ClimbOnBeam;
                     }
@@ -873,9 +891,8 @@ namespace SimplifiedMoveset
                         int x = room.GetTilePosition(bodyChunk0.pos).x;
                         for (int y = room.GetTilePosition(bodyChunk0.lastPos).y; y >= room.GetTilePosition(bodyChunk0.pos).y; --y)
                         {
-                            if (room.GetTile(x, y).horizontalBeam)
+                            if (room.GetTile(x, y).horizontalBeam && (attachedFields.grabBeamCooldownPosY == null || attachedFields.grabBeamCooldownPosY - bodyChunk0.pos.y >= 20f))
                             {
-                                attachedFields.grabBeamCooldownCounter = 8;
                                 if (attachedFields.soundCooldown == 0)
                                 {
                                     attachedFields.soundCooldown = 40;
@@ -942,6 +959,14 @@ namespace SimplifiedMoveset
                         // exits //
                         // ----- //
 
+                        // stand on ground
+                        if (bodyChunk1.ContactPoint.y < 0 && player.input[0].y < 0)
+                        {
+                            player.room.PlaySound(SoundID.Slugcat_Regain_Footing, player.mainBodyChunk, false, 1f, 1f);
+                            player.animation = Player.AnimationIndex.StandUp;
+                            return;
+                        }
+
                         if (SwitchHorizontalToVerticalBeam(player, attachedFields)) // grab vertical beam if possible
                         {
                             return;
@@ -959,9 +984,16 @@ namespace SimplifiedMoveset
                                 PrepareGetUpOnBeamAnimation(player, 1, attachedFields);
                                 return;
                             }
+                            else if (player.input[0].y == -1 && player.IsTileSolid(1, 0, -1))
+                            {
+                                // this case would lead to jumping + regrabbing beam otherwise
+                                // not clean..
+                                player.input[1].jmp = true;
+                                // player.canJump = 0;
+                            }
 
                             attachedFields.dontUseTubeWormCounter = 2; // don't drop and shoot tubeWorm at the same time
-                            attachedFields.grabBeamCooldownCounter = 8;
+                            attachedFields.grabBeamCooldownPosY = bodyChunk0.pos.y;
                             player.animation = Player.AnimationIndex.None;
                             return;
                         }
@@ -1258,7 +1290,6 @@ namespace SimplifiedMoveset
                         // lose grip
                         if (!player.room.GetTile(bodyChunk0.pos).verticalBeam)
                         {
-                            player.animation = Player.AnimationIndex.None;
                             if (player.room.GetTile(player.room.GetTilePosition(bodyChunk0.pos) + new IntVector2(0, -1)).verticalBeam)
                             {
                                 player.room.PlaySound(SoundID.Slugcat_Get_Up_On_Top_Of_Vertical_Beam_Tip, player.mainBodyChunk, false, 1f, 1f);
@@ -1267,6 +1298,10 @@ namespace SimplifiedMoveset
                             else if (player.room.GetTile(player.room.GetTilePosition(bodyChunk0.pos) + new IntVector2(0, 1)).verticalBeam)
                             {
                                 player.animation = Player.AnimationIndex.HangUnderVerticalBeam;
+                            }
+                            else
+                            {
+                                player.animation = Player.AnimationIndex.None;
                             }
                         }
                         return;
@@ -1574,15 +1609,18 @@ namespace SimplifiedMoveset
 
                     if (player.input[0].x != 0)
                     {
-                        // bodyMode would change when player.input[0].x != player.bodyChunks[0].ContactPoint.x // skip this check for now
+                        BodyChunk bodyChunk0 = player.bodyChunks[0];
+                        BodyChunk bodyChunk1 = player.bodyChunks[1];
+
+                        // bodyMode would change when player.input[0].x != bodyChunk0.ContactPoint.x // skip this check for now
                         player.canWallJump = player.input[0].x * -15;
 
                         // when upside down, flip instead of climbing
-                        if (player.bodyChunks[0].pos.y < player.bodyChunks[1].pos.y)
+                        if (bodyChunk0.pos.y < bodyChunk1.pos.y)
                         {
-                            player.bodyChunks[0].vel.y = Custom.LerpAndTick(player.bodyChunks[0].vel.y, 2f * player.gravity, 0.8f, 1f);
-                            player.bodyChunks[1].vel.y = Custom.LerpAndTick(player.bodyChunks[1].vel.y, 0.0f, 0.8f, 1f);
-                            player.bodyChunks[1].vel.x = -player.input[0].x * 5f;
+                            bodyChunk0.vel.y = Custom.LerpAndTick(bodyChunk0.vel.y, 2f * player.gravity, 0.8f, 1f);
+                            bodyChunk1.vel.y = Custom.LerpAndTick(bodyChunk1.vel.y, 0.0f, 0.8f, 1f);
+                            bodyChunk1.vel.x = -player.input[0].x * 5f;
                         }
                         else
                         {
@@ -1594,29 +1632,36 @@ namespace SimplifiedMoveset
 
                             if (MainMod.Option_WallClimb && player.input[0].y != 0)
                             {
-                                if (player.input[0].y == 1 && !player.IsTileSolid(bChunk: 1, player.input[0].x, 0) && (player.bodyChunks[1].pos.x < player.bodyChunks[0].pos.x) == (player.input[0].x < 0)) // climb up even when lower body part is hanging in the air
+                                if (player.input[0].y == 1 && !player.IsTileSolid(bChunk: 1, player.input[0].x, 0) && (bodyChunk1.pos.x < bodyChunk0.pos.x) == (player.input[0].x < 0)) // climb up even when lower body part is hanging in the air
                                 {
-                                    player.bodyChunks[0].pos.y += Math.Abs(player.bodyChunks[0].pos.x - player.bodyChunks[1].pos.x);
-                                    player.bodyChunks[1].pos.x = player.bodyChunks[0].pos.x;
-                                    player.bodyChunks[1].vel.x = -player.input[0].x * velXGain;
+                                    bodyChunk0.pos.y += Math.Abs(bodyChunk0.pos.x - bodyChunk1.pos.x);
+                                    bodyChunk1.pos.x = bodyChunk0.pos.x;
+                                    bodyChunk1.vel.x = -player.input[0].x * velXGain;
                                 }
 
-                                player.bodyChunks[0].vel.y += player.gravity;
-                                player.bodyChunks[1].vel.y += player.gravity;
+                                bodyChunk0.vel.y += player.gravity;
+                                bodyChunk1.vel.y += player.gravity;
 
                                 // downward momentum when ContactPoint.x != 0 is limited to -player.gravity bc of Player.Update()
-                                player.bodyChunks[0].vel.y = Mathf.Lerp(player.bodyChunks[0].vel.y, player.input[0].y * 2.5f, 0.3f);
-                                player.bodyChunks[1].vel.y = Mathf.Lerp(player.bodyChunks[1].vel.y, player.input[0].y * 2.5f, 0.3f);
+                                bodyChunk0.vel.y = Mathf.Lerp(bodyChunk0.vel.y, player.input[0].y * 2.5f, 0.3f);
+                                bodyChunk1.vel.y = Mathf.Lerp(bodyChunk1.vel.y, player.input[0].y * 2.5f, 0.3f);
                                 ++player.animationFrame;
                             }
                             else if (player.lowerBodyFramesOffGround > 8 && player.input[0].y != -1) // stay in place // don't slide down // when only Option_WallClimb is enabled then this happens even when holding up // don't slide/climb when doing a normal jump off the ground
                             {
-                                player.bodyChunks[0].vel.y = Custom.LerpAndTick(player.bodyChunks[0].vel.y, player.gravity, 0.3f, 1f);
-                                player.bodyChunks[1].vel.y = Custom.LerpAndTick(player.bodyChunks[1].vel.y, player.gravity, 0.3f, 1f);
-
-                                if (!player.IsTileSolid(bChunk: 1, player.input[0].x, 0) && player.input[0].x > 0 == player.bodyChunks[1].pos.x > player.bodyChunks[0].pos.x)
+                                if (player.grasps[0]?.grabbed is Cicada cicada)
                                 {
-                                    player.bodyChunks[1].vel.x = -player.input[0].x * velXGain;
+                                    bodyChunk0.vel.y = Custom.LerpAndTick(bodyChunk0.vel.y, player.gravity - cicada.LiftPlayerPower * 0.5f, 0.3f, 1f);
+                                }
+                                else
+                                {
+                                    bodyChunk0.vel.y = Custom.LerpAndTick(bodyChunk0.vel.y, player.gravity, 0.3f, 1f);
+                                }
+                                bodyChunk1.vel.y = Custom.LerpAndTick(bodyChunk1.vel.y, player.gravity, 0.3f, 1f);
+
+                                if (!player.IsTileSolid(bChunk: 1, player.input[0].x, 0) && player.input[0].x > 0 == bodyChunk1.pos.x > bodyChunk0.pos.x)
+                                {
+                                    bodyChunk1.vel.x = -player.input[0].x * velXGain;
                                 }
                             }
                         }
@@ -1721,6 +1766,25 @@ namespace SimplifiedMoveset
                     player.simulateHoldJumpButton = 0;
                 }
             }
+        }
+
+        //
+        //
+        //
+
+        public sealed class AttachedFields // need reference => reference type
+        {
+            public bool initializeHands = false;
+            public bool isSwitchingBeams = false;
+
+            public int dontUseTubeWormCounter = 0;
+            public int getUpOnBeamAbortCounter = 0;
+            public int getUpOnBeamDirection = 0;
+            public float? grabBeamCooldownPosY = null;
+
+            public int grabBeamCounter = 0;
+            public int jumpPressedCounter = 0;
+            public int soundCooldown = 0;
         }
     }
 }

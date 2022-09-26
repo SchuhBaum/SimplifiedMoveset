@@ -21,8 +21,9 @@ namespace SimplifiedMoveset
                 Vector2 chunk2Vel = bodyChunkConnection.chunk2.vel;
                 orig(bodyChunkConnection);
 
-                BodyChunkMod.bodyChunkConnectionVel[bodyChunkConnection.chunk1] = bodyChunkConnection.chunk1.vel - chunk1Vel; // this needs to be adapted if there are multiple bodyChunks connecting to one // enough for players with only one connection
-                BodyChunkMod.bodyChunkConnectionVel[bodyChunkConnection.chunk2] = bodyChunkConnection.chunk2.vel - chunk2Vel;
+
+                bodyChunkConnection.chunk1.GetAttachedFields().bodyChunkConnectionVel = bodyChunkConnection.chunk1.vel - chunk1Vel; // this needs to be adapted if there are multiple bodyChunks connecting to one // enough for players with only one connection
+                bodyChunkConnection.chunk2.GetAttachedFields().bodyChunkConnectionVel = bodyChunkConnection.chunk2.vel - chunk2Vel;
             }
             else
             {
