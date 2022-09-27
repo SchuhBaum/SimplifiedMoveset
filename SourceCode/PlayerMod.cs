@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Mono.Cecil.Cil;
 using MonoMod.Cil;
 using RWCustom;
@@ -560,16 +561,17 @@ namespace SimplifiedMoveset
                         player.flipDirection = player.input[0].x;
                     }
 
-                    bool superLaunchJump = player.superLaunchJump >= 20;
-                    orig(player);
-
-                    // crouch jump
-                    // stand up when pressing jump / jumping
+                    // crouch jump // stand up during normal crouch jumps
                     // not during superLaunchJump => possible to bump your head otherwise and mess up jumps
-                    if (MainMod.Option_CrouchJump && !superLaunchJump && player.bodyMode == Player.BodyModeIndex.Crawl)
+                    // problem: you can stand up during DownOnFours animation; None + Stand + input.y == -1 => DownOnFours + Stand => don't stand up when jumping
+                    // BUT: this animation is also used when aborting a crawlTurn; crawlTurn + Default + input.x == 0 => None + Default => None + Stand + no inputs => DownOnFours + Stand => stand up when jumping
+                    // this solution is not perfect; you can still press down shortly before crawl turn but the timing is more tight
+                    // at least when the option crawl turn is used because then you start rolling by down-diagonal
+                    if (MainMod.Option_CrouchJump && player.superLaunchJump < 20 && (player.input.All(input => input.y != -1) && (player.animation == Player.AnimationIndex.DownOnFours || player.animation == Player.AnimationIndex.None && player.bodyMode == Player.BodyModeIndex.Default) || player.animation == Player.AnimationIndex.CrawlTurn || player.bodyMode == Player.BodyModeIndex.Crawl))
                     {
                         player.standing = true;
                     }
+                    orig(player); // changes player.animation
                 }
             }
             else
