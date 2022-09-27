@@ -569,9 +569,13 @@ namespace SimplifiedMoveset
                     // at least when the option crawl turn is used because then you start rolling by down-diagonal
                     if (MainMod.Option_CrouchJump && player.superLaunchJump < 20 && (player.input.All(input => input.y != -1) && (player.animation == Player.AnimationIndex.DownOnFours || player.animation == Player.AnimationIndex.None && player.bodyMode == Player.BodyModeIndex.Default) || player.animation == Player.AnimationIndex.CrawlTurn || player.bodyMode == Player.BodyModeIndex.Crawl))
                     {
+                        orig(player); // uses player.standing
                         player.standing = true;
                     }
-                    orig(player); // changes player.animation
+                    else
+                    {
+                        orig(player);
+                    }
                 }
             }
             else

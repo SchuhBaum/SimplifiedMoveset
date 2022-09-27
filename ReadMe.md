@@ -1,5 +1,5 @@
 ## SimplifiedMoveset
-###### Version: 0.76
+###### Version: 0.77
 
 This is a mod for Rain World v1.5.
 
@@ -82,7 +82,7 @@ v0.70:
 - Restructered code.
 
 
-v0.76:
+v0.77:
 - (grab) Added this option (disabled by default). You can only grab dead large creatures when crouching. Fixed a bug where you could not grab them in vertical corridors. Fixed a bug where you could not grab when lying on top of the creature.
 - (beam climb) Fixed a bug where bumping your head would be considered wall climbing and cancel the StandOnBeam animation.
 - (beam climb) Reworked switching beams from horizontal to vertical and vice versa. Excluded some cases.
@@ -91,4 +91,4 @@ v0.76:
 - (roll_1) End a roll always standing. Otherwise you can sometimes chain rolls on slopes when using the crawl option.
 - (wall jump / climb) Fixed a bug where cicadas would slowly lift the player up during wall climbs.
 - (beam climb) Fixed a bug where you would regrab the same horizontal beam when using a cicada while holding down + jump.
-- (crouch jump) Don't stand up when jumping during the DownOnFours animation and pressing down. Otherwise this can mess up a super launch jump.
+- (crouch jump) Don't stand up when jumping during the DownOnFours animation and pressing down. Otherwise this can mess up a super launch jump. Fixed a bug where you would not stand up when jumping out of shortcuts.
