@@ -423,7 +423,7 @@ namespace SimplifiedMoveset
                     if (attachedFields.grabBeamCounter > 0) return true; // automatically re-grab
                     if (player.animation != Player.AnimationIndex.None || player.bodyMode != Player.BodyModeIndex.Default) return false;
                     // if (player.IsClimbingOnBeam()) return false; // don't mess with switching beams while beam climbing
-                    return attachedFields.grabBeamCooldownPos == null && player.input[0].y < 0 && !player.input[0].jmp;
+                    return attachedFields.grabBeamCooldownPos == null && player.input[0].y < 0 && !player.input[0].jmp && !player.IsTileSolidOrSlope(0, 0, -1) && !player.IsTileSolidOrSlope(1, 0, -1);
                 });
 
                 //
