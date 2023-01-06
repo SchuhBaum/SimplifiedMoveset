@@ -94,6 +94,8 @@ namespace SimplifiedMoveset
                 // usually this happens in one tile horizontal holes
                 // but this can also happen when climbing beams and bumping your head into a corner
                 // in this situation canceling beam climbing can be spammed
+                //
+                // grabbing beams by holding down is now implemented here instead of UpdateAnimation()
                 IL.Player.MovementUpdate += IL_Player_MovementUpdate;
             }
 
@@ -152,18 +154,19 @@ namespace SimplifiedMoveset
             player.bodyChunks[0].vel.y += player.dynamicRunSpeed[0];
         }
 
-        public static bool IsTileSolidOrSlope(Player? player, int chunkIndex, int relativeX, int relativeY)
-        {
-            if (player?.room == null)
-            {
-                return false;
-            }
+        // the name of the function is a bit ambiguous since one of the animations
+        // is called ClimbOnBeam..
+        // public static bool IsClimbingOnBeam(this Player player)
+        // {
+        //     int player_animation = (int)player.animation;
+        //     return player_animation >= 6 && player_animation <= 12;
+        // }
 
-            if (player.IsTileSolid(chunkIndex, relativeX, relativeY))
-            {
-                return true;
-            }
-            return player.room.GetTile(player.room.GetTilePosition(player.bodyChunks[chunkIndex].pos) + new IntVector2(relativeX, relativeY)).Terrain == Room.Tile.TerrainType.Slope;
+        public static bool IsTileSolidOrSlope(this Player player, int chunkIndex, int relativeX, int relativeY)
+        {
+            if (player.room is not Room room) return false;
+            if (player.IsTileSolid(chunkIndex, relativeX, relativeY)) return true;
+            return room.GetTile(room.GetTilePosition(player.bodyChunks[chunkIndex].pos) + new IntVector2(relativeX, relativeY)).Terrain == Room.Tile.TerrainType.Slope;
         }
 
         // direction: up = 1, down = -1
@@ -373,8 +376,10 @@ namespace SimplifiedMoveset
             ILCursor cursor = new(context);
             cursor.Goto(519);
 
+            //
             // prevents spamming when in a corner while beam climbing
             // skip whole if statement
+            //
 
             if (cursor.TryGotoNext(instruction => instruction.MatchLdfld<Player.InputPackage>("y"))) // 619
             {
@@ -385,6 +390,58 @@ namespace SimplifiedMoveset
 
                 cursor.Next.OpCode = OpCodes.Br;
                 cursor.Next.Operand = label;
+            }
+            else
+            {
+                Debug.LogException(new Exception("SimplifiedMoveset: IL_Player_MovementUpdate failed."));
+            }
+
+            //
+            // grab beams by holding down
+            //
+
+            cursor = new(context);
+            cursor.Goto(1702);
+
+            if (cursor.TryGotoNext(
+                instruction => instruction.MatchLdcI4(0),
+                instruction => instruction.MatchBle(out _)))
+            {
+                Debug.Log("SimplifiedMoveset: IL_Player_MovementUpdate: Index " + cursor.Index); // 1801
+
+                //
+                // // this.wantToGrab = 1 when EmitDelegate() returns true
+                //
+                cursor.Next.Next.OpCode = OpCodes.Brfalse;
+                cursor.Goto(cursor.Index - 4);
+                cursor = cursor.RemoveRange(5);
+
+                cursor.EmitDelegate<Func<Player, bool>>(player =>
+                {
+                    AttachedFields attachedFields = player.GetAttachedFields();
+                    if (player.input[0].y > 0) return true; // vanilla case
+                    if (attachedFields.grabBeamCounter > 0) return true; // automatically re-grab
+                    if (player.animation != Player.AnimationIndex.None || player.bodyMode != Player.BodyModeIndex.Default) return false;
+                    // if (player.IsClimbingOnBeam()) return false; // don't mess with switching beams while beam climbing
+                    return attachedFields.grabBeamCooldownPos == null && player.input[0].y < 0 && !player.input[0].jmp;
+                });
+
+                //
+                // // this.wantToGrab = ((this.input[0].y == 0 || this.input[0].jmp) ? 0 : 1);
+                //
+                // cursor.Remove(); // ldarg.0 // seems to not change cursor.Index(?) even with cursor = cursor.Remove() // 1801
+                // cursor.GotoNext(); // 1802 // 1801?
+                // cursor.Next.OpCode = OpCodes.Brfalse; // 1802 // this.input[0].y is false, i.e. this.input[0].y == 0
+                // ILLabel label = (ILLabel)cursor.Next.Operand;
+                //
+                // cursor.GotoNext(); // 1803 // 1802?
+                //
+                // cursor.Emit(OpCodes.Ldarg_0);
+                // cursor.Emit<Player>(OpCodes.Callvirt, "get_input");
+                // cursor.Emit(OpCodes.Ldc_I4_0);
+                // cursor.Emit(OpCodes.Ldelema, typeof(Player.InputPackage));
+                // cursor.Emit<Player.InputPackage>(OpCodes.Ldfld, "jmp");
+                // cursor.Emit(OpCodes.Brtrue, label);
             }
             else
             {
@@ -524,7 +581,7 @@ namespace SimplifiedMoveset
             // don't instantly regrab vertical beams
             if (player.animation == Player.AnimationIndex.ClimbOnBeam)
             {
-                player.GetAttachedFields().grabBeamCooldownPosY = player.bodyChunks[0].pos.y;
+                player.GetAttachedFields().grabBeamCooldownPos = player.bodyChunks[1].pos;
             }
 
             if (player.bodyMode != Player.BodyModeIndex.CorridorClimb && player.bodyMode != Player.BodyModeIndex.WallClimb)
@@ -649,9 +706,9 @@ namespace SimplifiedMoveset
                 --attachedFields.grabBeamCounter;
             }
 
-            if (attachedFields.grabBeamCooldownPosY != null && (player.animation != Player.AnimationIndex.None || player.bodyMode != Player.BodyModeIndex.Default))
+            if (attachedFields.grabBeamCooldownPos != null && Vector2.Distance(attachedFields.grabBeamCooldownPos ?? new(), bodyChunk0.pos) >= 20f) // check versus bodyChunk0 since you are only grabbing with your hands
             {
-                attachedFields.grabBeamCooldownPosY = null;
+                attachedFields.grabBeamCooldownPos = null;
             }
 
             if (attachedFields.soundCooldown > 0)
@@ -711,12 +768,12 @@ namespace SimplifiedMoveset
                     bodyChunk1.vel.x -= 9.1f * player.rollDirection;
                     bodyChunk1.vel.y += 2f; // default: 2.7f
                 }
-                else if (IsTileSolidOrSlope(player, chunkIndex: 1, 0, -1) || IsTileSolidOrSlope(player, chunkIndex: 1, 0, -2))
+                else if (player.IsTileSolidOrSlope(chunkIndex: 1, 0, -1) || player.IsTileSolidOrSlope(chunkIndex: 1, 0, -2))
                 {
                     bodyChunk1.vel.y -= 3f; // stick better to slopes // default: -0.5f
                 }
 
-                if (IsTileSolidOrSlope(player, chunkIndex: 0, 0, -1) || IsTileSolidOrSlope(player, chunkIndex: 0, 0, -2))
+                if (player.IsTileSolidOrSlope(chunkIndex: 0, 0, -1) || player.IsTileSolidOrSlope(chunkIndex: 0, 0, -2))
                 {
                     bodyChunk0.vel.y -= 3f; // default: -2.3f
                 }
@@ -731,7 +788,7 @@ namespace SimplifiedMoveset
                 }
 
                 // finish // abort when mid-air // don't cancel belly slides on slopes
-                if (player.rollCounter > (!player.longBellySlide ? 20 : 39) || player.canJump == 0 && !IsTileSolidOrSlope(player, chunkIndex: 0, 0, -1) && !IsTileSolidOrSlope(player, chunkIndex: 1, 0, -1))
+                if (player.rollCounter > (!player.longBellySlide ? 20 : 39) || player.canJump == 0 && !player.IsTileSolidOrSlope(chunkIndex: 0, 0, -1) && !player.IsTileSolidOrSlope(chunkIndex: 1, 0, -1))
                 {
                     player.rollDirection = 0;
                     player.animation = Player.AnimationIndex.None;
@@ -874,45 +931,45 @@ namespace SimplifiedMoveset
                 }
 
                 // grab beams by holding down // extends some cases when holding up -- forget which ones :/ // don't grab beams while falling inside corridors
-                if ((player.input[0].y != 0 || attachedFields.grabBeamCounter > 0) && player.animation == Player.AnimationIndex.None && player.bodyMode == Player.BodyModeIndex.Default && (!player.IsTileSolid(bChunk: 0, -1, 0) || !player.IsTileSolid(bChunk: 0, 1, 0)) && (!player.IsTileSolid(bChunk: 1, -1, 0) || !player.IsTileSolid(bChunk: 1, 1, 0)))
-                {
-                    if (room.GetTile(bodyChunk0.pos).verticalBeam && (attachedFields.grabBeamCooldownPosY == null || attachedFields.grabBeamCooldownPosY - bodyChunk0.pos.y >= 20f))
-                    {
-                        if (attachedFields.soundCooldown == 0)
-                        {
-                            attachedFields.soundCooldown = 40;
-                            room.PlaySound(SoundID.Slugcat_Grab_Beam, player.mainBodyChunk, false, 1f, 1f);
-                        }
+                // if ((player.input[0].y != 0 || attachedFields.grabBeamCounter > 0) && player.animation == Player.AnimationIndex.None && player.bodyMode == Player.BodyModeIndex.Default && (!player.IsTileSolid(bChunk: 0, -1, 0) || !player.IsTileSolid(bChunk: 0, 1, 0)) && (!player.IsTileSolid(bChunk: 1, -1, 0) || !player.IsTileSolid(bChunk: 1, 1, 0)))
+                // {
+                //     if (room.GetTile(bodyChunk0.pos).verticalBeam && (attachedFields.grabBeamCooldownPosY == null || attachedFields.grabBeamCooldownPosY - bodyChunk0.pos.y >= 20f))
+                //     {
+                //         if (attachedFields.soundCooldown == 0)
+                //         {
+                //             attachedFields.soundCooldown = 40;
+                //             room.PlaySound(SoundID.Slugcat_Grab_Beam, player.mainBodyChunk, false, 1f, 1f);
+                //         }
 
-                        float middleOfTileX = room.MiddleOfTile(bodyChunk0.pos).x;
-                        player.flipDirection = Mathf.Abs(bodyChunk0.vel.x) <= 5f ? (bodyChunk0.pos.x >= middleOfTileX ? 1 : -1) : (bodyChunk0.vel.x >= 0.0f ? 1 : -1);
+                //         float middleOfTileX = room.MiddleOfTile(bodyChunk0.pos).x;
+                //         player.flipDirection = Mathf.Abs(bodyChunk0.vel.x) <= 5f ? (bodyChunk0.pos.x >= middleOfTileX ? 1 : -1) : (bodyChunk0.vel.x >= 0.0f ? 1 : -1);
 
-                        bodyChunk0.pos.x = middleOfTileX;
-                        bodyChunk0.vel = new Vector2(0.0f, 0.0f);
-                        bodyChunk1.vel.y = 0.0f;
-                        player.animation = Player.AnimationIndex.ClimbOnBeam;
-                    }
-                    else
-                    {
-                        int x = room.GetTilePosition(bodyChunk0.pos).x;
-                        for (int y = room.GetTilePosition(bodyChunk0.lastPos).y; y >= room.GetTilePosition(bodyChunk0.pos).y; --y)
-                        {
-                            if (room.GetTile(x, y).horizontalBeam && (attachedFields.grabBeamCooldownPosY == null || attachedFields.grabBeamCooldownPosY - bodyChunk0.pos.y >= 20f))
-                            {
-                                if (attachedFields.soundCooldown == 0)
-                                {
-                                    attachedFields.soundCooldown = 40;
-                                    room.PlaySound(SoundID.Slugcat_Grab_Beam, player.mainBodyChunk, false, 1f, 1f);
-                                }
+                //         bodyChunk0.pos.x = middleOfTileX;
+                //         bodyChunk0.vel = new Vector2(0.0f, 0.0f);
+                //         bodyChunk1.vel.y = 0.0f;
+                //         player.animation = Player.AnimationIndex.ClimbOnBeam;
+                //     }
+                //     else
+                //     {
+                //         int x = room.GetTilePosition(bodyChunk0.pos).x;
+                //         for (int y = room.GetTilePosition(bodyChunk0.lastPos).y; y >= room.GetTilePosition(bodyChunk0.pos).y; --y)
+                //         {
+                //             if (room.GetTile(x, y).horizontalBeam && (attachedFields.grabBeamCooldownPosY == null || attachedFields.grabBeamCooldownPosY - bodyChunk0.pos.y >= 20f))
+                //             {
+                //                 if (attachedFields.soundCooldown == 0)
+                //                 {
+                //                     attachedFields.soundCooldown = 40;
+                //                     room.PlaySound(SoundID.Slugcat_Grab_Beam, player.mainBodyChunk, false, 1f, 1f);
+                //                 }
 
-                                bodyChunk0.pos.y = room.MiddleOfTile(new IntVector2(x, y)).y;
-                                bodyChunk1.vel.y = 0.0f;
-                                player.animation = Player.AnimationIndex.HangFromBeam;
-                                break;
-                            }
-                        }
-                    }
-                }
+                //                 bodyChunk0.pos.y = room.MiddleOfTile(new IntVector2(x, y)).y;
+                //                 bodyChunk1.vel.y = 0.0f;
+                //                 player.animation = Player.AnimationIndex.HangFromBeam;
+                //                 break;
+                //             }
+                //         }
+                //     }
+                // }
 
                 switch (player.animation)
                 {
@@ -966,7 +1023,8 @@ namespace SimplifiedMoveset
                         // ----- //
 
                         // stand on ground
-                        if (bodyChunk1.ContactPoint.y < 0 && player.input[0].y < 0)
+                        // don't exit animation when leaving corridor with beam horizontally
+                        if (bodyChunk1.ContactPoint.y < 0 && player.input[0].y < 0 && Math.Abs(bodyChunk0.pos.x - bodyChunk1.pos.x) < 5f)
                         {
                             player.room.PlaySound(SoundID.Slugcat_Regain_Footing, player.mainBodyChunk, false, 1f, 1f);
                             player.animation = Player.AnimationIndex.StandUp;
@@ -999,7 +1057,7 @@ namespace SimplifiedMoveset
                             }
 
                             attachedFields.dontUseTubeWormCounter = 2; // don't drop and shoot tubeWorm at the same time
-                            attachedFields.grabBeamCooldownPosY = bodyChunk0.pos.y;
+                            attachedFields.grabBeamCooldownPos = bodyChunk0.pos;
                             player.animation = Player.AnimationIndex.None;
                             return;
                         }
@@ -1324,6 +1382,14 @@ namespace SimplifiedMoveset
                                 bodyChunk0.pos.x += Mathf.Clamp(middleOfTileX - bodyChunk0.pos.x, -2f * velXGain, 2f * velXGain);
                                 bodyChunk1.pos.x += Mathf.Clamp(middleOfTileX - bodyChunk1.pos.x, -2f * velXGain, 2f * velXGain);
 
+                                // you might get stuck from solid tiles above;
+                                // you can exit by pressing jump;
+                                if (player.input[0].jmp && !player.input[1].jmp)
+                                {
+                                    player.animation = Player.AnimationIndex.None;
+                                    break;
+                                }
+
                                 // ignore x input
                                 if (player.input[0].x != 0 && !player.IsTileSolid(bChunk: 0, player.input[0].x, 0) && !player.IsTileSolid(bChunk: 1, player.input[0].x, 0))
                                 {
@@ -1570,7 +1636,7 @@ namespace SimplifiedMoveset
                         player.GoThroughFloors = true;
                         for (int chunkIndex = 0; chunkIndex < 2; ++chunkIndex)
                         {
-                            if (!IsTileSolidOrSlope(player, chunkIndex, 0, -1) && (IsTileSolidOrSlope(player, chunkIndex, -1, -1) || IsTileSolidOrSlope(player, chunkIndex, 1, -1))) // push into shortcuts and holes but don't stand still on slopes
+                            if (!player.IsTileSolidOrSlope(chunkIndex, 0, -1) && (player.IsTileSolidOrSlope(chunkIndex, -1, -1) || player.IsTileSolidOrSlope(chunkIndex, 1, -1))) // push into shortcuts and holes but don't stand still on slopes
                             {
                                 BodyChunk bodyChunk = player.bodyChunks[chunkIndex];
                                 bodyChunk.vel.x = 0.8f * bodyChunk.vel.x + 0.4f * (room.MiddleOfTile(bodyChunk.pos).x - bodyChunk.pos.x);
@@ -1786,7 +1852,7 @@ namespace SimplifiedMoveset
             public int dontUseTubeWormCounter = 0;
             public int getUpOnBeamAbortCounter = 0;
             public int getUpOnBeamDirection = 0;
-            public float? grabBeamCooldownPosY = null;
+            public Vector2? grabBeamCooldownPos = null;
 
             public int grabBeamCounter = 0;
             public int jumpPressedCounter = 0;
