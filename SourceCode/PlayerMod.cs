@@ -706,7 +706,9 @@ namespace SimplifiedMoveset
                 --attachedFields.grabBeamCounter;
             }
 
-            if (attachedFields.grabBeamCooldownPos != null && Vector2.Distance(attachedFields.grabBeamCooldownPos ?? new(), bodyChunk0.pos) >= 20f) // check versus bodyChunk0 since you are only grabbing with your hands
+            // check versus bodyChunk0 since you are only grabbing with your hands
+            // if the distance is too low you might instantly re-grab horizontal beams when moving horizontally
+            if (attachedFields.grabBeamCooldownPos is Vector2 grabBeamCooldownPos && Vector2.Distance(grabBeamCooldownPos, bodyChunk0.pos) >= 25f)
             {
                 attachedFields.grabBeamCooldownPos = null;
             }
