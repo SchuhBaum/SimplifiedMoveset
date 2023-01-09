@@ -40,14 +40,14 @@ namespace SimplifiedMoveset
                 On.Player.ThrowObject -= Player_ThrowObject_Option_BellySlide;
             }
 
-            if (MainMod.Option_Crawl)
-            {
-                On.Player.TerrainImpact -= Player_TerrainImpact;
-            }
-
             if (MainMod.Option_Grab)
             {
                 On.Player.Grabability -= Player_Grabability;
+            }
+
+            if (MainMod.Option_Crawl || MainMod.Option_Roll_2)
+            {
+                IL.Player.TerrainImpact -= IL_Player_TerrainImpact;
             }
 
             if (MainMod.Option_SpearThrow)
@@ -104,14 +104,14 @@ namespace SimplifiedMoveset
                 On.Player.ThrowObject += Player_ThrowObject_Option_BellySlide; // remove throw timing
             }
 
-            if (MainMod.Option_Crawl)
-            {
-                On.Player.TerrainImpact += Player_TerrainImpact; // initiate rolls from crawl turns
-            }
-
             if (MainMod.Option_Grab)
             {
                 On.Player.Grabability += Player_Grabability; // only grab dead large creatures when crouching
+            }
+
+            if (MainMod.Option_Crawl || MainMod.Option_Roll_2)
+            {
+                IL.Player.TerrainImpact += IL_Player_TerrainImpact;
             }
 
             if (MainMod.Option_SpearThrow)
@@ -324,7 +324,7 @@ namespace SimplifiedMoveset
                 player.dropGrabTile = new IntVector2?();
             }
 
-            if (player.bodyChunks[0].ContactPoint.y < 0)
+            if (player.bodyChunks[0].contactPoint.y < 0)
             {
                 ++player.upperBodyFramesOnGround;
                 player.upperBodyFramesOffGround = 0;
@@ -335,7 +335,7 @@ namespace SimplifiedMoveset
                 ++player.upperBodyFramesOffGround;
             }
 
-            if (player.bodyChunks[1].ContactPoint.y < 0)
+            if (player.bodyChunks[1].contactPoint.y < 0)
             {
                 ++player.lowerBodyFramesOnGround;
                 player.lowerBodyFramesOffGround = 0;
@@ -446,6 +446,40 @@ namespace SimplifiedMoveset
             else
             {
                 Debug.LogException(new Exception("SimplifiedMoveset: IL_Player_MovementUpdate failed."));
+            }
+            // MainMod.LogAllInstructions(context);
+        }
+
+        private static void IL_Player_TerrainImpact(ILContext context)
+        {
+            // add the ability to initiate rolls from crawl turns (Option_Crawl);
+            // remove the ability to initiate rolls from rocket jumps (Option_Roll_2);
+
+            ILCursor cursor = new(context);
+            if (cursor.TryGotoNext(instruction => instruction.MatchCallvirt<Player>("get_input")))
+            {
+                Debug.Log("SimplifiedMoveset: IL_Player_TerrainImpact: Index " + cursor.Index);
+                cursor.RemoveRange(39);
+                cursor.Emit(OpCodes.Ldarg_2);
+                cursor.Emit(OpCodes.Ldarg_3);
+
+                cursor.EmitDelegate<Func<Player, IntVector2, float, bool>>((player, direction, speed) =>
+                {
+                    if (!MainMod.Option_Roll_2 && player.animation == Player.AnimationIndex.RocketJump) return false;
+                    if (MainMod.Option_Crawl)
+                    {
+                        return player.input[0].downDiagonal != 0 && direction.y < 0 && player.animation != Player.AnimationIndex.Roll && ((speed > 12.0 || player.animation == Player.AnimationIndex.Flip) && player.allowRoll > 0 || player.animation == Player.AnimationIndex.CrawlTurn); // less requirements than vanilla
+                    }
+
+                    return player.input[0].downDiagonal != 0 && player.animation != Player.AnimationIndex.Roll && (speed > 12f || player.animation == Player.AnimationIndex.Flip || (player.animation == Player.AnimationIndex.RocketJump && player.rocketJumpFromBellySlide)) && direction.y < 0 && player.allowRoll > 0 && player.consistentDownDiagonal > ((speed <= 24f) ? 6 : 1); // vanilla case
+                });
+
+                cursor.GotoNext();
+                cursor.Next.OpCode = OpCodes.Brfalse;
+            }
+            else
+            {
+                Debug.LogException(new Exception("SimplifiedMoveset: IL_Player_GrabUpdate failed."));
             }
             // MainMod.LogAllInstructions(context);
         }
@@ -567,17 +601,6 @@ namespace SimplifiedMoveset
         // there are cases where this function does not call orig()
         private static void Player_Jump(On.Player.orig_Jump orig, Player player)
         {
-            if (!MainMod.Option_Roll_2 && player.animation == Player.AnimationIndex.Roll)
-            {
-                player.animation = Player.AnimationIndex.None;
-                player.standing = true;
-                player.rollCounter = 0;
-                player.rollDirection = 0;
-
-                orig(player);
-                return;
-            }
-
             // don't instantly regrab vertical beams
             if (player.animation == Player.AnimationIndex.ClimbOnBeam)
             {
@@ -638,24 +661,6 @@ namespace SimplifiedMoveset
             else
             {
                 orig(player);
-            }
-        }
-
-        private static void Player_TerrainImpact(On.Player.orig_TerrainImpact orig, Player player, int chunk, IntVector2 direction, float speed, bool firstContact)
-        {
-            orig(player, chunk, direction, speed, firstContact);
-
-            // roll initiate logic // has less requirements than roll initiate logic from orig() // allow roll from crawl turn
-            if (MainMod.Option_Crawl && player.input[0].downDiagonal != 0 && direction.y < 0 && player.animation != Player.AnimationIndex.Roll && ((speed > 12.0 || player.animation == Player.AnimationIndex.Flip) && player.allowRoll > 0 || player.animation == Player.AnimationIndex.CrawlTurn))
-            {
-                player.room.PlaySound(SoundID.Slugcat_Roll_Init, player.mainBodyChunk.pos, 1f, 1f);
-                player.animation = Player.AnimationIndex.Roll;
-                player.rollDirection = player.input[0].downDiagonal;
-                player.rollCounter = 0;
-
-                player.bodyChunks[0].vel.x = Mathf.Lerp(player.bodyChunks[0].vel.x, 9f * player.input[0].x, 0.7f);
-                player.bodyChunks[1].vel.x = Mathf.Lerp(player.bodyChunks[1].vel.x, 9f * player.input[0].x, 0.7f);
-                player.standing = false;
             }
         }
 
@@ -783,7 +788,7 @@ namespace SimplifiedMoveset
                 bodyChunk0.vel.x += (!player.longBellySlide ? 16.7f : 14f) * player.rollDirection * Mathf.Sin((float)(player.rollCounter / (!player.longBellySlide ? 20.0 : 39.0) * Math.PI));
                 foreach (BodyChunk bodyChunk in player.bodyChunks)
                 {
-                    if (bodyChunk.ContactPoint.y == 0)
+                    if (bodyChunk.contactPoint.y == 0)
                     {
                         bodyChunk.vel.x *= player.surfaceFriction;
                     }
@@ -854,7 +859,7 @@ namespace SimplifiedMoveset
 
                     if (player.airInLungs < 0.5 && (double)player.airInLungs > 1 / 6)
                         player.swimCycle += 0.05f;
-                    if (bodyChunk0.ContactPoint.x != 0 || bodyChunk0.ContactPoint.y != 0)
+                    if (bodyChunk0.contactPoint.x != 0 || bodyChunk0.contactPoint.y != 0)
                         player.swimForce *= 0.5f;
 
                     if (player.swimCycle > 4.0)
@@ -984,12 +989,12 @@ namespace SimplifiedMoveset
                         bodyChunk0.vel.y = 0.0f;
                         bodyChunk0.pos.y = room.MiddleOfTile(bodyChunk0.pos).y;
 
-                        if (player.input[0].x != 0 && bodyChunk0.ContactPoint.x != player.input[0].x)
+                        if (player.input[0].x != 0 && bodyChunk0.contactPoint.x != player.input[0].x)
                         {
                             Room.Tile tile = room.GetTile(bodyChunk0.pos + new Vector2(12f * player.input[0].x, 0.0f));
                             if (tile.horizontalBeam)
                             {
-                                if (bodyChunk1.ContactPoint.x != player.input[0].x)
+                                if (bodyChunk1.contactPoint.x != player.input[0].x)
                                 {
                                     bodyChunk0.vel.x += player.input[0].x * Mathf.Lerp(1.2f, 1.4f, player.Adrenaline) * player.slugcatStats.poleClimbSpeedFac * Custom.LerpMap(player.slowMovementStun, 0.0f, 10f, 1f, 0.5f);
                                 }
@@ -1026,7 +1031,7 @@ namespace SimplifiedMoveset
 
                         // stand on ground
                         // don't exit animation when leaving corridor with beam horizontally
-                        if (bodyChunk1.ContactPoint.y < 0 && player.input[0].y < 0 && Math.Abs(bodyChunk0.pos.x - bodyChunk1.pos.x) < 5f)
+                        if (bodyChunk1.contactPoint.y < 0 && player.input[0].y < 0 && Math.Abs(bodyChunk0.pos.x - bodyChunk1.pos.x) < 5f)
                         {
                             player.room.PlaySound(SoundID.Slugcat_Regain_Footing, player.mainBodyChunk, false, 1f, 1f);
                             player.animation = Player.AnimationIndex.StandUp;
@@ -1125,7 +1130,7 @@ namespace SimplifiedMoveset
                             attachedFields.getUpOnBeamDirection = -direction;
                             return;
                         }
-                        else if (bodyChunk0.ContactPoint.y == direction || bodyChunk1.ContactPoint.y == direction)
+                        else if (bodyChunk0.contactPoint.y == direction || bodyChunk1.contactPoint.y == direction)
                         {
                             if (attachedFields.getUpOnBeamAbortCounter > 0) // revert to the original position should always work // abort if stuck in a loop just in case
                             {
@@ -1151,7 +1156,7 @@ namespace SimplifiedMoveset
                         player.animation = Player.AnimationIndex.None;
                         return;
                     case Player.AnimationIndex.StandOnBeam:
-                        bool isWallClimbing = player.bodyMode == Player.BodyModeIndex.WallClimb && bodyChunk1.ContactPoint.x != 0;
+                        bool isWallClimbing = player.bodyMode == Player.BodyModeIndex.WallClimb && bodyChunk1.contactPoint.x != 0;
                         UpdateAnimationCounter(player);
 
                         player.bodyMode = Player.BodyModeIndex.ClimbingOnBeam;
@@ -1159,7 +1164,7 @@ namespace SimplifiedMoveset
                         player.canJump = 5;
                         bodyChunk1.vel.x *= 0.5f;
 
-                        if (player.input[0].x != 0 && bodyChunk1.ContactPoint.x != player.input[0].x)
+                        if (player.input[0].x != 0 && bodyChunk1.contactPoint.x != player.input[0].x)
                         {
                             Room.Tile tile = room.GetTile(bodyChunk1.pos + new Vector2(12f * player.input[0].x, 0.0f));
                             if (tile.horizontalBeam)
@@ -1217,7 +1222,7 @@ namespace SimplifiedMoveset
                             return;
                         }
 
-                        if (bodyChunk0.ContactPoint.y < 1 || !player.IsTileSolid(bChunk: 1, 0, 1))
+                        if (bodyChunk0.contactPoint.y < 1 || !player.IsTileSolid(bChunk: 1, 0, 1))
                         {
                             bodyChunk1.vel.y = 0.0f;
                             bodyChunk1.pos.y = room.MiddleOfTile(bodyChunk1.pos).y + 5f;
@@ -1256,15 +1261,15 @@ namespace SimplifiedMoveset
 
                         foreach (BodyChunk bodyChunk in player.bodyChunks)
                         {
-                            if (bodyChunk.ContactPoint.x != 0)
+                            if (bodyChunk.contactPoint.x != 0)
                             {
-                                player.flipDirection = -bodyChunk.ContactPoint.x;
+                                player.flipDirection = -bodyChunk.contactPoint.x;
                                 break;
                             }
                         }
 
                         bool shouldSwitchSides = true;
-                        if (shouldSwitchSides && !player.IsTileSolid(0, 0, 1) && player.input[0].y > 0 && (bodyChunk0.ContactPoint.y < 0 || player.IsTileSolid(0, player.flipDirection, 1)))
+                        if (shouldSwitchSides && !player.IsTileSolid(0, 0, 1) && player.input[0].y > 0 && (bodyChunk0.contactPoint.y < 0 || player.IsTileSolid(0, player.flipDirection, 1)))
                         {
                             shouldSwitchSides = false;
                         }
@@ -1340,7 +1345,7 @@ namespace SimplifiedMoveset
                         //
 
                         // stand on ground
-                        if (bodyChunk1.ContactPoint.y < 0 && player.input[0].y < 0)
+                        if (bodyChunk1.contactPoint.y < 0 && player.input[0].y < 0)
                         {
                             player.room.PlaySound(SoundID.Slugcat_Regain_Footing, player.mainBodyChunk, false, 1f, 1f);
                             player.animation = Player.AnimationIndex.StandUp;
@@ -1608,7 +1613,7 @@ namespace SimplifiedMoveset
                         }
                     }
                     // more requirements than vanilla // prevent collision and sound spam
-                    else if ((player.bodyChunks[1].onSlope == 0 || player.input[0].x != -player.bodyChunks[1].onSlope) && (player.lowerBodyFramesOnGround >= 3 || player.bodyChunks[1].ContactPoint.y < 0 && room.GetTile(room.GetTilePosition(player.bodyChunks[1].pos) + new IntVector2(0, -1)).Terrain != Room.Tile.TerrainType.Air && room.GetTile(room.GetTilePosition(player.bodyChunks[0].pos) + new IntVector2(0, -1)).Terrain != Room.Tile.TerrainType.Air))
+                    else if ((player.bodyChunks[1].onSlope == 0 || player.input[0].x != -player.bodyChunks[1].onSlope) && (player.lowerBodyFramesOnGround >= 3 || player.bodyChunks[1].contactPoint.y < 0 && room.GetTile(room.GetTilePosition(player.bodyChunks[1].pos) + new IntVector2(0, -1)).Terrain != Room.Tile.TerrainType.Air && room.GetTile(room.GetTilePosition(player.bodyChunks[0].pos) + new IntVector2(0, -1)).Terrain != Room.Tile.TerrainType.Air))
                     {
                         AlignPosYOnSlopes(player);
                         room.PlaySound(SoundID.Slugcat_Stand_Up, player.mainBodyChunk);
@@ -1616,11 +1621,11 @@ namespace SimplifiedMoveset
 
                         if (player.input[0].x == 0)
                         {
-                            if (player.bodyChunks[1].ContactPoint.y == -1 && player.IsTileSolid(1, 0, -1) && !player.IsTileSolid(1, 0, 1))
+                            if (player.bodyChunks[1].contactPoint.y == -1 && player.IsTileSolid(1, 0, -1) && !player.IsTileSolid(1, 0, 1))
                             {
                                 player.feetStuckPos = new Vector2?(room.MiddleOfTile(room.GetTilePosition(player.bodyChunks[1].pos)) + new Vector2(0.0f, player.bodyChunks[1].rad - 10f));
                             }
-                            else if (player.bodyChunks[0].ContactPoint.y == -1 && player.IsTileSolid(0, 0, -1) && !player.IsTileSolid(0, 0, 1))
+                            else if (player.bodyChunks[0].contactPoint.y == -1 && player.IsTileSolid(0, 0, -1) && !player.IsTileSolid(0, 0, 1))
                             {
                                 player.feetStuckPos = new Vector2?(player.bodyChunks[0].pos + new Vector2(0.0f, -1f));
                             }
@@ -1628,7 +1633,7 @@ namespace SimplifiedMoveset
                         return;
                     }
 
-                    if (player.bodyChunks[0].ContactPoint.y > -1 && player.input[0].x != 0 && player.bodyChunks[1].pos.y < player.bodyChunks[0].pos.y - 3.0 && player.bodyChunks[1].ContactPoint.x == player.input[0].x)
+                    if (player.bodyChunks[0].contactPoint.y > -1 && player.input[0].x != 0 && player.bodyChunks[1].pos.y < player.bodyChunks[0].pos.y - 3.0 && player.bodyChunks[1].contactPoint.x == player.input[0].x)
                     {
                         ++player.bodyChunks[1].pos.y;
                     }
@@ -1686,7 +1691,7 @@ namespace SimplifiedMoveset
                         BodyChunk bodyChunk0 = player.bodyChunks[0];
                         BodyChunk bodyChunk1 = player.bodyChunks[1];
 
-                        // bodyMode would change when player.input[0].x != bodyChunk0.ContactPoint.x // skip this check for now
+                        // bodyMode would change when player.input[0].x != bodyChunk0.contactPoint.x // skip this check for now
                         player.canWallJump = player.input[0].x * -15;
 
                         // when upside down, flip instead of climbing
@@ -1787,14 +1792,14 @@ namespace SimplifiedMoveset
                 }
 
                 // climb on smaller obstacles instead
-                if (player.input[0].x != 0 && player.bodyChunks[1].ContactPoint.x == player.input[0].x && player.IsTileSolid(0, player.input[0].x, -1) && !player.IsTileSolid(0, player.input[0].x, 0))
+                if (player.input[0].x != 0 && player.bodyChunks[1].contactPoint.x == player.input[0].x && player.IsTileSolid(0, player.input[0].x, -1) && !player.IsTileSolid(0, player.input[0].x, 0))
                 {
                     player.simulateHoldJumpButton = 0;
                     return;
                 }
 
                 // jump to be able to climb on smaller obstacles
-                if (player.input[0].x != 0 && (player.bodyChunks[0].ContactPoint.x == player.input[0].x && player.IsTileSolid(0, player.input[0].x, 0)) && !player.IsTileSolid(0, player.input[0].x, 1))
+                if (player.input[0].x != 0 && (player.bodyChunks[0].contactPoint.x == player.input[0].x && player.IsTileSolid(0, player.input[0].x, 0)) && !player.IsTileSolid(0, player.input[0].x, 1))
                 {
                     float adrenalineModifier = Mathf.Lerp(1f, 1.15f, player.Adrenaline);
                     if (player.exhausted)

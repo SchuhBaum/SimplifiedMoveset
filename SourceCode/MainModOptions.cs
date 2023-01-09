@@ -57,8 +57,8 @@ namespace SimplifiedMoveset
             AddCheckBox("grab", "Grab", "Grab dead creatures only when crouching.", defaultBool: false);
             AddCheckBox("ledgeGrab", "Ledge Grab", "Slugcat stays in the ledge grab animation until jump is pressed.", defaultBool: false);
 
-            AddCheckBox("roll_1", "Roll 1", "Stand up after rolls, and rocket jumps (same effect as with the option Belly Slide). Removes timing / variable height for rocket jumps from rolls.\nThe changes for rocket jumps are only in effect if the option \"Roll 2\" is enabled as well.", defaultBool: true);
-            AddCheckBox("roll_2", "Roll 2", "When disabled, you can only perform normal jumps during rolls.", defaultBool: true);
+            AddCheckBox("roll_1", "Roll 1", "Stand up after rolls, and rocket jumps (same effect as with the option Belly Slide). Rocket jumps from rolls have consistent height.", defaultBool: true);
+            AddCheckBox("roll_2", "Roll 2", "When disabled, removes the ability to initiate rolls from rocket jumps.", defaultBool: true);
             AddCheckBox("slideTurn", "Slide Turn", "Reduces the requirements for slide turns. Backflips are possible earlier.", defaultBool: false);
 
             AddCheckBox("spearThrow", "Spear Throw", "The throw momentum does not affect slugcat on the ground. The momentum while climbing beams is reduced. Throw boosting in the air is still possible.", defaultBool: true);

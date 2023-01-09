@@ -1,5 +1,5 @@
 ## SimplifiedMoveset
-###### Version: 0.80
+###### Version: 0.81
 
 This is a mod for Rain World v1.5.
 
@@ -94,3 +94,6 @@ v0.80:
 - (crouch jump) Don't stand up when jumping during the DownOnFours animation and pressing down. Otherwise this can mess up a super launch jump. Fixed a bug where you would not stand up when jumping out of shortcuts.
 - (beam climb) You can exit the ClimbUpToBeamTip-animation by pressing jump. In rare cases you can get stuck in this animation otherwise.
 - (beam climb) Changed implementation for grabbing beams by holding down. Added that you can prevent grabbing beams by holding down and jump. This way you can go faster down like in corridors.
+
+v0.81:
+- (roll_2) Changed this option. When disabled, removes the ability to initiate rolls from rocket jumps.
