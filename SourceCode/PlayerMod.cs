@@ -418,8 +418,15 @@ namespace SimplifiedMoveset
 
                 cursor.EmitDelegate<Func<Player, bool>>(player =>
                 {
-                    AttachedFields attachedFields = player.GetAttachedFields();
+                    // there is a check for timeSinceInCorridorMode >= 20 afterwards;
+                    // why do you wait after climbing in a corridor?;
+                    // this check is only used under certain conditions (being upside down?);
+                    // this can lead to not grabbing beams and falling down;
+                    // in some modded regions this means even falling to your death;
+                    if (player.timeSinceInCorridorMode < 20) player.timeSinceInCorridorMode = 20;
                     if (player.input[0].y > 0) return true; // vanilla case
+
+                    AttachedFields attachedFields = player.GetAttachedFields();
                     if (attachedFields.grabBeamCounter > 0) return true; // automatically re-grab
                     if (player.animation != Player.AnimationIndex.None || player.bodyMode != Player.BodyModeIndex.Default) return false;
                     // if (player.IsClimbingOnBeam()) return false; // don't mess with switching beams while beam climbing

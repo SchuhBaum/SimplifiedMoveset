@@ -1,5 +1,5 @@
 ## SimplifiedMoveset
-###### Version: 0.81
+###### Version: 0.82
 
 This is a mod for Rain World v1.5.
 
@@ -95,5 +95,6 @@ v0.80:
 - (beam climb) You can exit the ClimbUpToBeamTip-animation by pressing jump. In rare cases you can get stuck in this animation otherwise.
 - (beam climb) Changed implementation for grabbing beams by holding down. Added that you can prevent grabbing beams by holding down and jump. This way you can go faster down like in corridors.
 
-v0.81:
+v0.82:
 - (roll_2) Changed this option. When disabled, removes the ability to initiate rolls from rocket jumps.
+- (beam climb) Removed the time that you need to wait before you can grab beams after leaving a corridor. Not sure what the purpose of this was since you only needed to wait under certain conditions (being upside down?).
