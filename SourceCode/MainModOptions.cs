@@ -6,25 +6,37 @@ namespace SimplifiedMoveset
 {
     public class MainModOptions : OptionInterface
     {
-        private Vector2 marginX = new();
-        private Vector2 pos = new();
+        //
+        // parameters
+        //
+
+        private readonly float fontHeight = 20f;
         private readonly float spacing = 20f;
-
-        private readonly List<float> boxEndPositions = new();
-
         private readonly int numberOfCheckboxes = 3;
         private readonly float checkBoxSize = 24f;
+        private float CheckBoxWithSpacing => checkBoxSize + 0.25f * spacing;
+
+        //
+        // variables
+        //
+
+        private Vector2 marginX = new();
+        private Vector2 pos = new();
+        private readonly List<OpLabel> textLabels = new();
+        private readonly List<float> boxEndPositions = new();
+
         private readonly List<OpCheckBox> checkBoxes = new();
         private readonly List<OpLabel> checkBoxesTextLabels = new();
 
-        private readonly float fontHeight = 20f;
-        private readonly List<OpLabel> textLabels = new();
+        //
+        // main
+        //
 
-        private float CheckBoxWithSpacing => checkBoxSize + 0.25f * spacing;
+        public MainModOptions() : base(plugin: MainMod.instance) { }
 
-        public MainModOptions() : base(MainMod.instance)
-        {
-        }
+        //
+        // public
+        //
 
         public override void Initialize()
         {
@@ -72,10 +84,12 @@ namespace SimplifiedMoveset
             DrawCheckBoxes(ref Tabs[0]);
             DrawBox(ref Tabs[0]);
         }
+
         public override void Update(float dt)
         {
             base.Update(dt);
         }
+
         public override void ConfigOnChange()
         {
             base.ConfigOnChange();
@@ -119,9 +133,9 @@ namespace SimplifiedMoveset
             Debug.Log("SimplifiedMoveset: Option_WallJump " + MainMod.Option_WallJump);
         }
 
-        // ----------------- //
-        // private functions //
-        // ----------------- //
+        //
+        // private
+        //
 
         private void InitializeMarginAndPos()
         {

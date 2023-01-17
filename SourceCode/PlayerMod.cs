@@ -572,6 +572,17 @@ namespace SimplifiedMoveset
 
         private static int Player_Grabability(On.Player.orig_Grabability orig, Player player, PhysicalObject physicalObject)
         {
+            // ignore the change when you are already grabbing it;
+            // otherwise this can conflict with JollyCoopFixesAndStuff's SlugcatCollision option;
+            // this option also excludes collision from carried but not dragged creatures;
+            foreach (Creature.Grasp? grasp in player.grasps)
+            {
+                if (grasp != null && grasp.grabbed == physicalObject)
+                {
+                    return orig(player, physicalObject);
+                }
+            }
+
             // you can stand in vertical corridors => exclude
             // you can stand when surface swimming => exclude
             // you can stand during beam climbing => exclude
