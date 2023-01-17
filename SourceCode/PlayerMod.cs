@@ -1408,9 +1408,12 @@ namespace SimplifiedMoveset
                                 bodyChunk1.pos.x += Mathf.Clamp(middleOfTileX - bodyChunk1.pos.x, -2f * velXGain, 2f * velXGain);
 
                                 // you might get stuck from solid tiles above;
-                                // you can exit by pressing jump;
-                                if (player.input[0].jmp && !player.input[1].jmp)
+                                // do a auto-regrab like you can do when pressing down while being on the beam tip;
+                                if (player.input[0].y < 0)
                                 {
+                                    attachedFields.grabBeamCounter = 15;
+                                    attachedFields.dontUseTubeWormCounter = 2;
+                                    player.canJump = 0;
                                     player.animation = Player.AnimationIndex.None;
                                     break;
                                 }
