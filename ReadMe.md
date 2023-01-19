@@ -9,7 +9,7 @@ Various movement changes. The main idea is to remove or simplify timings, making
 Here is a youtube video showing some of the changes: https://www.youtube.com/watch?v=Jp6UyUgoWB0
 
 ### Known issues
-- Pressing jump during the GetUpOnBeam animation will drop you afterwards (might be a vanilla thing). Intended is that nothing happens and you can only jump off after this (short) animation is finished.
+- Pressing jump while holding up during the GetUpToBeamTip animation will perform a normal jump (might be a vanilla thing). Intended is that you get a boost and end up in the BeamTip animation.
 
 ### Installation
 1. (ModLoader) `BepInEx` and `BOI` can be downloaded from [RainDB](https://www.raindb.net/) under `Tools`.  
