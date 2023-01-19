@@ -1,5 +1,5 @@
 ## SimplifiedMoveset
-###### Version: 0.85
+###### Version: 0.86
 
 This is a mod for Rain World v1.5.
 
@@ -7,10 +7,6 @@ This is a mod for Rain World v1.5.
 Various movement changes. The main idea is to remove or simplify timings, making it easier to perform moves consistently. In addition, includes the ability to breath underwater and crawl on walls (disabled by default).  
   
 Here is a youtube video showing some of the changes: https://www.youtube.com/watch?v=Jp6UyUgoWB0
-
-### Known issues
-- Pressing jump during the GetUpOnBeam animation will drop you afterwards (might be a vanilla thing). Intended is that nothing happens and you can only jump off after this (short) animation is finished.
-- Pressing jump while holding up during the GetUpToBeamTip animation will perform a normal jump (might be a vanilla thing). Intended is that you get a boost and end up in the BeamTip animation.
 
 ### Installation
 1. (ModLoader) `BepInEx` and `BOI` can be downloaded from [RainDB](https://www.raindb.net/) under `Tools`.  
@@ -31,12 +27,10 @@ v0.30:
 - Extended the spear throw option to work with slopes and when hanging from beams.
 - When the wall climb option is enabled, (mid-air) wall jumps have a higher priority than using grapple worms.
 
-
 v0.40:
 - Added support for AutoUpdate.
 - Extended the climb option. Should be more consistent now.
 - Added a ledge grab option (disabled by default). When enabled, you stay in the ledge grab animation until jump is pressed. Added the ability to mid-air wall jump off a ledge grab.
-
 
 v0.50:
 - Ledge grab option uses vanilla behaviour when grabbing a shortcut entrance ledge.
@@ -47,7 +41,6 @@ v0.50:
 - Reworked the wall climb option. Simplified some cases.
 - Added an option regarding tube worms. When enabled (default), tube/grapple worms auto-aim grapple to beams. They still prioritize solid tiles. Adjusts (starting) angle when diagonal up is pressed (vanilla uses straight up in that case).
 - Restructured code.
-
 
 v0.60:
 - (beam climb) When hanging from a vertical beam and pressing jump, you drop instead of doing a mini-jump (for consistency).
@@ -61,7 +54,6 @@ v0.60:
 - (belly slide) Removed the timing required for throwing spears while belly sliding.
 - (belly slide and roll) Rocket jumps and flips are no longer canceled by bumping into ceilings.
 - (spear throw) Simplified implementation. Fixed a bug where thrown spears would just fall when starving.
-
 
 v0.70:
 - (beam climb) When hanging from a horizontal beam and using a tube worm, retracting the tongue has priority when pressing jump (for consistency).
@@ -81,7 +73,6 @@ v0.70:
 - (beam climb) GetUpToBeamTip should not be canceled anymore by holding left or right. Fixed a bug where canceling beam climb would be spammed when climbing into a corner.
 - Restructered code.
 
-
 v0.80:
 - (grab) Added this option (disabled by default). You can only grab dead large creatures when crouching. Fixed a bug where you could not grab them in vertical corridors. Fixed a bug where you could not grab when lying on top of the creature.
 - (beam climb) Fixed a bug where bumping your head would be considered wall climbing and cancel the StandOnBeam animation.
@@ -94,9 +85,11 @@ v0.80:
 - (crouch jump) Don't stand up when jumping during the DownOnFours animation and pressing down. Otherwise this can mess up a super launch jump. Fixed a bug where you would not stand up when jumping out of shortcuts.
 - (beam climb) Changed implementation for grabbing beams by holding down. Added that you can prevent grabbing beams by holding down and jump. This way you can go faster down like in corridors.
 
-v0.85:
+v0.86:
 - (roll_2) Changed this option. When disabled, removes the ability to initiate rolls from rocket jumps.
 - (beam climb) Removed the time that you need to wait before you can grab beams after leaving a corridor. Not sure what the purpose of this was since you only needed to wait under certain conditions (being upside down?).
 - (grab) Fixed a bug where grabability was not set correctly.
 - (beam climb) You can exit the ClimbUpToBeamTip-animation by pressing down. In rare cases you can get stuck in this animation otherwise.
-- Fixed a bug where belly slides would be canceled early when being close to a wall.
+- (belly slide) Fixed a bug where belly slides would be canceled early when being close to a wall.
+- (beam climb) Fixed a bug where you would not be able to grab beams for too long when jumping during the StandOnBeam animation.
+- (beam climb) Fixed a bug where you would jump off too early before reaching the BeamTip animation.

@@ -1112,7 +1112,10 @@ namespace SimplifiedMoveset
                         int direction = attachedFields.getUpOnBeamDirection; // -1 (down) or 1 (up)
                         int bodyChunkIndex = direction == 1 ? 1 : 0;
 
-                        player.canJump = 0; // otherwise: bugged when pressing jump during this animation => drops slugcat when StandOnBeam animation is reached
+                        // otherwise this is bugged when pressing jump during this animation
+                        // => drops slugcat when StandOnBeam animation is reached;
+                        player.canJump = 0;
+
                         player.bodyMode = Player.BodyModeIndex.ClimbingOnBeam;
                         bodyChunk0.vel.x = 0.0f;
                         bodyChunk0.vel.y = 0.0f;
@@ -1144,7 +1147,11 @@ namespace SimplifiedMoveset
 
                         if (room.GetTile(player.bodyChunks[bodyChunkIndex].pos).horizontalBeam && Math.Abs(player.bodyChunks[bodyChunkIndex].pos.y - player.upOnHorizontalBeamPos.y) < 25.0)
                         {
-                            player.noGrabCounter = 15;
+                            // this might be helpful when horizontal beams are stacked vertically;
+                            // however, this can lead to a bug where you are not able to grab beams after jumping off;
+                            // => reduce this counter as a workaround;
+                            player.noGrabCounter = 5; // vanilla: 15
+
                             player.animation = direction == 1 ? Player.AnimationIndex.StandOnBeam : Player.AnimationIndex.HangFromBeam;
                             player.bodyChunks[bodyChunkIndex].pos.y = room.MiddleOfTile(player.bodyChunks[bodyChunkIndex].pos).y + direction * 5f;
                             player.bodyChunks[bodyChunkIndex].vel.y = 0.0f;
@@ -1393,6 +1400,9 @@ namespace SimplifiedMoveset
                             {
                                 player.room.PlaySound(SoundID.Slugcat_Get_Up_On_Top_Of_Vertical_Beam_Tip, player.mainBodyChunk, false, 1f, 1f);
                                 player.animation = Player.AnimationIndex.GetUpToBeamTip;
+
+                                // otherwise it might cancel the GetUpToBeamTip animation before it gets reached;
+                                player.wantToJump = 0;
                             }
                             else if (player.room.GetTile(player.room.GetTilePosition(bodyChunk0.pos) + new IntVector2(0, 1)).verticalBeam)
                             {
@@ -1405,6 +1415,9 @@ namespace SimplifiedMoveset
                         }
                         return;
                     case Player.AnimationIndex.GetUpToBeamTip:
+                        // otherwise you might jump early when reaching the BeamTip;
+                        player.wantToJump = 0;
+
                         // don't let go of beam while climbing to the top // don't prevent player from entering corridors
                         // if (bodyChunk0.contactPoint.x == 0 && bodyChunk1.contactPoint.x == 0)
                         foreach (BodyChunk bodyChunk in player.bodyChunks)
