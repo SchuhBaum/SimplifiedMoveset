@@ -714,8 +714,13 @@ namespace SimplifiedMoveset
         // there are cases where this function does not call orig()
         private static void Player_UpdateAnimation(On.Player.orig_UpdateAnimation orig, Player player)
         {
+            if (player.room is not Room room)
+            {
+                orig(player);
+                return;
+            }
+
             AttachedFields attachedFields = player.GetAttachedFields();
-            Room? room = player.room;
             BodyChunk bodyChunk0 = player.bodyChunks[0];
             BodyChunk bodyChunk1 = player.bodyChunks[1];
 
@@ -757,7 +762,7 @@ namespace SimplifiedMoveset
             }
 
             // belly slide // backflip always possible // do a longer version by default
-            if (MainMod.Option_BellySlide && player.animation == Player.AnimationIndex.BellySlide && room != null)
+            if (MainMod.Option_BellySlide && player.animation == Player.AnimationIndex.BellySlide)
             {
                 UpdateAnimationCounter(player);
                 if (player.slideCounter > 0) // no backflips after belly slide
@@ -786,6 +791,11 @@ namespace SimplifiedMoveset
                         return;
                     }
                 }
+
+                // when being close to wall the belly slide might get canceled early;
+                // this happens in MovementUpdate(): if (this.goIntoCorridorClimb > 2 && !this.corridorDrop)..
+                // as a workaround set goIntoCorridorClimb to zero;
+                player.goIntoCorridorClimb = 0;
                 player.whiplashJump = player.input[0].x == -player.rollDirection;
 
                 if (player.rollCounter < 6)
@@ -916,7 +926,7 @@ namespace SimplifiedMoveset
                     player.canWallJump = player.flipDirection * -15; // you can do a (mid-air) wall jump off a ledge grab
                 }
 
-                if (MainMod.Option_LedgeGrab && room != null)
+                if (MainMod.Option_LedgeGrab)
                 {
                     if (player.input[0].jmp && attachedFields.jumpPressedCounter < 20)
                     {
@@ -946,7 +956,7 @@ namespace SimplifiedMoveset
             }
 
             // beam climb 
-            if (MainMod.Option_BeamClimb && room != null)
+            if (MainMod.Option_BeamClimb)
             {
                 // velocity gained in x direction each frame (if no slowmovementstun, and bodyMode is default)
                 float velXGain = 2.4f * Mathf.Lerp(1f, 1.2f, player.Adrenaline) * player.surfaceFriction * room.gravity;

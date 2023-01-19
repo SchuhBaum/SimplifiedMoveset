@@ -1,5 +1,5 @@
 ## SimplifiedMoveset
-###### Version: 0.84
+###### Version: 0.85
 
 This is a mod for Rain World v1.5.
 
@@ -7,6 +7,9 @@ This is a mod for Rain World v1.5.
 Various movement changes. The main idea is to remove or simplify timings, making it easier to perform moves consistently. In addition, includes the ability to breath underwater and crawl on walls (disabled by default).  
   
 Here is a youtube video showing some of the changes: https://www.youtube.com/watch?v=Jp6UyUgoWB0
+
+### Known issues
+- Pressing jump during the GetUpOnBeam animation will drop you afterwards (might be a vanilla thing). Intended is that nothing happens and you can only jump off after this (short) animation is finished.
 
 ### Installation
 1. (ModLoader) `BepInEx` and `BOI` can be downloaded from [RainDB](https://www.raindb.net/) under `Tools`.  
@@ -21,10 +24,6 @@ If you have feedback, you can message me on Discord `@SchuhBaum#7246` or write a
 
 ### License  
 There are two licenses available - MIT and Unlicense. You can choose which one you want to use.
-
-### Bugs
-- Standing next to a wall, the belly slide can fail (not sure why). In this case the body mode index is set to CorridorClimb and goes into crawl afterwards. This bug seems to exist in vanilla as well.
-- Pressing jump during the GetUpOnBeam animation will drop you afterwards. Intended is that nothing happens and you can only jump off after this (short) animation is finished.
 
 ### Changelog
 v0.30:
@@ -94,8 +93,9 @@ v0.80:
 - (crouch jump) Don't stand up when jumping during the DownOnFours animation and pressing down. Otherwise this can mess up a super launch jump. Fixed a bug where you would not stand up when jumping out of shortcuts.
 - (beam climb) Changed implementation for grabbing beams by holding down. Added that you can prevent grabbing beams by holding down and jump. This way you can go faster down like in corridors.
 
-v0.84:
+v0.85:
 - (roll_2) Changed this option. When disabled, removes the ability to initiate rolls from rocket jumps.
 - (beam climb) Removed the time that you need to wait before you can grab beams after leaving a corridor. Not sure what the purpose of this was since you only needed to wait under certain conditions (being upside down?).
 - (grab) Fixed a bug where grabability was not set correctly.
 - (beam climb) You can exit the ClimbUpToBeamTip-animation by pressing down. In rare cases you can get stuck in this animation otherwise.
+- Fixed a bug where belly slides would be canceled early when being close to a wall.
