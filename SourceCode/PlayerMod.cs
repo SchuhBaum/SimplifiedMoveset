@@ -1772,7 +1772,7 @@ namespace SimplifiedMoveset
                         // when upside down, flip instead of climbing
                         if (bodyChunk0.pos.y < bodyChunk1.pos.y)
                         {
-                            bodyChunk0.vel.y = Custom.LerpAndTick(bodyChunk0.vel.y, 2f * player.gravity * player.EffectiveRoomGravity, 0.8f, 1f);
+                            bodyChunk0.vel.y = Custom.LerpAndTick(bodyChunk0.vel.y, 2f * player.gravity, 0.8f, 1f);
                             bodyChunk1.vel.y = Custom.LerpAndTick(bodyChunk1.vel.y, 0.0f, 0.8f, 1f);
                             bodyChunk1.vel.x = -player.input[0].x * 5f;
                         }
@@ -1793,8 +1793,8 @@ namespace SimplifiedMoveset
                                     bodyChunk1.vel.x = -player.input[0].x * velXGain;
                                 }
 
-                                bodyChunk0.vel.y += player.gravity * player.EffectiveRoomGravity;
-                                bodyChunk1.vel.y += player.gravity * player.EffectiveRoomGravity;
+                                bodyChunk0.vel.y += player.gravity;
+                                bodyChunk1.vel.y += player.gravity;
 
                                 // downward momentum when ContactPoint.x != 0 is limited to -player.gravity bc of Player.Update()
                                 bodyChunk0.vel.y = Mathf.Lerp(bodyChunk0.vel.y, player.input[0].y * 2.5f, 0.3f);
@@ -1805,13 +1805,13 @@ namespace SimplifiedMoveset
                             {
                                 if (player.grasps[0]?.grabbed is Cicada cicada)
                                 {
-                                    bodyChunk0.vel.y = Custom.LerpAndTick(bodyChunk0.vel.y, player.gravity * player.EffectiveRoomGravity - cicada.LiftPlayerPower * 0.5f, 0.3f, 1f);
+                                    bodyChunk0.vel.y = Custom.LerpAndTick(bodyChunk0.vel.y, player.gravity - cicada.LiftPlayerPower * 0.5f, 0.3f, 1f);
                                 }
                                 else
                                 {
-                                    bodyChunk0.vel.y = Custom.LerpAndTick(bodyChunk0.vel.y, player.gravity * player.EffectiveRoomGravity, 0.3f, 1f);
+                                    bodyChunk0.vel.y = Custom.LerpAndTick(bodyChunk0.vel.y, player.gravity, 0.3f, 1f);
                                 }
-                                bodyChunk1.vel.y = Custom.LerpAndTick(bodyChunk1.vel.y, player.gravity * player.EffectiveRoomGravity, 0.3f, 1f);
+                                bodyChunk1.vel.y = Custom.LerpAndTick(bodyChunk1.vel.y, player.gravity, 0.3f, 1f);
 
                                 if (!player.IsTileSolid(bChunk: 1, player.input[0].x, 0) && player.input[0].x > 0 == bodyChunk1.pos.x > bodyChunk0.pos.x)
                                 {

@@ -1,5 +1,5 @@
 ## SimplifiedMoveset
-###### Version: 2.0.1
+###### Version: 2.0.2
 
 This is a mod for Rain World v1.9.
 
@@ -23,9 +23,10 @@ There are two licenses available - MIT and Unlicense. You can choose which one y
 
 ### Changelog
 #### (Rain World v1.9)
-v2.0.1:
+v2.0.2:
 - Added support for Rain World 1.9.
 - Removed AutoUpdate.
+- (wall climb / jump) Fixed a bug where you would slightly slide down without pressing down.
 
 #### (Rain World v1.5)
 v0.30:
