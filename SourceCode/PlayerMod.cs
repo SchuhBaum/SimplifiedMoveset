@@ -45,7 +45,7 @@ namespace SimplifiedMoveset
                 On.Player.Grabability -= Player_Grabability;
             }
 
-            if (MainMod.Option_Crawl || MainMod.Option_Roll_2)
+            if (MainMod.Option_BellySlide || MainMod.Option_Crawl || MainMod.Option_Roll_1 || MainMod.Option_Roll_2)
             {
                 IL.Player.TerrainImpact -= IL_Player_TerrainImpact;
             }
@@ -58,6 +58,7 @@ namespace SimplifiedMoveset
             if (MainMod.Option_Swim)
             {
                 IL.Player.GrabUpdate -= IL_Player_GrabUpdate;
+                On.Player.UpdateMSC -= Player_UpdateMSC;
             }
 
             if (MainMod.Option_WallJump)
@@ -109,7 +110,7 @@ namespace SimplifiedMoveset
                 On.Player.Grabability += Player_Grabability; // only grab dead large creatures when crouching
             }
 
-            if (MainMod.Option_Crawl || MainMod.Option_Roll_2)
+            if (MainMod.Option_BellySlide || MainMod.Option_Crawl || MainMod.Option_Roll_1 || MainMod.Option_Roll_2)
             {
                 IL.Player.TerrainImpact += IL_Player_TerrainImpact;
             }
@@ -122,6 +123,7 @@ namespace SimplifiedMoveset
             if (MainMod.Option_Swim)
             {
                 IL.Player.GrabUpdate += IL_Player_GrabUpdate; // can eat stuff underwater
+                On.Player.UpdateMSC += Player_UpdateMSC; // don't let MSC reset buoyancy
             }
 
             if (MainMod.Option_WallJump)
@@ -192,12 +194,11 @@ namespace SimplifiedMoveset
             }
         }
 
-        public static void RocketJump(Player? player, float adrenalineModifier, float scale = 1f, SoundID soundID = SoundID.Slugcat_Rocket_Jump)
+        public static void RocketJump(Player? player, float adrenalineModifier, float scale = 1f, SoundID? soundID = null)
         {
-            if (player == null)
-            {
-                return;
-            }
+            if (player == null) return;
+
+            soundID ??= SoundID.Slugcat_Rocket_Jump;
 
             player.bodyChunks[1].vel *= 0.0f;
             player.bodyChunks[1].pos += new Vector2(5f * player.rollDirection, 5f);
@@ -288,10 +289,7 @@ namespace SimplifiedMoveset
 
         public static void UpdateAnimationCounter(Player? player)
         {
-            if (player == null)
-            {
-                return;
-            }
+            if (player == null) return;
 
             if (player.longBellySlide && player.animation != Player.AnimationIndex.BellySlide)
             {
@@ -358,7 +356,7 @@ namespace SimplifiedMoveset
             // allow to eat underwater
             // change player.mainBodyChunk.submersion < 0.5f to < 2f => always true
 
-            if (cursor.TryGotoNext(MoveType.After, instruction => instruction.MatchCallvirt<BodyChunk>("get_submersion"))) // 33
+            if (cursor.TryGotoNext(MoveType.After, instruction => instruction.MatchCallvirt<BodyChunk>("get_submersion"))) // 87
             {
                 Debug.Log("SimplifiedMoveset: IL_Player_GrabUpdate: Index " + cursor.Index);
                 cursor.Next.OpCode = OpCodes.Ldc_R4;
@@ -374,22 +372,27 @@ namespace SimplifiedMoveset
         private static void IL_Player_MovementUpdate(ILContext context)
         {
             ILCursor cursor = new(context);
-            cursor.Goto(519);
+            cursor.Goto(504);
 
             //
             // prevents spamming when in a corner while beam climbing
             // skip whole if statement
             //
 
-            if (cursor.TryGotoNext(instruction => instruction.MatchLdfld<Player.InputPackage>("y"))) // 619
+            if (cursor.TryGotoNext(instruction => instruction.MatchLdfld<Player.InputPackage>("y"))) // 604
             {
                 Debug.Log("SimplifiedMoveset: IL_Player_MovementUpdate: Index " + cursor.Index);
-                cursor.Goto(cursor.Index + 2); // 621
+                cursor.Goto(cursor.Index + 2); // 606
                 object label = cursor.Next.Operand;
-                cursor.Goto(cursor.Index - 6); // 615
+                cursor.Goto(cursor.Index - 6); // 600
 
                 cursor.Next.OpCode = OpCodes.Br;
                 cursor.Next.Operand = label;
+
+                // it works but why do I need two?
+                cursor.GotoNext();
+                cursor.GotoNext();
+                cursor.Emit(OpCodes.Ldarg_0); // 601
             }
             else
             {
@@ -401,20 +404,20 @@ namespace SimplifiedMoveset
             //
 
             cursor = new(context);
-            cursor.Goto(1702);
+            cursor.Goto(1829);
 
-            if (cursor.TryGotoNext(
-                instruction => instruction.MatchLdcI4(0),
-                instruction => instruction.MatchBle(out _)))
+            if (cursor.TryGotoNext(MoveType.After,
+                instruction => instruction.MatchCall<PhysicalObject>("get_Submersion"),
+                instruction => instruction.MatchLdcR4(0.9f)))
             {
-                Debug.Log("SimplifiedMoveset: IL_Player_MovementUpdate: Index " + cursor.Index); // 1801
+                Debug.Log("SimplifiedMoveset: IL_Player_MovementUpdate: Index " + cursor.Index); // 1929
 
                 //
                 // // this.wantToGrab = 1 when EmitDelegate() returns true
                 //
-                cursor.Next.Next.OpCode = OpCodes.Brfalse;
-                cursor.Goto(cursor.Index - 4);
-                cursor = cursor.RemoveRange(5);
+                cursor.Next.OpCode = OpCodes.Brfalse;
+                cursor.Goto(cursor.Index - 14); // 1915
+                cursor = cursor.RemoveRange(14);
 
                 cursor.EmitDelegate<Func<Player, bool>>(player =>
                 {
@@ -424,7 +427,7 @@ namespace SimplifiedMoveset
                     // this can lead to not grabbing beams and falling down;
                     // in some modded regions this means even falling to your death;
                     if (player.timeSinceInCorridorMode < 20) player.timeSinceInCorridorMode = 20;
-                    if (player.input[0].y > 0) return true; // vanilla case
+                    if (player.input[0].y > 0 && (!ModManager.MSC || !player.monkAscension) && !(player.Submersion > 0.9f)) return true; // vanilla case
 
                     AttachedFields attachedFields = player.GetAttachedFields();
                     if (attachedFields.grabBeamCounter > 0) return true; // automatically re-grab
@@ -432,23 +435,6 @@ namespace SimplifiedMoveset
                     // if (player.IsClimbingOnBeam()) return false; // don't mess with switching beams while beam climbing
                     return attachedFields.grabBeamCooldownPos == null && player.input[0].y < 0 && !player.input[0].jmp && !player.IsTileSolidOrSlope(0, 0, -1) && !player.IsTileSolidOrSlope(1, 0, -1);
                 });
-
-                //
-                // // this.wantToGrab = ((this.input[0].y == 0 || this.input[0].jmp) ? 0 : 1);
-                //
-                // cursor.Remove(); // ldarg.0 // seems to not change cursor.Index(?) even with cursor = cursor.Remove() // 1801
-                // cursor.GotoNext(); // 1802 // 1801?
-                // cursor.Next.OpCode = OpCodes.Brfalse; // 1802 // this.input[0].y is false, i.e. this.input[0].y == 0
-                // ILLabel label = (ILLabel)cursor.Next.Operand;
-                //
-                // cursor.GotoNext(); // 1803 // 1802?
-                //
-                // cursor.Emit(OpCodes.Ldarg_0);
-                // cursor.Emit<Player>(OpCodes.Callvirt, "get_input");
-                // cursor.Emit(OpCodes.Ldc_I4_0);
-                // cursor.Emit(OpCodes.Ldelema, typeof(Player.InputPackage));
-                // cursor.Emit<Player.InputPackage>(OpCodes.Ldfld, "jmp");
-                // cursor.Emit(OpCodes.Brtrue, label);
             }
             else
             {
@@ -463,19 +449,28 @@ namespace SimplifiedMoveset
             // remove the ability to initiate rolls from rocket jumps (Option_Roll_2);
 
             ILCursor cursor = new(context);
-            if (cursor.TryGotoNext(instruction => instruction.MatchCallvirt<Player>("get_input")))
+            if (cursor.TryGotoNext(instruction => instruction.MatchCall<Player>("get_input")))
             {
-                Debug.Log("SimplifiedMoveset: IL_Player_TerrainImpact: Index " + cursor.Index);
-                cursor.RemoveRange(39);
+                Debug.Log("SimplifiedMoveset: IL_Player_TerrainImpact: Index " + cursor.Index); // 13
+                cursor.RemoveRange(42); // 55
                 cursor.Emit(OpCodes.Ldarg_2);
                 cursor.Emit(OpCodes.Ldarg_3);
 
                 cursor.EmitDelegate<Func<Player, IntVector2, float, bool>>((player, direction, speed) =>
                 {
-                    if (!MainMod.Option_Roll_2 && player.animation == Player.AnimationIndex.RocketJump) return false;
-                    if (MainMod.Option_Crawl)
+                    if (player.animation == Player.AnimationIndex.RocketJump)
                     {
-                        return player.input[0].downDiagonal != 0 && direction.y < 0 && player.animation != Player.AnimationIndex.Roll && ((speed > 12.0 || player.animation == Player.AnimationIndex.Flip) && player.allowRoll > 0 || player.animation == Player.AnimationIndex.CrawlTurn); // less requirements than vanilla
+                        if (!MainMod.Option_Roll_2) return false;
+
+                        if (MainMod.Option_BellySlide || MainMod.Option_Roll_1)
+                        {
+                            return player.input[0].downDiagonal != 0 && direction.y < 0 && player.animation != Player.AnimationIndex.Roll && player.allowRoll > 0 && player.consistentDownDiagonal > ((speed <= 24f) ? 6 : 1);
+                        }
+                    }
+
+                    if (player.animation == Player.AnimationIndex.CrawlTurn && MainMod.Option_Crawl)
+                    {
+                        return player.input[0].downDiagonal != 0 && direction.y < 0 && player.animation != Player.AnimationIndex.Roll; // less requirements than vanilla
                     }
 
                     return player.input[0].downDiagonal != 0 && player.animation != Player.AnimationIndex.Roll && (speed > 12f || player.animation == Player.AnimationIndex.Flip || (player.animation == Player.AnimationIndex.RocketJump && player.rocketJumpFromBellySlide)) && direction.y < 0 && player.allowRoll > 0 && player.consistentDownDiagonal > ((speed <= 24f) ? 6 : 1); // vanilla case
@@ -486,7 +481,7 @@ namespace SimplifiedMoveset
             }
             else
             {
-                Debug.LogException(new Exception("SimplifiedMoveset: IL_Player_GrabUpdate failed."));
+                Debug.LogException(new Exception("SimplifiedMoveset: IL_Player_TerrainImpact failed."));
             }
             // MainMod.LogAllInstructions(context);
         }
@@ -496,11 +491,11 @@ namespace SimplifiedMoveset
             ILCursor cursor = new(context);
             if (MainMod.Option_BeamClimb)
             {
-                cursor.Goto(2280);
+                cursor.Goto(2384);
 
                 // case Player.AnimationIndex.GetUpToBeamTip:
                 // prevent jumping during animation
-                if (cursor.TryGotoNext(instruction => instruction.MatchStfld<Player>("canJump"))) // 2380
+                if (cursor.TryGotoNext(instruction => instruction.MatchStfld<Player>("canJump"))) // 2484
                 {
                     Debug.Log("SimplifiedMoveset: IL_Player_UpdateAnimation_1: Index " + cursor.Index);
                     cursor.Prev.OpCode = OpCodes.Ldc_I4_0; // player.canJump = 0
@@ -513,15 +508,16 @@ namespace SimplifiedMoveset
 
             if (MainMod.Option_Roll_1)
             {
-                cursor.Goto(4217);
+                cursor.Goto(4728);
 
+                // case Player.AnimationIndex.Roll:
                 // always stand up when roll has finished
                 // prevent chain rolling on slopes
-                if (cursor.TryGotoNext(instruction => instruction.MatchStfld<Player>("standing"))) // 4317
+                if (cursor.TryGotoNext(instruction => instruction.MatchStfld<Player>("standing"))) // 4828
                 {
                     Debug.Log("SimplifiedMoveset: IL_Player_UpdateAnimation_2: Index " + cursor.Index);
                     cursor.Prev.Previous.OpCode = OpCodes.Pop;
-                    cursor.Prev.OpCode = OpCodes.Ldc_I4_1;
+                    cursor.Prev.OpCode = OpCodes.Ldc_I4_1; // player.standing = 1;
                 }
                 else
                 {
@@ -566,11 +562,11 @@ namespace SimplifiedMoveset
             if (MainMod.Option_Swim)
             {
                 player.slugcatStats.lungsFac = 0.0f;
-                player.buoyancy = 0.9f;
+                player.buoyancy = player.gravity;
             }
         }
 
-        private static int Player_Grabability(On.Player.orig_Grabability orig, Player player, PhysicalObject physicalObject)
+        private static Player.ObjectGrabability Player_Grabability(On.Player.orig_Grabability orig, Player player, PhysicalObject physicalObject)
         {
             // ignore the change when you are already grabbing it;
             // otherwise this can conflict with JollyCoopFixesAndStuff's SlugcatCollision option;
@@ -587,9 +583,9 @@ namespace SimplifiedMoveset
             // you can stand when surface swimming => exclude
             // you can stand during beam climbing => exclude
             if (physicalObject is Creature creature && !creature.Template.smallCreature && creature.dead &&
-                player.standing && player.bodyMode != Player.BodyModeIndex.CorridorClimb && player.bodyMode != Player.BodyModeIndex.Swimming && player.bodyMode != Player.BodyModeIndex.ZeroG && (player.animation < Player.AnimationIndex.HangFromBeam || player.animation > Player.AnimationIndex.BeamTip))
+                player.standing && player.bodyMode != Player.BodyModeIndex.CorridorClimb && player.bodyMode != Player.BodyModeIndex.Swimming && player.bodyMode != Player.BodyModeIndex.ZeroG && ((int)player.animation < (int)Player.AnimationIndex.HangFromBeam || (int)player.animation > (int)Player.AnimationIndex.BeamTip))
             {
-                return (int)Player.ObjectGrabability.CantGrab;
+                return Player.ObjectGrabability.CantGrab;
             }
             return orig(player, physicalObject);
         }
@@ -751,6 +747,12 @@ namespace SimplifiedMoveset
                 --attachedFields.jumpPressedCounter;
             }
 
+            if (player.animation == Player.AnimationIndex.None)
+            {
+                orig(player);
+                return;
+            }
+
             if (MainMod.Option_Crawl && player.animation == Player.AnimationIndex.CorridorTurn && player.corridorTurnCounter < 30)
             {
                 player.corridorTurnCounter = 30;
@@ -798,7 +800,7 @@ namespace SimplifiedMoveset
                 player.goIntoCorridorClimb = 0;
                 player.whiplashJump = player.input[0].x == -player.rollDirection;
 
-                if (player.rollCounter < 6)
+                if (player.rollCounter < 6 && !player.isRivulet)
                 {
                     bodyChunk1.vel.x -= 9.1f * player.rollDirection;
                     bodyChunk1.vel.y += 2f; // default: 2.7f
@@ -813,7 +815,34 @@ namespace SimplifiedMoveset
                     bodyChunk0.vel.y -= 3f; // default: -2.3f
                 }
 
-                bodyChunk0.vel.x += (!player.longBellySlide ? 16.7f : 14f) * player.rollDirection * Mathf.Sin((float)(player.rollCounter / (!player.longBellySlide ? 20.0 : 39.0) * Math.PI));
+                float longBellySlide = 14f;
+                float normalBellySlide = 16.7f; // default: 18.1f
+
+                if (player.isRivulet)
+                {
+                    longBellySlide = 20f;
+                    normalBellySlide = 23.1f;
+                }
+                else if (player.isGourmand)
+                {
+                    if (player.gourmandExhausted)
+                    {
+                        longBellySlide = 10f;
+                        normalBellySlide = 12.9f;
+                    }
+                    else
+                    {
+                        longBellySlide = 40f;
+                        normalBellySlide = 41.5f;
+                    }
+                }
+                else if (player.isSlugpup)
+                {
+                    longBellySlide = 7f;
+                    normalBellySlide = 8.3f;
+                }
+                bodyChunk0.vel.x += (player.longBellySlide ? longBellySlide : normalBellySlide) * player.rollDirection * Mathf.Sin((float)(player.rollCounter / (player.longBellySlide ? 39.0 : 20.0) * Math.PI));
+
                 foreach (BodyChunk bodyChunk in player.bodyChunks)
                 {
                     if (bodyChunk.contactPoint.y == 0)
@@ -822,8 +851,17 @@ namespace SimplifiedMoveset
                     }
                 }
 
+                int longRollCounter = 39; // default: 34
+                int normalRollCounter = 20; // default: 12
+
+                if (player.isRivulet)
+                {
+                    longRollCounter = 23;
+                    normalRollCounter = 10;
+                }
+
                 // finish // abort when mid-air // don't cancel belly slides on slopes
-                if (player.rollCounter > (!player.longBellySlide ? 20 : 39) || player.canJump == 0 && !player.IsTileSolidOrSlope(chunkIndex: 0, 0, -1) && !player.IsTileSolidOrSlope(chunkIndex: 1, 0, -1))
+                if (player.rollCounter > (player.longBellySlide ? longRollCounter : normalRollCounter) || player.canJump == 0 && !player.IsTileSolidOrSlope(chunkIndex: 0, 0, -1) && !player.IsTileSolidOrSlope(chunkIndex: 1, 0, -1))
                 {
                     player.rollDirection = 0;
                     player.animation = Player.AnimationIndex.None;
@@ -835,9 +873,11 @@ namespace SimplifiedMoveset
             }
 
             // deep swim // ignore jump input // increase speed 
-            if (MainMod.Option_Swim && player.animation == Player.AnimationIndex.DeepSwim)
+            else if (MainMod.Option_Swim && player.animation == Player.AnimationIndex.DeepSwim)
             {
-                UpdateAnimationCounter(player);
+                // don't update twice;
+                // UpdateAnimationCounter(player);
+
                 if (player.slugcatStats.lungsFac != 0.0f)
                 {
                     player.slugcatStats.lungsFac = 0.0f;
@@ -860,68 +900,70 @@ namespace SimplifiedMoveset
                     }
                 }
 
-                player.dynamicRunSpeed[0] = 0.0f;
-                player.dynamicRunSpeed[1] = 0.0f;
+                // not sure why I had these;
+                // maybe I just removed the jump boost since you can breath underwater;
+                // player.dynamicRunSpeed[0] = 0.0f;
+                // player.dynamicRunSpeed[1] = 0.0f;
 
-                if (player.grasps[0] != null && player.grasps[0].grabbed is JetFish jetFish && jetFish.Consious)
-                {
-                    player.waterFriction = 1f;
-                    return;
-                }
+                // if (player.grasps[0] != null && player.grasps[0].grabbed is JetFish jetFish && jetFish.Consious)
+                // {
+                //     player.waterFriction = 1f;
+                //     return;
+                // }
 
-                player.canJump = 0;
-                player.standing = false;
-                player.GoThroughFloors = true;
+                // player.canJump = 0;
+                // player.standing = false;
+                // player.GoThroughFloors = true;
 
-                float num1 = (float)((Mathf.Abs(Vector2.Dot(bodyChunk0.vel.normalized, (bodyChunk0.pos - bodyChunk1.pos).normalized)) + (double)Mathf.Abs(Vector2.Dot(bodyChunk1.vel.normalized, (bodyChunk0.pos - bodyChunk1.pos).normalized))) / 2.0);
-                player.swimCycle += 0.01f;
-                if (player.input[0].ZeroGGamePadIntVec.x != 0 || player.input[0].ZeroGGamePadIntVec.y != 0)
-                {
-                    float num2 = (float)(0.2 + Mathf.InverseLerp(0.0f, 12f, Vector2.Angle(bodyChunk0.lastPos - bodyChunk1.lastPos, bodyChunk0.pos - bodyChunk1.pos)) * 0.8);
-                    if (player.slowMovementStun > 0)
-                        num2 *= 0.5f;
+                // float num1 = (float)((Mathf.Abs(Vector2.Dot(bodyChunk0.vel.normalized, (bodyChunk0.pos - bodyChunk1.pos).normalized)) + (double)Mathf.Abs(Vector2.Dot(bodyChunk1.vel.normalized, (bodyChunk0.pos - bodyChunk1.pos).normalized))) / 2.0);
 
-                    float to = num2 * Mathf.Lerp(1f, 1.2f, player.Adrenaline);
-                    player.swimForce = (double)to <= player.swimForce ? Mathf.Lerp(player.swimForce, to, 0.05f) : Mathf.Lerp(player.swimForce, to, 0.7f);
-                    player.swimCycle += Mathf.Lerp(player.swimForce, 1f, 0.5f) / 10f;
+                // player.swimCycle += 0.01f;
+                // if (player.input[0].ZeroGGamePadIntVec.x != 0 || player.input[0].ZeroGGamePadIntVec.y != 0)
+                // {
+                //     float num2 = (float)(0.2 + Mathf.InverseLerp(0.0f, 12f, Vector2.Angle(bodyChunk0.lastPos - bodyChunk1.lastPos, bodyChunk0.pos - bodyChunk1.pos)) * 0.8);
+                //     if (player.slowMovementStun > 0)
+                //         num2 *= 0.5f;
 
-                    if (player.airInLungs < 0.5 && (double)player.airInLungs > 1 / 6)
-                        player.swimCycle += 0.05f;
-                    if (bodyChunk0.contactPoint.x != 0 || bodyChunk0.contactPoint.y != 0)
-                        player.swimForce *= 0.5f;
+                //     float to = num2 * Mathf.Lerp(1f, 1.2f, player.Adrenaline);
+                //     player.swimForce = (double)to <= player.swimForce ? Mathf.Lerp(player.swimForce, to, 0.05f) : Mathf.Lerp(player.swimForce, to, 0.7f);
+                //     player.swimCycle += Mathf.Lerp(player.swimForce, 1f, 0.5f) / 10f;
 
-                    if (player.swimCycle > 4.0)
-                        player.swimCycle = 0.0f;
-                    else if (player.swimCycle > 3.0)
-                        bodyChunk0.vel += Custom.DirVec(bodyChunk1.pos, bodyChunk0.pos) * 0.7f * Mathf.Lerp(player.swimForce, 1f, 0.5f) * bodyChunk0.submersion;
+                //     if (player.airInLungs < 0.5 && (double)player.airInLungs > 1 / 6)
+                //         player.swimCycle += 0.05f;
+                //     if (bodyChunk0.contactPoint.x != 0 || bodyChunk0.contactPoint.y != 0)
+                //         player.swimForce *= 0.5f;
 
-                    Vector2 vector2 = player.SwimDir(true);
-                    if (player.airInLungs < 0.3)
-                        vector2 = Vector3.Slerp(vector2, new Vector2(0.0f, 1f), Mathf.InverseLerp(0.3f, 0.0f, player.airInLungs));
+                //     if (player.swimCycle > 4.0)
+                //         player.swimCycle = 0.0f;
+                //     else if (player.swimCycle > 3.0)
+                //         bodyChunk0.vel += Custom.DirVec(bodyChunk1.pos, bodyChunk0.pos) * 0.7f * Mathf.Lerp(player.swimForce, 1f, 0.5f) * bodyChunk0.submersion;
 
-                    bodyChunk0.vel += vector2 * 0.5f * player.swimForce * Mathf.Lerp(num1, 1f, 0.5f) * bodyChunk0.submersion;
-                    bodyChunk1.vel -= vector2 * 0.1f * bodyChunk0.submersion;
-                    bodyChunk0.vel += Custom.DirVec(bodyChunk1.pos, bodyChunk0.pos) * 0.4f * player.swimForce * num1 * bodyChunk0.submersion;
+                //     Vector2 vector2 = player.SwimDir(true);
+                //     if (player.airInLungs < 0.3)
+                //         vector2 = Vector3.Slerp(vector2, new Vector2(0.0f, 1f), Mathf.InverseLerp(0.3f, 0.0f, player.airInLungs));
 
-                    if (bodyChunk0.vel.magnitude < 6.0)
-                    {
-                        bodyChunk0.vel += vector2 * 0.2f * Mathf.InverseLerp(6f, 1.5f, bodyChunk0.vel.magnitude);
-                        bodyChunk1.vel -= vector2 * 0.1f * Mathf.InverseLerp(6f, 1.5f, bodyChunk0.vel.magnitude);
-                    }
-                }
+                //     bodyChunk0.vel += vector2 * 0.5f * player.swimForce * Mathf.Lerp(num1, 1f, 0.5f) * bodyChunk0.submersion;
+                //     bodyChunk1.vel -= vector2 * 0.1f * bodyChunk0.submersion;
+                //     bodyChunk0.vel += Custom.DirVec(bodyChunk1.pos, bodyChunk0.pos) * 0.4f * player.swimForce * num1 * bodyChunk0.submersion;
 
-                player.waterFriction = Mathf.Lerp(0.92f, 0.96f, num1);
-                if (player.bodyMode == Player.BodyModeIndex.Swimming)
-                    return;
-                player.animation = Player.AnimationIndex.None;
-                return;
+                //     if (bodyChunk0.vel.magnitude < 6.0)
+                //     {
+                //         bodyChunk0.vel += vector2 * 0.2f * Mathf.InverseLerp(6f, 1.5f, bodyChunk0.vel.magnitude);
+                //         bodyChunk1.vel -= vector2 * 0.1f * Mathf.InverseLerp(6f, 1.5f, bodyChunk0.vel.magnitude);
+                //     }
+                // }
+
+                // player.waterFriction = Mathf.Lerp(0.92f, 0.96f, num1);
+                // if (player.bodyMode == Player.BodyModeIndex.Swimming)
+                //     return;
+                // player.animation = Player.AnimationIndex.None;
+                // return;
             }
 
             // ledge grab 
-            if (player.animation == Player.AnimationIndex.LedgeGrab)
+            else if (player.animation == Player.AnimationIndex.LedgeGrab)
             {
-                // enabled always // TODO: consider changing ledge grab option to this only
-                if (player.canWallJump == 0 || Math.Sign(player.canWallJump) == -Math.Sign(player.flipDirection))
+                if (MainMod.Option_WallJump && (player.canWallJump == 0 || Math.Sign(player.canWallJump) == -Math.Sign(player.flipDirection)))
                 {
                     player.canWallJump = player.flipDirection * -15; // you can do a (mid-air) wall jump off a ledge grab
                 }
@@ -956,10 +998,12 @@ namespace SimplifiedMoveset
             }
 
             // beam climb 
-            if (MainMod.Option_BeamClimb)
+            // don't start a else if statement with an option check unless it's last check;
+            // this one is the last;
+            else if (MainMod.Option_BeamClimb)
             {
                 // velocity gained in x direction each frame (if no slowmovementstun, and bodyMode is default)
-                float velXGain = 2.4f * Mathf.Lerp(1f, 1.2f, player.Adrenaline) * player.surfaceFriction * room.gravity;
+                float velXGain = 2.4f * Mathf.Lerp(1f, 1.2f, player.Adrenaline) * player.surfaceFriction * player.EffectiveRoomGravity;
                 if (player.slowMovementStun > 0)
                 {
                     velXGain *= 0.4f + 0.6f * Mathf.InverseLerp(10f, 0.0f, player.slowMovementStun);
@@ -1006,484 +1050,471 @@ namespace SimplifiedMoveset
                 //     }
                 // }
 
-                switch (player.animation)
+                if (player.animation == Player.AnimationIndex.HangFromBeam)
                 {
-                    case Player.AnimationIndex.HangFromBeam:
-                        UpdateAnimationCounter(player);
-                        player.bodyMode = Player.BodyModeIndex.ClimbingOnBeam;
-                        player.standing = true;
+                    UpdateAnimationCounter(player);
+                    player.bodyMode = Player.BodyModeIndex.ClimbingOnBeam;
+                    player.standing = true;
 
-                        bodyChunk0.vel.x *= 0.2f;
-                        bodyChunk0.vel.y = 0.0f;
-                        bodyChunk0.pos.y = room.MiddleOfTile(bodyChunk0.pos).y;
+                    bodyChunk0.vel.x *= 0.2f;
+                    bodyChunk0.vel.y = 0.0f;
+                    bodyChunk0.pos.y = room.MiddleOfTile(bodyChunk0.pos).y;
 
-                        if (player.input[0].x != 0 && bodyChunk0.contactPoint.x != player.input[0].x)
+                    if (player.input[0].x != 0 && bodyChunk0.contactPoint.x != player.input[0].x)
+                    {
+                        Room.Tile tile = room.GetTile(bodyChunk0.pos + new Vector2(12f * player.input[0].x, 0.0f));
+                        if (tile.horizontalBeam)
                         {
-                            Room.Tile tile = room.GetTile(bodyChunk0.pos + new Vector2(12f * player.input[0].x, 0.0f));
-                            if (tile.horizontalBeam)
+                            if (bodyChunk1.contactPoint.x != player.input[0].x)
                             {
-                                if (bodyChunk1.contactPoint.x != player.input[0].x)
-                                {
-                                    bodyChunk0.vel.x += player.input[0].x * Mathf.Lerp(1.2f, 1.4f, player.Adrenaline) * player.slugcatStats.poleClimbSpeedFac * Custom.LerpMap(player.slowMovementStun, 0.0f, 10f, 1f, 0.5f);
-                                }
-
-                                bodyChunk1.vel.x += player.flipDirection * (0.5f + 0.5f * Mathf.Sin((float)(player.animationFrame / 20.0 * Math.PI * 2.0))) * -0.5f;
-                                ++player.animationFrame;
-
-                                if (player.animationFrame > 20)
-                                {
-                                    player.animationFrame = 1;
-                                    room.PlaySound(SoundID.Slugcat_Climb_Along_Horizontal_Beam, player.mainBodyChunk, false, 1f, 1f);
-                                    player.AerobicIncrease(0.05f);
-                                }
+                                bodyChunk0.vel.x += player.input[0].x * Mathf.Lerp(1.2f, 1.4f, player.Adrenaline) * player.slugcatStats.poleClimbSpeedFac * Custom.LerpMap(player.slowMovementStun, 0.0f, 10f, 1f, 0.5f);
                             }
-                            else if (!tile.Solid && player.input[1].y != 1) // stop at end of horizontal beam // leaning
-                            {
-                                bodyChunk0.pos.x = room.MiddleOfTile(bodyChunk0.pos).x;
-                                bodyChunk0.vel.x -= leanFactor * player.input[0].x;
-                                bodyChunk1.vel.x += leanFactor * player.input[0].x;
-                            }
-                        }
-                        else if (player.animationFrame < 10)
-                        {
+
+                            bodyChunk1.vel.x += player.flipDirection * (0.5f + 0.5f * Mathf.Sin((float)(player.animationFrame / 20.0 * Math.PI * 2.0))) * -0.5f;
                             ++player.animationFrame;
-                        }
-                        else if (player.animationFrame > 10)
-                        {
-                            --player.animationFrame;
-                        }
 
-                        // ----- //
-                        // exits //
-                        // ----- //
-
-                        // stand on ground
-                        // don't exit animation when leaving corridor with beam horizontally
-                        if (bodyChunk1.contactPoint.y < 0 && player.input[0].y < 0 && Math.Abs(bodyChunk0.pos.x - bodyChunk1.pos.x) < 5f)
-                        {
-                            player.room.PlaySound(SoundID.Slugcat_Regain_Footing, player.mainBodyChunk, false, 1f, 1f);
-                            player.animation = Player.AnimationIndex.StandUp;
-                            return;
-                        }
-
-                        if (SwitchHorizontalToVerticalBeam(player, attachedFields)) // grab vertical beam if possible
-                        {
-                            return;
-                        }
-
-                        if (player.input[0].jmp && !player.input[1].jmp)
-                        {
-                            if (player.tubeWorm?.tongues[0].Attached == true) // retract tubeWorm first // consistent behavior with when standing on beam and pressing jump
+                            if (player.animationFrame > 20)
                             {
-                                return;
+                                player.animationFrame = 1;
+                                room.PlaySound(SoundID.Slugcat_Climb_Along_Horizontal_Beam, player.mainBodyChunk, false, 1f, 1f);
+                                player.AerobicIncrease(0.05f);
                             }
-
-                            if (player.input[0].y == 1) // only drop when pressing jump without holding up
-                            {
-                                PrepareGetUpOnBeamAnimation(player, 1, attachedFields);
-                                return;
-                            }
-                            else if (player.input[0].y == -1 && player.IsTileSolid(1, 0, -1))
-                            {
-                                // this case would lead to jumping + regrabbing beam otherwise
-                                // not clean..
-                                player.input[1].jmp = true;
-                                // player.canJump = 0;
-                            }
-
-                            attachedFields.dontUseTubeWormCounter = 2; // don't drop and shoot tubeWorm at the same time
-                            attachedFields.grabBeamCooldownPos = bodyChunk0.pos;
-                            player.animation = Player.AnimationIndex.None;
-                            return;
                         }
-                        else if (player.input[0].y == 1 && player.input[1].y == 0)
+                        else if (!tile.Solid && player.input[1].y != 1) // stop at end of horizontal beam // leaning
+                        {
+                            bodyChunk0.pos.x = room.MiddleOfTile(bodyChunk0.pos).x;
+                            bodyChunk0.vel.x -= leanFactor * player.input[0].x;
+                            bodyChunk1.vel.x += leanFactor * player.input[0].x;
+                        }
+                    }
+                    else if (player.animationFrame < 10)
+                    {
+                        ++player.animationFrame;
+                    }
+                    else if (player.animationFrame > 10)
+                    {
+                        --player.animationFrame;
+                    }
+
+                    // ----- //
+                    // exits //
+                    // ----- //
+
+                    // stand on ground
+                    // don't exit animation when leaving corridor with beam horizontally
+                    if (bodyChunk1.contactPoint.y < 0 && player.input[0].y < 0 && Math.Abs(bodyChunk0.pos.x - bodyChunk1.pos.x) < 5f)
+                    {
+                        player.room.PlaySound(SoundID.Slugcat_Regain_Footing, player.mainBodyChunk, false, 1f, 1f);
+                        player.animation = Player.AnimationIndex.StandUp;
+                        return;
+                    }
+
+                    if (SwitchHorizontalToVerticalBeam(player, attachedFields)) return;// grab vertical beam if possible
+
+                    if (player.input[0].jmp && !player.input[1].jmp)
+                    {
+                        if (player.tubeWorm?.tongues[0].Attached == true) return; // retract tubeWorm first // consistent behavior with when standing on beam and pressing jump
+
+                        if (player.input[0].y == 1) // only drop when pressing jump without holding up
                         {
                             PrepareGetUpOnBeamAnimation(player, 1, attachedFields);
                             return;
                         }
-
-                        if (!room.GetTile(bodyChunk0.pos).horizontalBeam)
+                        else if (player.input[0].y == -1 && player.IsTileSolid(1, 0, -1))
                         {
-                            player.animation = Player.AnimationIndex.None;
-                        }
-                        return;
-                    case Player.AnimationIndex.GetUpOnBeam:
-                        // GetUpOnBeam and GetDownOnBeam
-                        int direction = attachedFields.getUpOnBeamDirection; // -1 (down) or 1 (up)
-                        int bodyChunkIndex = direction == 1 ? 1 : 0;
-
-                        // otherwise this is bugged when pressing jump during this animation
-                        // => drops slugcat when StandOnBeam animation is reached;
-                        player.canJump = 0;
-
-                        player.bodyMode = Player.BodyModeIndex.ClimbingOnBeam;
-                        bodyChunk0.vel.x = 0.0f;
-                        bodyChunk0.vel.y = 0.0f;
-
-                        if (direction == 1)
-                        {
-                            player.forceFeetToHorizontalBeamTile = 20;
+                            // this case would lead to jumping + regrabbing beam otherwise
+                            // not clean..
+                            player.input[1].jmp = true;
+                            // player.canJump = 0;
                         }
 
-                        // adjust x direction? // skip // this makes the same animation as with straightUpOnHorizontalBeam = false
-                        // if (room.GetTile(player.upOnHorizontalBeamPos).Solid)
-                        // {
-                        //     for (int index = 1; index >= -1; index -= 2)
-                        //     {
-                        //         if (!room.GetTile(player.upOnHorizontalBeamPos + new Vector2(player.flipDirection * index * 20f, 0.0f)).Solid)
-                        //         {
-                        //             player.upOnHorizontalBeamPos.x += player.flipDirection * index * 20f;
-                        //             break;
-                        //         }
-                        //     }
-                        // }
-
-                        bodyChunk0.vel += Custom.DirVec(bodyChunk0.pos, player.upOnHorizontalBeamPos) * 1.8f;
-                        bodyChunk1.vel += Custom.DirVec(bodyChunk1.pos, player.upOnHorizontalBeamPos + new Vector2(0.0f, -20f)) * 1.8f;
-
-                        // ----- //
-                        // exits //
-                        // ----- //
-
-                        if (room.GetTile(player.bodyChunks[bodyChunkIndex].pos).horizontalBeam && Math.Abs(player.bodyChunks[bodyChunkIndex].pos.y - player.upOnHorizontalBeamPos.y) < 25.0)
-                        {
-                            // this might be helpful when horizontal beams are stacked vertically;
-                            // however, this can lead to a bug where you are not able to grab beams after jumping off;
-                            // => reduce this counter as a workaround;
-                            player.noGrabCounter = 5; // vanilla: 15
-
-                            player.animation = direction == 1 ? Player.AnimationIndex.StandOnBeam : Player.AnimationIndex.HangFromBeam;
-                            player.bodyChunks[bodyChunkIndex].pos.y = room.MiddleOfTile(player.bodyChunks[bodyChunkIndex].pos).y + direction * 5f;
-                            player.bodyChunks[bodyChunkIndex].vel.y = 0.0f;
-                            return;
-                        }
-
-                        // revert when bumping into something or pressing the opposite direction
-                        if (player.input[0].y == -direction)
-                        {
-                            player.upOnHorizontalBeamPos -= direction * new Vector2(0.0f, 20f);
-                            attachedFields.getUpOnBeamDirection = -direction;
-                            return;
-                        }
-                        else if (bodyChunk0.contactPoint.y == direction || bodyChunk1.contactPoint.y == direction)
-                        {
-                            if (attachedFields.getUpOnBeamAbortCounter > 0) // revert to the original position should always work // abort if stuck in a loop just in case
-                            {
-                                attachedFields.grabBeamCounter = 15;
-                                player.animation = Player.AnimationIndex.None;
-                                return;
-                            }
-                            else
-                            {
-                                attachedFields.getUpOnBeamAbortCounter = 2;
-                            }
-
-                            player.upOnHorizontalBeamPos -= direction * new Vector2(0.0f, 20f);
-                            attachedFields.getUpOnBeamDirection = -direction;
-                            return;
-                        }
-
-                        if ((room.GetTile(bodyChunk0.pos).horizontalBeam || room.GetTile(bodyChunk1.pos).horizontalBeam) && Custom.DistLess(player.bodyChunks[1 - bodyChunkIndex].pos, player.upOnHorizontalBeamPos, 30f)) // default: 25f
-                        {
-                            return;
-                        }
-
+                        attachedFields.dontUseTubeWormCounter = 2; // don't drop and shoot tubeWorm at the same time
+                        attachedFields.grabBeamCooldownPos = bodyChunk0.pos;
                         player.animation = Player.AnimationIndex.None;
                         return;
-                    case Player.AnimationIndex.StandOnBeam:
-                        bool isWallClimbing = player.bodyMode == Player.BodyModeIndex.WallClimb && bodyChunk1.contactPoint.x != 0;
-                        UpdateAnimationCounter(player);
+                    }
+                    else if (player.input[0].y == 1 && player.input[1].y == 0)
+                    {
+                        PrepareGetUpOnBeamAnimation(player, 1, attachedFields);
+                        return;
+                    }
 
-                        player.bodyMode = Player.BodyModeIndex.ClimbingOnBeam;
-                        player.standing = true;
-                        player.canJump = 5;
-                        bodyChunk1.vel.x *= 0.5f;
+                    if (!room.GetTile(bodyChunk0.pos).horizontalBeam)
+                    {
+                        player.animation = Player.AnimationIndex.None;
+                    }
+                    return;
+                }
+                else if (player.animation == Player.AnimationIndex.GetUpOnBeam)
+                {
+                    // GetUpOnBeam and GetDownOnBeam
+                    int direction = attachedFields.getUpOnBeamDirection; // -1 (down) or 1 (up)
+                    int bodyChunkIndex = direction == 1 ? 1 : 0;
 
-                        if (player.input[0].x != 0 && bodyChunk1.contactPoint.x != player.input[0].x)
+                    // otherwise this is bugged when pressing jump during this animation
+                    // => drops slugcat when StandOnBeam animation is reached;
+                    player.canJump = 0;
+
+                    player.bodyMode = Player.BodyModeIndex.ClimbingOnBeam;
+                    bodyChunk0.vel.x = 0.0f;
+                    bodyChunk0.vel.y = 0.0f;
+
+                    if (direction == 1)
+                    {
+                        player.forceFeetToHorizontalBeamTile = 20;
+                    }
+
+                    // adjust x direction? // skip // this makes the same animation as with straightUpOnHorizontalBeam = false
+                    // if (room.GetTile(player.upOnHorizontalBeamPos).Solid)
+                    // {
+                    //     for (int index = 1; index >= -1; index -= 2)
+                    //     {
+                    //         if (!room.GetTile(player.upOnHorizontalBeamPos + new Vector2(player.flipDirection * index * 20f, 0.0f)).Solid)
+                    //         {
+                    //             player.upOnHorizontalBeamPos.x += player.flipDirection * index * 20f;
+                    //             break;
+                    //         }
+                    //     }
+                    // }
+
+                    bodyChunk0.vel += Custom.DirVec(bodyChunk0.pos, player.upOnHorizontalBeamPos) * 1.8f;
+                    bodyChunk1.vel += Custom.DirVec(bodyChunk1.pos, player.upOnHorizontalBeamPos + new Vector2(0.0f, -20f)) * 1.8f;
+
+                    // ----- //
+                    // exits //
+                    // ----- //
+
+                    if (room.GetTile(player.bodyChunks[bodyChunkIndex].pos).horizontalBeam && Math.Abs(player.bodyChunks[bodyChunkIndex].pos.y - player.upOnHorizontalBeamPos.y) < 25.0)
+                    {
+                        // this might be helpful when horizontal beams are stacked vertically;
+                        // however, this can lead to a bug where you are not able to grab beams after jumping off;
+                        // => reduce this counter as a workaround;
+                        player.noGrabCounter = 5; // vanilla: 15
+
+                        player.animation = direction == 1 ? Player.AnimationIndex.StandOnBeam : Player.AnimationIndex.HangFromBeam;
+                        player.bodyChunks[bodyChunkIndex].pos.y = room.MiddleOfTile(player.bodyChunks[bodyChunkIndex].pos).y + direction * 5f;
+                        player.bodyChunks[bodyChunkIndex].vel.y = 0.0f;
+                        return;
+                    }
+
+                    // revert when bumping into something or pressing the opposite direction
+                    if (player.input[0].y == -direction)
+                    {
+                        player.upOnHorizontalBeamPos -= direction * new Vector2(0.0f, 20f);
+                        attachedFields.getUpOnBeamDirection = -direction;
+                        return;
+                    }
+                    else if (bodyChunk0.contactPoint.y == direction || bodyChunk1.contactPoint.y == direction)
+                    {
+                        if (attachedFields.getUpOnBeamAbortCounter > 0) // revert to the original position should always work // abort if stuck in a loop just in case
                         {
-                            Room.Tile tile = room.GetTile(bodyChunk1.pos + new Vector2(12f * player.input[0].x, 0.0f));
-                            if (tile.horizontalBeam)
-                            {
-                                // run normally (like when on ground) with reduced(?) player.dynamicRunSpeed
-                                ++player.animationFrame;
-                                if (player.animationFrame > 6)
-                                {
-                                    player.animationFrame = 0;
-                                    room.PlaySound(SoundID.Slugcat_Walk_On_Horizontal_Beam, player.mainBodyChunk, false, 1f, 1f);
-                                }
-                            }
-                            else if (!tile.Solid)
-                            {
-                                if (player.input[1].y != -1) // leaning
-                                {
-                                    if (player.input[0].jmp && !player.input[1].jmp) // jump from leaning
-                                    {
-                                        bodyChunk0.vel.x += player.input[0].x * velXGain; // player.dynamicRunSpeed[0];
-                                        bodyChunk1.vel.x += player.input[0].x * velXGain;
-                                    }
-                                    else
-                                    {
-                                        bodyChunk1.pos.x = room.MiddleOfTile(bodyChunk1.pos).x;
-                                        bodyChunk0.vel.x -= player.input[0].x * (velXGain - leanFactor);
-                                        bodyChunk1.vel.x -= player.input[0].x * (velXGain + leanFactor);
-                                    }
-                                }
-                                else // stop at the end of horizontal beam
-                                {
-                                    bodyChunk1.pos.x = room.MiddleOfTile(bodyChunk1.pos).x;
-                                    bodyChunk0.vel.x -= player.input[0].x * velXGain;
-                                    bodyChunk1.vel.x -= player.input[0].x * velXGain;
-                                }
-                            }
-                        }
-                        else if (player.animationFrame > 0)
-                        {
-                            player.animationFrame = 0;
-                        }
-
-                        // ----- //
-                        // exits //
-                        // ----- //
-
-                        // grab vertical beam if possible
-                        if (SwitchHorizontalToVerticalBeam(player, attachedFields))
-                        {
-                            return;
-                        }
-
-                        if (isWallClimbing)
-                        {
+                            attachedFields.grabBeamCounter = 15;
                             player.animation = Player.AnimationIndex.None;
                             return;
                         }
-
-                        if (bodyChunk0.contactPoint.y < 1 || !player.IsTileSolid(bChunk: 1, 0, 1))
-                        {
-                            bodyChunk1.vel.y = 0.0f;
-                            bodyChunk1.pos.y = room.MiddleOfTile(bodyChunk1.pos).y + 5f;
-                            bodyChunk0.vel.y += 2f;
-
-                            player.dynamicRunSpeed[0] = 2.1f * player.slugcatStats.runspeedFac;
-                            player.dynamicRunSpeed[1] = 2.1f * player.slugcatStats.runspeedFac;
-                        }
                         else
                         {
-                            // stop moving forward when bumping your "head" into something
-                            bodyChunk0.vel.x -= player.input[0].x * velXGain;
-                            bodyChunk1.vel.x -= player.input[0].x * velXGain;
+                            attachedFields.getUpOnBeamAbortCounter = 2;
                         }
 
-                        // move down to HangFromBeam
-                        if (player.input[0].y == -1 && (player.input[1].y == 0 || player.input[0].jmp && !player.input[1].jmp))
-                        {
-                            PrepareGetUpOnBeamAnimation(player, -1, attachedFields);
-                            return;
-                        }
-
-                        // grab nearby horizontal beams
-                        if (player.input[0].y == 1 && player.input[1].y == 0 && room.GetTile(room.GetTilePosition(bodyChunk0.pos) + new IntVector2(0, 1)).horizontalBeam)
-                        {
-                            bodyChunk0.pos.y += 8f;
-                            bodyChunk1.pos.y += 8f;
-                            player.animation = Player.AnimationIndex.HangFromBeam;
-                        }
+                        player.upOnHorizontalBeamPos -= direction * new Vector2(0.0f, 20f);
+                        attachedFields.getUpOnBeamDirection = -direction;
                         return;
-                    case Player.AnimationIndex.ClimbOnBeam:
-                        UpdateAnimationCounter(player);
-                        player.bodyMode = Player.BodyModeIndex.ClimbingOnBeam;
-                        player.standing = true;
-                        player.canJump = 1;
+                    }
 
-                        foreach (BodyChunk bodyChunk in player.bodyChunks)
+                    if ((room.GetTile(bodyChunk0.pos).horizontalBeam || room.GetTile(bodyChunk1.pos).horizontalBeam) && Custom.DistLess(player.bodyChunks[1 - bodyChunkIndex].pos, player.upOnHorizontalBeamPos, 30f)) return; // default: 25f
+                    player.animation = Player.AnimationIndex.None;
+                    return;
+                }
+                else if (player.animation == Player.AnimationIndex.StandOnBeam)
+                {
+                    bool isWallClimbing = player.bodyMode == Player.BodyModeIndex.WallClimb && bodyChunk1.contactPoint.x != 0;
+                    UpdateAnimationCounter(player);
+
+                    player.bodyMode = Player.BodyModeIndex.ClimbingOnBeam;
+                    player.standing = true;
+                    player.canJump = 5;
+                    bodyChunk1.vel.x *= 0.5f;
+
+                    if (player.input[0].x != 0 && bodyChunk1.contactPoint.x != player.input[0].x)
+                    {
+                        Room.Tile tile = room.GetTile(bodyChunk1.pos + new Vector2(12f * player.input[0].x, 0.0f));
+                        if (tile.horizontalBeam)
                         {
-                            if (bodyChunk.contactPoint.x != 0)
+                            // run normally (like when on ground) with reduced(?) player.dynamicRunSpeed
+                            ++player.animationFrame;
+                            if (player.animationFrame > 6)
                             {
-                                player.flipDirection = -bodyChunk.contactPoint.x;
-                                break;
+                                player.animationFrame = 0;
+                                room.PlaySound(SoundID.Slugcat_Walk_On_Horizontal_Beam, player.mainBodyChunk, false, 1f, 1f);
                             }
                         }
-
-                        bool shouldSwitchSides = true;
-                        if (shouldSwitchSides && !player.IsTileSolid(0, 0, 1) && player.input[0].y > 0 && (bodyChunk0.contactPoint.y < 0 || player.IsTileSolid(0, player.flipDirection, 1)))
+                        else if (!tile.Solid)
                         {
-                            shouldSwitchSides = false;
+                            if (player.input[1].y != -1) // leaning
+                            {
+                                if (player.input[0].jmp && !player.input[1].jmp) // jump from leaning
+                                {
+                                    bodyChunk0.vel.x += player.input[0].x * velXGain; // player.dynamicRunSpeed[0];
+                                    bodyChunk1.vel.x += player.input[0].x * velXGain;
+                                }
+                                else
+                                {
+                                    bodyChunk1.pos.x = room.MiddleOfTile(bodyChunk1.pos).x;
+                                    bodyChunk0.vel.x -= player.input[0].x * (velXGain - leanFactor);
+                                    bodyChunk1.vel.x -= player.input[0].x * (velXGain + leanFactor);
+                                }
+                            }
+                            else // stop at the end of horizontal beam
+                            {
+                                bodyChunk1.pos.x = room.MiddleOfTile(bodyChunk1.pos).x;
+                                bodyChunk0.vel.x -= player.input[0].x * velXGain;
+                                bodyChunk1.vel.x -= player.input[0].x * velXGain;
+                            }
+                        }
+                    }
+                    else if (player.animationFrame > 0)
+                    {
+                        player.animationFrame = 0;
+                    }
+
+                    // ----- //
+                    // exits //
+                    // ----- //
+
+                    // grab vertical beam if possible
+                    if (SwitchHorizontalToVerticalBeam(player, attachedFields)) return;
+
+                    if (isWallClimbing)
+                    {
+                        player.animation = Player.AnimationIndex.None;
+                        return;
+                    }
+
+                    if (bodyChunk0.contactPoint.y < 1 || !player.IsTileSolid(bChunk: 1, 0, 1))
+                    {
+                        bodyChunk1.vel.y = 0.0f;
+                        bodyChunk1.pos.y = room.MiddleOfTile(bodyChunk1.pos).y + 5f;
+                        bodyChunk0.vel.y += 2f;
+
+                        player.dynamicRunSpeed[0] = 2.1f * player.slugcatStats.runspeedFac;
+                        player.dynamicRunSpeed[1] = 2.1f * player.slugcatStats.runspeedFac;
+                    }
+                    else
+                    {
+                        // stop moving forward when bumping your "head" into something
+                        bodyChunk0.vel.x -= player.input[0].x * velXGain;
+                        bodyChunk1.vel.x -= player.input[0].x * velXGain;
+                    }
+
+                    // move down to HangFromBeam
+                    if (player.input[0].y == -1 && (player.input[1].y == 0 || player.input[0].jmp && !player.input[1].jmp))
+                    {
+                        PrepareGetUpOnBeamAnimation(player, -1, attachedFields);
+                        return;
+                    }
+
+                    // grab nearby horizontal beams
+                    if (player.input[0].y == 1 && player.input[1].y == 0 && room.GetTile(room.GetTilePosition(bodyChunk0.pos) + new IntVector2(0, 1)).horizontalBeam)
+                    {
+                        bodyChunk0.pos.y += 8f;
+                        bodyChunk1.pos.y += 8f;
+                        player.animation = Player.AnimationIndex.HangFromBeam;
+                    }
+                    return;
+                }
+                else if (player.animation == Player.AnimationIndex.ClimbOnBeam)
+                {
+                    UpdateAnimationCounter(player);
+                    player.bodyMode = Player.BodyModeIndex.ClimbingOnBeam;
+                    player.standing = true;
+                    player.canJump = 1;
+
+                    foreach (BodyChunk bodyChunk in player.bodyChunks)
+                    {
+                        if (bodyChunk.contactPoint.x != 0)
+                        {
+                            player.flipDirection = -bodyChunk.contactPoint.x;
+                            break;
+                        }
+                    }
+
+                    bool shouldSwitchSides = player.IsTileSolid(0, 0, 1) || player.input[0].y <= 0 || (bodyChunk0.contactPoint.y >= 0 && !player.IsTileSolid(0, player.flipDirection, 1));
+                    if (shouldSwitchSides && player.IsTileSolid(0, player.flipDirection, 0))
+                    {
+                        player.flipDirection = -player.flipDirection;
+                    }
+
+                    if (shouldSwitchSides)
+                    {
+                        bodyChunk0.pos.x = (bodyChunk0.pos.x + player.room.MiddleOfTile(bodyChunk0.pos).x + player.flipDirection * 5f) / 2f;
+                        bodyChunk1.pos.x = (bodyChunk1.pos.x * 7f + player.room.MiddleOfTile(bodyChunk0.pos).x + player.flipDirection * 5f) / 8f;
+                    }
+                    else
+                    {
+                        bodyChunk0.pos.x = (bodyChunk0.pos.x + player.room.MiddleOfTile(bodyChunk0.pos).x) / 2f;
+                        bodyChunk1.pos.x = (bodyChunk1.pos.x * 7f + player.room.MiddleOfTile(bodyChunk0.pos).x) / 8f;
+                    }
+
+                    bodyChunk0.vel.x = 0f;
+                    bodyChunk0.vel.y = 0.5f * bodyChunk0.vel.y + 1f + player.gravity;
+                    bodyChunk1.vel.y -= 1f - player.gravity;
+
+                    if (player.input[0].y > 0)
+                    {
+                        player.animationFrame++;
+                        if (player.animationFrame > 20)
+                        {
+                            player.animationFrame = 0;
+                            player.room.PlaySound(SoundID.Slugcat_Climb_Up_Vertical_Beam, player.mainBodyChunk, false, 1f, 1f);
+                            player.AerobicIncrease(0.1f);
+                        }
+                        bodyChunk0.vel.y += Mathf.Lerp(1f, 1.4f, player.Adrenaline) * player.slugcatStats.poleClimbSpeedFac * Custom.LerpMap(player.slowMovementStun, 0f, 10f, 1f, 0.2f);
+                    }
+                    else if (player.input[0].y < 0)
+                    {
+                        bodyChunk0.vel.y -= 2.2f * (0.2f + 0.8f * player.EffectiveRoomGravity);
+                    }
+
+                    if (player.slideUpPole > 0)
+                    {
+                        player.slideUpPole--;
+                        if (player.slideUpPole > 8)
+                        {
+                            player.animationFrame = 12;
+                        }
+                        if (player.slideUpPole == 0)
+                        {
+                            player.slowMovementStun = Math.Max(player.slowMovementStun, 16);
+                        }
+                        if (player.slideUpPole > 14)
+                        {
+                            bodyChunk0.pos.y += 2f;
+                            bodyChunk1.pos.y += 2f;
                         }
 
-                        if (shouldSwitchSides && player.IsTileSolid(0, player.flipDirection, 0))
-                        {
-                            player.flipDirection = -player.flipDirection;
-                        }
+                        bodyChunk0.vel.y += Custom.LerpMap(player.slideUpPole, 17f, 0f, 3f, -1.2f, 0.45f);
+                        bodyChunk1.vel.y += Custom.LerpMap(player.slideUpPole, 17f, 0f, 1.5f, -1.4f, 0.45f);
+                    }
+                    player.GoThroughFloors = player.input[0].x == 0 && player.input[0].downDiagonal == 0;
 
-                        if (shouldSwitchSides)
+                    // grab other parallel vertical beam
+                    if (player.input[0].x == player.flipDirection && player.input[1].x == 0 && player.flipDirection == player.lastFlipDirection && player.room.GetTile(player.room.GetTilePosition(bodyChunk0.pos) + new IntVector2(player.flipDirection, 0)).verticalBeam)
+                    {
+                        bodyChunk0.pos.x = player.room.MiddleOfTile(player.room.GetTilePosition(bodyChunk0.pos) + new IntVector2(player.flipDirection, 0)).x - (float)player.flipDirection * 5f;
+                        player.flipDirection = -player.flipDirection;
+                        player.jumpStun = 11 * player.flipDirection;
+                    }
+
+                    //
+                    // exits
+                    //
+
+                    // stand on ground
+                    if (bodyChunk1.contactPoint.y < 0 && player.input[0].y < 0)
+                    {
+                        player.room.PlaySound(SoundID.Slugcat_Regain_Footing, player.mainBodyChunk, false, 1f, 1f);
+                        player.animation = Player.AnimationIndex.StandUp;
+                        return;
+                    }
+
+                    // switch to horizontal beams
+                    if (SwitchVerticalToHorizontalBeam(player, attachedFields)) return;
+
+                    // lose grip
+                    if (!player.room.GetTile(bodyChunk0.pos).verticalBeam)
+                    {
+                        if (player.room.GetTile(player.room.GetTilePosition(bodyChunk0.pos) + new IntVector2(0, -1)).verticalBeam)
                         {
-                            bodyChunk0.pos.x = (bodyChunk0.pos.x + player.room.MiddleOfTile(bodyChunk0.pos).x + player.flipDirection * 5f) / 2f;
-                            bodyChunk1.pos.x = (bodyChunk1.pos.x * 7f + player.room.MiddleOfTile(bodyChunk0.pos).x + player.flipDirection * 5f) / 8f;
+                            player.room.PlaySound(SoundID.Slugcat_Get_Up_On_Top_Of_Vertical_Beam_Tip, player.mainBodyChunk, false, 1f, 1f);
+                            player.animation = Player.AnimationIndex.GetUpToBeamTip;
+
+                            // otherwise it might cancel the GetUpToBeamTip animation before it gets reached;
+                            player.wantToJump = 0;
+                        }
+                        else if (player.room.GetTile(player.room.GetTilePosition(bodyChunk0.pos) + new IntVector2(0, 1)).verticalBeam)
+                        {
+                            player.animation = Player.AnimationIndex.HangUnderVerticalBeam;
                         }
                         else
                         {
-                            bodyChunk0.pos.x = (bodyChunk0.pos.x + player.room.MiddleOfTile(bodyChunk0.pos).x) / 2f;
-                            bodyChunk1.pos.x = (bodyChunk1.pos.x * 7f + player.room.MiddleOfTile(bodyChunk0.pos).x) / 8f;
+                            player.animation = Player.AnimationIndex.None;
                         }
+                    }
+                    return;
+                }
+                else if (player.animation == Player.AnimationIndex.GetUpToBeamTip)
+                {
+                    // otherwise you might jump early when reaching the BeamTip;
+                    player.wantToJump = 0;
 
-                        bodyChunk0.vel.x = 0f;
-                        bodyChunk0.vel.y = 0.5f * bodyChunk0.vel.y + 1f + player.gravity;
-                        bodyChunk1.vel.y -= 1f - player.gravity;
+                    // don't let go of beam while climbing to the top // don't prevent player from entering corridors
+                    // if (bodyChunk0.contactPoint.x == 0 && bodyChunk1.contactPoint.x == 0)
+                    foreach (BodyChunk bodyChunk in player.bodyChunks)
+                    {
+                        Room.Tile tile = room.GetTile(bodyChunk.pos);
+                        if (!tile.verticalBeam && room.GetTile(tile.X, tile.Y - 1).verticalBeam)
+                        {
+                            float middleOfTileX = room.MiddleOfTile(tile.X, tile.Y).x;
+                            // give a bit of protection against wind and horizontal momentum
+                            bodyChunk0.pos.x += Mathf.Clamp(middleOfTileX - bodyChunk0.pos.x, -2f * velXGain, 2f * velXGain);
+                            bodyChunk1.pos.x += Mathf.Clamp(middleOfTileX - bodyChunk1.pos.x, -2f * velXGain, 2f * velXGain);
+
+                            // you might get stuck from solid tiles above;
+                            // do a auto-regrab like you can do when pressing down while being on the beam tip;
+                            if (player.input[0].y < 0)
+                            {
+                                attachedFields.grabBeamCounter = 15;
+                                attachedFields.dontUseTubeWormCounter = 2;
+                                player.canJump = 0;
+                                player.animation = Player.AnimationIndex.None;
+                                break;
+                            }
+
+                            // ignore x input
+                            if (player.input[0].x != 0 && !player.IsTileSolid(bChunk: 0, player.input[0].x, 0) && !player.IsTileSolid(bChunk: 1, player.input[0].x, 0))
+                            {
+                                bodyChunk0.vel.x -= player.input[0].x * velXGain;
+                                bodyChunk1.vel.x -= player.input[0].x * velXGain;
+                            }
+                            break;
+                        }
+                    }
+                }
+                else if (player.animation == Player.AnimationIndex.HangUnderVerticalBeam)
+                {
+                    UpdateAnimationCounter(player);
+                    player.bodyMode = Player.BodyModeIndex.ClimbingOnBeam; // gets updated and is default afterwards
+                    player.standing = false;
+
+                    // drop when pressing jump
+                    if (player.input[0].jmp && !player.input[1].jmp || bodyChunk1.vel.magnitude > 10.0 || bodyChunk0.vel.magnitude > 10.0 || !room.GetTile(bodyChunk0.pos + new Vector2(0.0f, 20f)).verticalBeam)
+                    {
+                        attachedFields.dontUseTubeWormCounter = 2;
+                        player.animation = Player.AnimationIndex.None;
+                        player.standing = true;
+                    }
+                    else
+                    {
+                        bodyChunk0.pos.x = Mathf.Lerp(bodyChunk0.pos.x, room.MiddleOfTile(bodyChunk0.pos).x, 0.5f);
+                        bodyChunk0.pos.y = Mathf.Max(bodyChunk0.pos.y, room.MiddleOfTile(bodyChunk0.pos).y + 5f + bodyChunk0.vel.y);
+
+                        bodyChunk0.vel.x *= 0.5f; // dont kill all momentum
+                        bodyChunk0.vel.x -= player.input[0].x * (velXGain + leanFactor);
+                        bodyChunk0.vel.y *= 0.5f;
+                        bodyChunk1.vel.x -= player.input[0].x * (velXGain - leanFactor);
 
                         if (player.input[0].y > 0)
                         {
-                            player.animationFrame++;
-                            if (player.animationFrame > 20)
-                            {
-                                player.animationFrame = 0;
-                                player.room.PlaySound(SoundID.Slugcat_Climb_Up_Vertical_Beam, player.mainBodyChunk, false, 1f, 1f);
-                                player.AerobicIncrease(0.1f);
-                            }
-                            bodyChunk0.vel.y += Mathf.Lerp(1f, 1.4f, player.Adrenaline) * player.slugcatStats.poleClimbSpeedFac * Custom.LerpMap(player.slowMovementStun, 0f, 10f, 1f, 0.2f);
+                            bodyChunk0.vel.y += 2.5f;
                         }
-                        else if (player.input[0].y < 0)
+
+                        if (room.GetTile(bodyChunk0.pos).verticalBeam)
                         {
-                            bodyChunk0.vel.y -= 2.2f * (0.2f + 0.8f * player.room.gravity);
+                            player.animation = Player.AnimationIndex.ClimbOnBeam;
                         }
-
-                        if (player.slideUpPole > 0)
-                        {
-                            player.slideUpPole--;
-                            if (player.slideUpPole > 8)
-                            {
-                                player.animationFrame = 12;
-                            }
-                            if (player.slideUpPole == 0)
-                            {
-                                player.slowMovementStun = Math.Max(player.slowMovementStun, 16);
-                            }
-                            if (player.slideUpPole > 14)
-                            {
-                                bodyChunk0.pos.y += 2f;
-                                bodyChunk1.pos.y += 2f;
-                            }
-
-                            bodyChunk0.vel.y += Custom.LerpMap(player.slideUpPole, 17f, 0f, 3f, -1.2f, 0.45f);
-                            bodyChunk1.vel.y += Custom.LerpMap(player.slideUpPole, 17f, 0f, 1.5f, -1.4f, 0.45f);
-                        }
-                        player.GoThroughFloors = player.input[0].x == 0 && player.input[0].downDiagonal == 0;
-
-                        // grab other parallel vertical beam
-                        if (player.input[0].x == player.flipDirection && player.input[1].x == 0 && player.flipDirection == player.lastFlipDirection && player.room.GetTile(player.room.GetTilePosition(bodyChunk0.pos) + new IntVector2(player.flipDirection, 0)).verticalBeam)
-                        {
-                            bodyChunk0.pos.x = player.room.MiddleOfTile(player.room.GetTilePosition(bodyChunk0.pos) + new IntVector2(player.flipDirection, 0)).x - (float)player.flipDirection * 5f;
-                            player.flipDirection = -player.flipDirection;
-                            player.jumpStun = 11 * player.flipDirection;
-                        }
-
-                        //
-                        // exits
-                        //
-
-                        // stand on ground
-                        if (bodyChunk1.contactPoint.y < 0 && player.input[0].y < 0)
-                        {
-                            player.room.PlaySound(SoundID.Slugcat_Regain_Footing, player.mainBodyChunk, false, 1f, 1f);
-                            player.animation = Player.AnimationIndex.StandUp;
-                            return;
-                        }
-
-                        // switch to horizontal beams
-                        if (SwitchVerticalToHorizontalBeam(player, attachedFields))
-                        {
-                            return;
-                        }
-
-                        // lose grip
-                        if (!player.room.GetTile(bodyChunk0.pos).verticalBeam)
-                        {
-                            if (player.room.GetTile(player.room.GetTilePosition(bodyChunk0.pos) + new IntVector2(0, -1)).verticalBeam)
-                            {
-                                player.room.PlaySound(SoundID.Slugcat_Get_Up_On_Top_Of_Vertical_Beam_Tip, player.mainBodyChunk, false, 1f, 1f);
-                                player.animation = Player.AnimationIndex.GetUpToBeamTip;
-
-                                // otherwise it might cancel the GetUpToBeamTip animation before it gets reached;
-                                player.wantToJump = 0;
-                            }
-                            else if (player.room.GetTile(player.room.GetTilePosition(bodyChunk0.pos) + new IntVector2(0, 1)).verticalBeam)
-                            {
-                                player.animation = Player.AnimationIndex.HangUnderVerticalBeam;
-                            }
-                            else
-                            {
-                                player.animation = Player.AnimationIndex.None;
-                            }
-                        }
-                        return;
-                    case Player.AnimationIndex.GetUpToBeamTip:
-                        // otherwise you might jump early when reaching the BeamTip;
-                        player.wantToJump = 0;
-
-                        // don't let go of beam while climbing to the top // don't prevent player from entering corridors
-                        // if (bodyChunk0.contactPoint.x == 0 && bodyChunk1.contactPoint.x == 0)
-                        foreach (BodyChunk bodyChunk in player.bodyChunks)
-                        {
-                            Room.Tile tile = room.GetTile(bodyChunk.pos);
-                            if (!tile.verticalBeam && room.GetTile(tile.X, tile.Y - 1).verticalBeam)
-                            {
-                                float middleOfTileX = room.MiddleOfTile(tile.X, tile.Y).x;
-                                // give a bit of protection against wind and horizontal momentum
-                                bodyChunk0.pos.x += Mathf.Clamp(middleOfTileX - bodyChunk0.pos.x, -2f * velXGain, 2f * velXGain);
-                                bodyChunk1.pos.x += Mathf.Clamp(middleOfTileX - bodyChunk1.pos.x, -2f * velXGain, 2f * velXGain);
-
-                                // you might get stuck from solid tiles above;
-                                // do a auto-regrab like you can do when pressing down while being on the beam tip;
-                                if (player.input[0].y < 0)
-                                {
-                                    attachedFields.grabBeamCounter = 15;
-                                    attachedFields.dontUseTubeWormCounter = 2;
-                                    player.canJump = 0;
-                                    player.animation = Player.AnimationIndex.None;
-                                    break;
-                                }
-
-                                // ignore x input
-                                if (player.input[0].x != 0 && !player.IsTileSolid(bChunk: 0, player.input[0].x, 0) && !player.IsTileSolid(bChunk: 1, player.input[0].x, 0))
-                                {
-                                    bodyChunk0.vel.x -= player.input[0].x * velXGain;
-                                    bodyChunk1.vel.x -= player.input[0].x * velXGain;
-                                }
-                                break;
-                            }
-                        }
-                        break;
-                    case Player.AnimationIndex.HangUnderVerticalBeam:
-                        UpdateAnimationCounter(player);
-                        player.bodyMode = Player.BodyModeIndex.ClimbingOnBeam; // gets updated and is default afterwards
-                        player.standing = false;
-
-                        // drop when pressing jump
-                        if (player.input[0].jmp && !player.input[1].jmp || bodyChunk1.vel.magnitude > 10.0 || bodyChunk0.vel.magnitude > 10.0 || !room.GetTile(bodyChunk0.pos + new Vector2(0.0f, 20f)).verticalBeam)
-                        {
-                            attachedFields.dontUseTubeWormCounter = 2;
-                            player.animation = Player.AnimationIndex.None;
-                            player.standing = true;
-                        }
-                        else
-                        {
-                            bodyChunk0.pos.x = Mathf.Lerp(bodyChunk0.pos.x, room.MiddleOfTile(bodyChunk0.pos).x, 0.5f);
-                            bodyChunk0.pos.y = Mathf.Max(bodyChunk0.pos.y, room.MiddleOfTile(bodyChunk0.pos).y + 5f + bodyChunk0.vel.y);
-
-                            bodyChunk0.vel.x *= 0.5f; // dont kill all momentum
-                            bodyChunk0.vel.x -= player.input[0].x * (velXGain + leanFactor);
-                            bodyChunk0.vel.y *= 0.5f;
-                            bodyChunk1.vel.x -= player.input[0].x * (velXGain - leanFactor);
-
-                            if (player.input[0].y > 0)
-                            {
-                                bodyChunk0.vel.y += 2.5f;
-                            }
-
-                            if (room.GetTile(bodyChunk0.pos).verticalBeam)
-                            {
-                                player.animation = Player.AnimationIndex.ClimbOnBeam;
-                            }
-                        }
-                        return;
+                    }
+                    return;
                 }
 
                 // BeamTip // don't drop off beam tip by leaning too much
@@ -1730,18 +1761,18 @@ namespace SimplifiedMoveset
                         return;
                     }
 
+                    BodyChunk bodyChunk0 = player.bodyChunks[0];
+                    BodyChunk bodyChunk1 = player.bodyChunks[1];
+
                     if (player.input[0].x != 0)
                     {
-                        BodyChunk bodyChunk0 = player.bodyChunks[0];
-                        BodyChunk bodyChunk1 = player.bodyChunks[1];
-
                         // bodyMode would change when player.input[0].x != bodyChunk0.contactPoint.x // skip this check for now
                         player.canWallJump = player.input[0].x * -15;
 
                         // when upside down, flip instead of climbing
                         if (bodyChunk0.pos.y < bodyChunk1.pos.y)
                         {
-                            bodyChunk0.vel.y = Custom.LerpAndTick(bodyChunk0.vel.y, 2f * player.gravity, 0.8f, 1f);
+                            bodyChunk0.vel.y = Custom.LerpAndTick(bodyChunk0.vel.y, 2f * player.gravity * player.EffectiveRoomGravity, 0.8f, 1f);
                             bodyChunk1.vel.y = Custom.LerpAndTick(bodyChunk1.vel.y, 0.0f, 0.8f, 1f);
                             bodyChunk1.vel.x = -player.input[0].x * 5f;
                         }
@@ -1762,8 +1793,8 @@ namespace SimplifiedMoveset
                                     bodyChunk1.vel.x = -player.input[0].x * velXGain;
                                 }
 
-                                bodyChunk0.vel.y += player.gravity;
-                                bodyChunk1.vel.y += player.gravity;
+                                bodyChunk0.vel.y += player.gravity * player.EffectiveRoomGravity;
+                                bodyChunk1.vel.y += player.gravity * player.EffectiveRoomGravity;
 
                                 // downward momentum when ContactPoint.x != 0 is limited to -player.gravity bc of Player.Update()
                                 bodyChunk0.vel.y = Mathf.Lerp(bodyChunk0.vel.y, player.input[0].y * 2.5f, 0.3f);
@@ -1774,13 +1805,13 @@ namespace SimplifiedMoveset
                             {
                                 if (player.grasps[0]?.grabbed is Cicada cicada)
                                 {
-                                    bodyChunk0.vel.y = Custom.LerpAndTick(bodyChunk0.vel.y, player.gravity - cicada.LiftPlayerPower * 0.5f, 0.3f, 1f);
+                                    bodyChunk0.vel.y = Custom.LerpAndTick(bodyChunk0.vel.y, player.gravity * player.EffectiveRoomGravity - cicada.LiftPlayerPower * 0.5f, 0.3f, 1f);
                                 }
                                 else
                                 {
-                                    bodyChunk0.vel.y = Custom.LerpAndTick(bodyChunk0.vel.y, player.gravity, 0.3f, 1f);
+                                    bodyChunk0.vel.y = Custom.LerpAndTick(bodyChunk0.vel.y, player.gravity * player.EffectiveRoomGravity, 0.3f, 1f);
                                 }
-                                bodyChunk1.vel.y = Custom.LerpAndTick(bodyChunk1.vel.y, player.gravity, 0.3f, 1f);
+                                bodyChunk1.vel.y = Custom.LerpAndTick(bodyChunk1.vel.y, player.gravity * player.EffectiveRoomGravity, 0.3f, 1f);
 
                                 if (!player.IsTileSolid(bChunk: 1, player.input[0].x, 0) && player.input[0].x > 0 == bodyChunk1.pos.x > bodyChunk0.pos.x)
                                 {
@@ -1801,7 +1832,7 @@ namespace SimplifiedMoveset
                         player.animationFrame = 0;
                     }
 
-                    player.bodyChunks[1].vel.y += player.bodyChunks[1].submersion * room.gravity;
+                    bodyChunk1.vel.y += bodyChunk1.submersion * player.EffectiveRoomGravity;
                     return;
                 }
                 orig(player);
@@ -1816,6 +1847,14 @@ namespace SimplifiedMoveset
             {
                 orig(player);
             }
+        }
+
+        private static void Player_UpdateMSC(On.Player.orig_UpdateMSC orig, Player player)
+        {
+            orig(player);
+
+            if (!ModManager.MSC) return;
+            player.buoyancy = player.gravity;
         }
 
         // there are cases where this function does not call orig()

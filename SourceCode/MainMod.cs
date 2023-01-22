@@ -1,58 +1,62 @@
+using System;
+using System.Security;
+using System.Security.Permissions;
 using BepInEx;
 using MonoMod.Cil;
 using UnityEngine;
 
+// temporary fix // should be added automatically //TODO
+[module: UnverifiableCode]
+[assembly: SecurityPermission(SecurityAction.RequestMinimum, SkipVerification = true)]
 namespace SimplifiedMoveset
 {
-    [BepInPlugin("SchuhBaum.SimplifiedMoveset", "SimplifiedMoveset", "0.86")]
+    [BepInPlugin("SchuhBaum.SimplifiedMoveset", "SimplifiedMoveset", "2.0.1")]
     public class MainMod : BaseUnityPlugin
     {
         //
-        // AutoUpdate
+        // meta data
         //
 
-        public string updateURL = "http://beestuff.pythonanywhere.com/audb/api/mods/8/2";
-        public int version = 32;
-        public string keyE = "AQAB";
-        public string keyN = "0Sb8AUUh0jkFOuNDGJti4jL0iTB4Oug0pM8opATxJH8hfAt6FW3//Q4wb4VfTHZVP3+zHMX6pxcqjdvN0wt/0SWyccfoFhx2LupmT3asV4UDPBdQNmDeA/XMfwmwYb23yxp0apq3kVJNJ3v1SExvo+EPQP4/74JueNBiYshKysRK1InJfkrO1pe1WxtcE7uIrRBVwIgegSVAJDm4PRCODWEp533RxA4FZjq8Hc4UP0Pa0LxlYlSI+jJ+hUrdoA6wd+c/R+lRqN2bjY9OE/OktAxqgthEkSXTtmZwFkCjds0RCqZTnzxfJLN7IheyZ69ptzcB6Zl7kFTEofv4uDjCYNic52/C8uarj+hl4O0yU4xpzdxhG9Tq9SAeNu7h6Dt4Impbr3dAonyVwOhA/HNIz8TUjXldRs0THcZumJ/ZvCHO3qSh7xKS/D7CWuwuY5jWzYZpyy14WOK55vnEFS0GmTwjR+zZtSUy2Y7m8hklllqHZNqRYejoORxTK4UkL4GFOk/uLZKVtOfDODwERWz3ns/eOlReeUaCG1Tole7GhvoZkSMyby/81k3Fh16Z55JD+j1HzUCaoKmT10OOmLF7muV7RV2ZWG0uzvN2oUfr5HSN3TveNw7JQPd5DvZ56whr5ExLMS7Gs6fFBesmkgAwcPTkU5pFpIjgbyk07lDI81k=";
-
-        //
-        // ConfigMachine
-        //
-
-        public readonly string author = "SchuhBaum";
-        public static MainMod? instance;
-        public static OptionalUI.OptionInterface LoadOI() => new MainModOptions();
+        public static readonly string MOD_ID = "SimplifiedMoveset";
+        public static readonly string author = "SchuhBaum";
+        public static readonly string version = "2.0.1";
 
         //
         // options
         //
 
-        public static bool Option_BeamClimb = true;
-        public static bool Option_BellySlide = true;
-        public static bool Option_Crawl = true;
+        public static bool Option_BeamClimb => MainModOptions.beamClimb.Value;
+        public static bool Option_BellySlide => MainModOptions.bellySlide.Value;
+        public static bool Option_Crawl => MainModOptions.crawl.Value;
 
-        public static bool Option_CrouchJump = true;
-        public static bool Option_Grab = true;
-        public static bool Option_LedgeGrab = false;
+        public static bool Option_CrouchJump => MainModOptions.crouchJump.Value;
+        public static bool Option_Grab => MainModOptions.grab.Value;
+        public static bool Option_LedgeGrab => MainModOptions.ledgeGrab.Value;
 
-        public static bool Option_Roll_1 = true;
-        public static bool Option_Roll_2 = true;
-        public static bool Option_SlideTurn = false;
+        public static bool Option_Roll_1 => MainModOptions.roll_1.Value;
+        public static bool Option_Roll_2 => MainModOptions.roll_2.Value;
+        public static bool Option_SlideTurn => MainModOptions.slideTurn.Value;
 
-        public static bool Option_SpearThrow = true;
-        public static bool Option_Swim = false;
-        public static bool Option_TubeWorm = true;
+        public static bool Option_SpearThrow => MainModOptions.spearThrow.Value;
+        public static bool Option_Swim => MainModOptions.swim.Value;
+        public static bool Option_TubeWorm => MainModOptions.tubeWorm.Value;
 
-        public static bool Option_WallClimb = false;
-        public static bool Option_WallJump = true;
+        public static bool Option_WallClimb => MainModOptions.wallClimb.Value;
+        public static bool Option_WallJump => MainModOptions.wallJump.Value;
+
+        //
+        // variables
+        //
+
+        public static bool isInitialized = false;
 
         //
         // main
         //
 
-        public MainMod() => instance = this;
-        public void OnEnable() => On.RainWorld.Start += RainWorld_Start; // initialize hooks
+        public MainMod() { }
+        public void OnEnable() => On.RainWorld.OnModsInit += RainWorld_OnModsInit; // initialize hooks
+
 
         //
         // public
@@ -60,10 +64,7 @@ namespace SimplifiedMoveset
 
         public static void LogAllInstructions(ILContext? context, int indexStringLength = 9, int opCodeStringLength = 14)
         {
-            if (context == null)
-            {
-                return;
-            }
+            if (context == null) return;
 
             Debug.Log("-----------------------------------------------------------------");
             Debug.Log("SimplifiedMoveset: Log all IL-instructions.");
@@ -78,38 +79,46 @@ namespace SimplifiedMoveset
 
             while (true)
             {
-                if (cursor.Next.MatchRet())
-                {
-                    break;
-                }
+                // this might return too early;
+                // if (cursor.Next.MatchRet()) break;
 
-                if (cursor.TryGotoNext(MoveType.Before))
+                // should always break at some point;
+                // only TryGotoNext() doesn't seem to be enough;
+                // it still throws an exception;
+                try
                 {
-                    cursorIndexString = cursor.Index.ToString();
-                    cursorIndexString = cursorIndexString.Length < indexStringLength ? cursorIndexString + new string(' ', indexStringLength - cursorIndexString.Length) : cursorIndexString;
-                    opCodeString = cursor.Next.OpCode.ToString();
-
-                    if (cursor.Next.Operand is ILLabel label)
+                    if (cursor.TryGotoNext(MoveType.Before))
                     {
-                        labelCursor.GotoLabel(label);
-                        operandString = "Label >>> " + labelCursor.Index;
+                        cursorIndexString = cursor.Index.ToString();
+                        cursorIndexString = cursorIndexString.Length < indexStringLength ? cursorIndexString + new string(' ', indexStringLength - cursorIndexString.Length) : cursorIndexString;
+                        opCodeString = cursor.Next.OpCode.ToString();
+
+                        if (cursor.Next.Operand is ILLabel label)
+                        {
+                            labelCursor.GotoLabel(label);
+                            operandString = "Label >>> " + labelCursor.Index;
+                        }
+                        else
+                        {
+                            operandString = cursor.Next.Operand?.ToString() ?? "";
+                        }
+
+                        if (operandString == "")
+                        {
+                            Debug.Log(cursorIndexString + opCodeString);
+                        }
+                        else
+                        {
+                            opCodeString = opCodeString.Length < opCodeStringLength ? opCodeString + new string(' ', opCodeStringLength - opCodeString.Length) : opCodeString;
+                            Debug.Log(cursorIndexString + opCodeString + operandString);
+                        }
                     }
                     else
                     {
-                        operandString = cursor.Next.Operand?.ToString() ?? "";
-                    }
-
-                    if (operandString == "")
-                    {
-                        Debug.Log(cursorIndexString + opCodeString);
-                    }
-                    else
-                    {
-                        opCodeString = opCodeString.Length < opCodeStringLength ? opCodeString + new string(' ', opCodeStringLength - opCodeString.Length) : opCodeString;
-                        Debug.Log(cursorIndexString + opCodeString + operandString);
+                        break;
                     }
                 }
-                else
+                catch
                 {
                     break;
                 }
@@ -121,9 +130,16 @@ namespace SimplifiedMoveset
         // private
         //
 
-        private void RainWorld_Start(On.RainWorld.orig_Start orig, RainWorld rainWorld)
+        private void RainWorld_OnModsInit(On.RainWorld.orig_OnModsInit orig, RainWorld rainWorld)
         {
-            Debug.Log("SimplifiedMoveset: Version " + Info.Metadata.Version);
+            orig(rainWorld);
+
+            if (isInitialized) return;
+            isInitialized = true;
+
+            MachineConnector.SetRegisteredOI(MOD_ID, MainModOptions.instance);
+
+            Debug.Log("SimplifiedMoveset: Version " + version);
             BodyChunkMod.OnEnable();
             BodyChunkConnectionMod.OnEnable();
             PlayerMod.OnEnable();
@@ -131,7 +147,6 @@ namespace SimplifiedMoveset
             RainWorldGameMod.OnEnable();
             SlugcatHandMod.OnEnable();
             TubeWormMod.OnEnable();
-            orig(rainWorld);
         }
     }
 }

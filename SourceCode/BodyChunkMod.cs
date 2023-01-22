@@ -94,26 +94,27 @@ namespace SimplifiedMoveset
                 float posYFromX;
                 int slopeVerticalPosition;
 
-                switch (slopeDirection)
+                if (slopeDirection == Room.SlopeDirection.UpLeft) // oO
                 {
-                    case Room.SlopeDirection.UpLeft: // oO
-                        posYFromX = (float)(middleOfTile.y + bodyChunk.pos.x - middleOfTile.x); // project down to the slope surface line
-                        onSlope = -1;
-                        slopeVerticalPosition = -1;
-                        break;
-                    case Room.SlopeDirection.UpRight: // Oo
-                        posYFromX = (float)(middleOfTile.y + middleOfTile.x - bodyChunk.pos.x); // project down to the slope surface line // pos.x stays constant // pos.y moves down when bodyChunk.pos.x > middleOfTile.x otherwise up to slope surface
-                        onSlope = 1;
-                        slopeVerticalPosition = -1;
-                        break;
-                    case Room.SlopeDirection.DownLeft: // �O
-                        posYFromX = (float)(middleOfTile.y + middleOfTile.x - bodyChunk.pos.x);
-                        slopeVerticalPosition = 1;
-                        break;
-                    default: // O�
-                        posYFromX = (float)(middleOfTile.y + bodyChunk.pos.x - middleOfTile.x);
-                        slopeVerticalPosition = 1;
-                        break;
+                    posYFromX = (float)(middleOfTile.y + bodyChunk.pos.x - middleOfTile.x); // project down to the slope surface line
+                    onSlope = -1;
+                    slopeVerticalPosition = -1;
+                }
+                else if (slopeDirection == Room.SlopeDirection.UpRight) // Oo
+                {
+                    posYFromX = (float)(middleOfTile.y + middleOfTile.x - bodyChunk.pos.x); // project down to the slope surface line // pos.x stays constant // pos.y moves down when bodyChunk.pos.x > middleOfTile.x otherwise up to slope surface
+                    onSlope = 1;
+                    slopeVerticalPosition = -1;
+                }
+                else if (slopeDirection == Room.SlopeDirection.DownLeft) // �O
+                {
+                    posYFromX = (float)(middleOfTile.y + middleOfTile.x - bodyChunk.pos.x);
+                    slopeVerticalPosition = 1;
+                }
+                else  // O�
+                {
+                    posYFromX = (float)(middleOfTile.y + bodyChunk.pos.x - middleOfTile.x);
+                    slopeVerticalPosition = 1;
                 }
 
                 if (slopeVerticalPosition == -1 && bodyChunk.pos.y <= posYFromX + bodyChunk.slopeRad + bodyChunk.slopeRad)

@@ -1,20 +1,20 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net35</TargetFramework>
+    <TargetFramework>net48</TargetFramework>
     <Nullable>enable</Nullable>
     <LangVersion>10.0</LangVersion>
-    <Version>0.86</Version>
+    <Version>2.0.1</Version>
   </PropertyGroup>
   
   <ItemGroup>
-    <Reference Include="..\..\references\Assembly-CSharp.dll"/>
+    <Reference Include="..\..\references\PUBLIC-Assembly-CSharp.dll"/>
     <Reference Include="..\..\references\BepInEx.dll"/>
-    <Reference Include="..\..\references\ConfigMachine.dll"/>  
     <Reference Include="..\..\references\HOOKS-Assembly-CSharp.dll"/>
     <Reference Include="..\..\references\Mono.Cecil.dll"/>
     <Reference Include="..\..\references\MonoMod.Utils.dll"/>
-    <Reference Include="..\..\references\UnityEngine.dll"/>
+    <Reference Include="..\..\references\UnityEngine.dll"/> 
+    <Reference Include="..\..\references\UnityEngine.CoreModule.dll"/>
   </ItemGroup>
 
 </Project>

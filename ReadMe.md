@@ -1,20 +1,19 @@
 ## SimplifiedMoveset
-###### Version: 0.86
+###### Version: 2.0.1
 
-This is a mod for Rain World v1.5.
+This is a mod for Rain World v1.9.
 
 ### Description
-Various movement changes. The main idea is to remove or simplify timings, making it easier to perform moves consistently. In addition, includes the ability to breath underwater and crawl on walls (disabled by default).  
+Various movement changes. The main idea is to remove or simplify timings, making it easier to perform advanced moves consistently. In addition, includes the ability to breath underwater and crawl on walls (disabled by default).  
   
-Here is a youtube video showing some of the changes: https://www.youtube.com/watch?v=Jp6UyUgoWB0
+Here is a youtube video showing Rain World 1.5 + some of the changes in action:  
+https://www.youtube.com/watch?v=Jp6UyUgoWB0
 
 ### Installation
-1. (ModLoader) `BepInEx` and `BOI` can be downloaded from [RainDB](https://www.raindb.net/) under `Tools`.  
-  **NOTE:** Rain World's BepInEx is a modified version. Don't download it from GitHub.  
-2. (Dependency) The mod `ConfigMachine` can be downloaded from [RainDB](https://www.raindb.net/) under `Tools`.
-3. Download the file  `SimplifiedMoveset.dll` from [Releases](https://github.com/SchuhBaum/SimplifiedMoveset/releases) and place it in the folder `[Steam]\SteamApps\common\Rain World\Mods`.  
-4. Start `[Steam]\SteamApps\common\Rain World\BOI\BlepOutIn.exe`.  
-5. Click `Select path` and enter the game's path `[Steam]\SteamApps\common\Rain World`. Enable the mod `SimplifiedMoveset.dll` and its dependencies. Then launch the game as normal. 
+0. Update Rain World to version 1.9 if needed.
+1. Download the file  `SimplifiedMoveset.zip` from [Releases](https://github.com/SchuhBaum/SimplifiedMoveset/releases).
+2. Extract its content in the folder `[Steam]\SteamApps\common\Rain World\RainWorld_Data\StreamingAssets\mods`.
+3. Start the game as normal. In the main menu select `Remix` and enable the mod. 
 
 ### Contact
 If you have feedback, you can message me on Discord `@SchuhBaum#7246` or write an email to SchuhBaum71@gmail.com.  
@@ -23,6 +22,12 @@ If you have feedback, you can message me on Discord `@SchuhBaum#7246` or write a
 There are two licenses available - MIT and Unlicense. You can choose which one you want to use.
 
 ### Changelog
+#### (Rain World v1.9)
+v2.0.1:
+- Added support for Rain World 1.9.
+- Removed AutoUpdate.
+
+#### (Rain World v1.5)
 v0.30:
 - Extended the spear throw option to work with slopes and when hanging from beams.
 - When the wall climb option is enabled, (mid-air) wall jumps have a higher priority than using grapple worms.

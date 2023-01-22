@@ -16,7 +16,9 @@ namespace SimplifiedMoveset
 
         private static void RainWorldGame_ctor(On.RainWorldGame.orig_ctor orig, RainWorldGame game, ProcessManager manager)
         {
-            Debug.Log("SimplifiedMoveset: Initialize. Add option specific hooks.");
+            Debug.Log("SimplifiedMoveset: Initialize.");
+            MainModOptions.instance.MainModOptions_OnConfigChanged();
+            Debug.Log("SimplifiedMoveset: Add option specific hooks.");
             PlayerMod.OnEnable_();
             BodyChunkMod.allAttachedFields.Clear();
 
