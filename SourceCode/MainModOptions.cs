@@ -21,7 +21,7 @@ namespace SimplifiedMoveset
         public static Configurable<bool> ledgeGrab = instance.config.Bind("ledgeGrab", defaultValue: false, new ConfigurableInfo("Slugcat stays in the ledge grab animation until jump is pressed.", null, "", "Ledge Grab"));
 
         public static Configurable<bool> roll_1 = instance.config.Bind("roll_1", defaultValue: true, new ConfigurableInfo("Stand up after rolls, and rocket jumps (same effect as with the option Belly Slide). Rocket jumps from rolls have consistent height.", null, "", "Roll 1"));
-        public static Configurable<bool> roll_2 = instance.config.Bind("roll_2", defaultValue: true, new ConfigurableInfo("When disabled, removes the ability to initiate rolls from rocket jumps.", null, "", "Roll 2"));
+        public static Configurable<bool> roll_2 = instance.config.Bind("roll_2_", defaultValue: false, new ConfigurableInfo("When enabled, removes the ability to initiate rolls from rocket jumps.", null, "", "Roll 2"));
         public static Configurable<bool> slideTurn = instance.config.Bind("slideTurn", defaultValue: false, new ConfigurableInfo("Reduces the requirements for slide turns. Backflips are possible earlier.", null, "", "Slide Turn"));
 
         public static Configurable<bool> spearThrow = instance.config.Bind("spearThrow", defaultValue: true, new ConfigurableInfo("The throw momentum does not affect slugcat on the ground. The momentum while climbing beams is reduced. Throw boosting in the air is still possible.", null, "", "Spear Throw"));

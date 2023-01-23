@@ -461,7 +461,7 @@ namespace SimplifiedMoveset
                 {
                     if (player.animation == Player.AnimationIndex.RocketJump)
                     {
-                        if (!MainMod.Option_Roll_2) return false;
+                        if (MainMod.Option_Roll_2) return false;
 
                         if (MainMod.Option_BellySlide || MainMod.Option_Roll_1)
                         {
