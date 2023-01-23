@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Mono.Cecil.Cil;
 using MonoMod.Cil;
+using MoreSlugcats;
 using RWCustom;
 using UnityEngine;
 
@@ -506,22 +507,44 @@ namespace SimplifiedMoveset
                 }
             }
 
+            if (MainMod.Option_Swim)
+            {
+                cursor.Goto(3122);
+
+                // case Player.AnimationIndex.DeepSwim:
+                // prevent dashing under water by pressing jump;
+                // unless remix is used and dashes are free;
+                if (cursor.TryGotoNext(MoveType.After, instruction => instruction.MatchLdfld<Player.InputPackage>("jmp"))) // 3223
+                {
+                    Debug.Log("SimplifiedMoveset: IL_Player_UpdateAnimation_2: Index " + cursor.Index);
+                    object label = cursor.Next.Operand;
+                    cursor.GotoNext();
+                    cursor.GotoNext();
+                    cursor.EmitDelegate(() => ModManager.MMF && MMF.cfgFreeSwimBoosts.Value);
+                    cursor.Emit(OpCodes.Brfalse, label);
+                }
+                else
+                {
+                    Debug.LogException(new Exception("SimplifiedMoveset: IL_Player_UpdateAnimation_2 failed."));
+                }
+            }
+
             if (MainMod.Option_Roll_1)
             {
-                cursor.Goto(4728);
+                cursor.Goto(4732);
 
                 // case Player.AnimationIndex.Roll:
                 // always stand up when roll has finished
                 // prevent chain rolling on slopes
-                if (cursor.TryGotoNext(instruction => instruction.MatchStfld<Player>("standing"))) // 4828
+                if (cursor.TryGotoNext(instruction => instruction.MatchStfld<Player>("standing"))) // 4832
                 {
-                    Debug.Log("SimplifiedMoveset: IL_Player_UpdateAnimation_2: Index " + cursor.Index);
+                    Debug.Log("SimplifiedMoveset: IL_Player_UpdateAnimation_3: Index " + cursor.Index);
                     cursor.Prev.Previous.OpCode = OpCodes.Pop;
                     cursor.Prev.OpCode = OpCodes.Ldc_I4_1; // player.standing = 1;
                 }
                 else
                 {
-                    Debug.LogException(new Exception("SimplifiedMoveset: IL_Player_UpdateAnimation_2 failed."));
+                    Debug.LogException(new Exception("SimplifiedMoveset: IL_Player_UpdateAnimation_3 failed."));
                 }
             }
             // MainMod.LogAllInstructions(context);
