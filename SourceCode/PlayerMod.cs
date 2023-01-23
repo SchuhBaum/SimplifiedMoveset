@@ -1660,7 +1660,8 @@ namespace SimplifiedMoveset
                 orig(player);
             }
 
-            if (MainMod.Option_Swim && player.animation == Player.AnimationIndex.SurfaceSwim)
+            // rivulet gets dynamicRunSpeed of 5f => don't slow down
+            if (MainMod.Option_Swim && player.animation == Player.AnimationIndex.SurfaceSwim && !player.isRivulet)
             {
                 player.swimCycle += 0.01f;
                 player.dynamicRunSpeed[0] = 3.5f;
