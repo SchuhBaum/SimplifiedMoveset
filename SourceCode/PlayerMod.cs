@@ -580,11 +580,11 @@ namespace SimplifiedMoveset
             orig(player, abstractCreature, world);
             attachedFields.Add(player, new AttachedFields());
 
-            if (MainMod.Option_Swim)
-            {
-                player.slugcatStats.lungsFac = 0.0f;
-                player.buoyancy = player.gravity;
-            }
+            if (!MainMod.Option_Swim) return;
+            if (player.slugcatStats == null) return; // otherwise this can crash Artificer dreams;
+
+            player.slugcatStats.lungsFac = 0.0f;
+            player.buoyancy = player.gravity;
         }
 
         private static Player.ObjectGrabability Player_Grabability(On.Player.orig_Grabability orig, Player player, PhysicalObject physicalObject)
