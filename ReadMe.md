@@ -28,7 +28,7 @@ v2.0.4:
 - Removed AutoUpdate.
 - (wall climb / jump) Fixed a bug where you would slightly slide down without pressing down.
 - (swim) Fixed a bug where you could still dash underwater (and by doing that consume air). I included an exception when Rain World Remixes "No swim boost penalty" option is used.
-- (roll_2) This option is to be enabled to add changes to vanilla behavior (for consistency). Before it was reversed.
+- (roll_2) This option needs to be enabled to add changes to vanilla behavior (for consistency). Before it was reversed.
 
 #### (Rain World v1.5)
 v0.30:
