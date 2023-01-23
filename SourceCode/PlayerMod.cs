@@ -310,11 +310,9 @@ namespace SimplifiedMoveset
 
         public static void UpdateBodyModeCounter(Player? player)
         {
-            if (player == null)
-            {
-                return;
-            }
+            if (player == null) return;
 
+            // vanilla copy & paste
             player.diveForce = Mathf.Max(0.0f, player.diveForce - 0.05f);
             player.waterRetardationImmunity = Mathf.InverseLerp(0.0f, 0.3f, player.diveForce) * 0.85f;
 
@@ -642,6 +640,11 @@ namespace SimplifiedMoveset
             if (player.animation == Player.AnimationIndex.ClimbOnBeam)
             {
                 player.GetAttachedFields().grabBeamCooldownPos = player.bodyChunks[1].pos;
+            }
+
+            if (MainMod.Option_WallJump && player.animation == Player.AnimationIndex.StandOnBeam && player.input[0].y > -1)
+            {
+                player.lowerBodyFramesOffGround = 0;
             }
 
             if (player.bodyMode != Player.BodyModeIndex.CorridorClimb && player.bodyMode != Player.BodyModeIndex.WallClimb)
@@ -1251,7 +1254,7 @@ namespace SimplifiedMoveset
                 }
                 else if (player.animation == Player.AnimationIndex.StandOnBeam)
                 {
-                    bool isWallClimbing = player.bodyMode == Player.BodyModeIndex.WallClimb && bodyChunk1.contactPoint.x != 0;
+                    // bool isWallClimbing = player.bodyMode == Player.BodyModeIndex.WallClimb && bodyChunk1.contactPoint.x != 0;
                     UpdateAnimationCounter(player);
 
                     player.bodyMode = Player.BodyModeIndex.ClimbingOnBeam;
@@ -1308,11 +1311,11 @@ namespace SimplifiedMoveset
                     // grab vertical beam if possible
                     if (SwitchHorizontalToVerticalBeam(player, attachedFields)) return;
 
-                    if (isWallClimbing)
-                    {
-                        player.animation = Player.AnimationIndex.None;
-                        return;
-                    }
+                    // if (isWallClimbing)
+                    // {
+                    //     // player.animation = Player.AnimationIndex.None;
+                    //     // return;
+                    // }
 
                     if (bodyChunk0.contactPoint.y < 1 || !player.IsTileSolid(bChunk: 1, 0, 1))
                     {
@@ -1883,73 +1886,76 @@ namespace SimplifiedMoveset
         // there are cases where this function does not call orig()
         private static void Player_WallJump(On.Player.orig_WallJump orig, Player player, int direction)
         {
-            if (player.room is Room room)
+            if (player.room is not Room room)
             {
-                // I think this was to prevent glitching hands when jumping off walls // hand animation is only used for wall climb
-                if (MainMod.Option_WallClimb && !player.GetAttachedFields().initializeHands)
+                orig(player, direction);
+                return;
+            }
+
+            // I think this was to prevent glitching hands when jumping off walls // hand animation is only used for wall climb
+            if (MainMod.Option_WallClimb && !player.GetAttachedFields().initializeHands)
+            {
+                player.GetAttachedFields().initializeHands = true;
+            }
+
+            if (!MainMod.Option_WallJump)
+            {
+                orig(player, direction);
+                return;
+            }
+
+            // climb on smaller obstacles instead
+            if (player.input[0].x != 0 && player.bodyChunks[1].contactPoint.x == player.input[0].x && player.IsTileSolid(0, player.input[0].x, -1) && !player.IsTileSolid(0, player.input[0].x, 0))
+            {
+                player.simulateHoldJumpButton = 0;
+                return;
+            }
+
+            // jump to be able to climb on smaller obstacles
+            if (player.input[0].x != 0 && player.bodyChunks[0].contactPoint.x == player.input[0].x && player.IsTileSolid(0, player.input[0].x, 0) && !player.IsTileSolid(0, player.input[0].x, 1))
+            {
+                float adrenalineModifier = Mathf.Lerp(1f, 1.15f, player.Adrenaline);
+                if (player.exhausted)
                 {
-                    player.GetAttachedFields().initializeHands = true;
+                    adrenalineModifier *= 1f - 0.5f * player.aerobicLevel;
                 }
 
-                if (!MainMod.Option_WallJump)
+                player.bodyChunks[0].vel.y = 4f * adrenalineModifier;
+                player.bodyChunks[1].vel.y = 3.5f * adrenalineModifier;
+                player.bodyChunks[0].pos.y += 10f * Mathf.Min(1f, adrenalineModifier);
+                player.bodyChunks[1].pos.y += 10f * Mathf.Min(1f, adrenalineModifier);
+
+                player.simulateHoldJumpButton = 0;
+                return;
+            }
+
+            IntVector2 bodyChunkTilePosition = room.GetTilePosition(player.bodyChunks[1].pos);
+            Room.Tile bodyChunkTile = room.GetTile(bodyChunkTilePosition);
+            Room.Tile groundTile = room.GetTile(bodyChunkTilePosition - new IntVector2(0, 1));
+
+            // normal jump off the ground // not exactly the same as in jump // but the same as in vanilla code // only changed conditions
+            if (groundTile.Solid || groundTile.Terrain == Room.Tile.TerrainType.Slope || groundTile.Terrain == Room.Tile.TerrainType.Floor || bodyChunkTile.WaterSurface || groundTile.WaterSurface) // ||  player.bodyChunks[1].submersion > 0.1 // bodyChunkTile.horizontalBeam || groundTile.horizontalBeam ||
+            {
+                float adrenalineModifier = Mathf.Lerp(1f, 1.15f, player.Adrenaline);
+                if (player.exhausted)
                 {
-                    orig(player, direction);
-                    return;
+                    adrenalineModifier *= 1f - 0.5f * player.aerobicLevel;
                 }
 
-                // climb on smaller obstacles instead
-                if (player.input[0].x != 0 && player.bodyChunks[1].contactPoint.x == player.input[0].x && player.IsTileSolid(0, player.input[0].x, -1) && !player.IsTileSolid(0, player.input[0].x, 0))
-                {
-                    player.simulateHoldJumpButton = 0;
-                    return;
-                }
+                player.bodyChunks[0].vel.y = 8f * adrenalineModifier;
+                player.bodyChunks[1].vel.y = 7f * adrenalineModifier;
+                player.bodyChunks[0].pos.y += 10f * Mathf.Min(1f, adrenalineModifier);
+                player.bodyChunks[1].pos.y += 10f * Mathf.Min(1f, adrenalineModifier);
 
-                // jump to be able to climb on smaller obstacles
-                if (player.input[0].x != 0 && (player.bodyChunks[0].contactPoint.x == player.input[0].x && player.IsTileSolid(0, player.input[0].x, 0)) && !player.IsTileSolid(0, player.input[0].x, 1))
-                {
-                    float adrenalineModifier = Mathf.Lerp(1f, 1.15f, player.Adrenaline);
-                    if (player.exhausted)
-                    {
-                        adrenalineModifier *= (float)(1.0 - 0.5 * player.aerobicLevel);
-                    }
-
-                    player.bodyChunks[0].vel.y = 4f * adrenalineModifier;
-                    player.bodyChunks[1].vel.y = 3.5f * adrenalineModifier;
-                    player.bodyChunks[0].pos.y += 10f * Mathf.Min(1f, adrenalineModifier);
-                    player.bodyChunks[1].pos.y += 10f * Mathf.Min(1f, adrenalineModifier);
-
-                    player.simulateHoldJumpButton = 0;
-                    return;
-                }
-
-                IntVector2 bodyChunkTilePosition = room.GetTilePosition(player.bodyChunks[1].pos);
-                Room.Tile bodyChunkTile = room.GetTile(bodyChunkTilePosition);
-                Room.Tile groundTile = room.GetTile(bodyChunkTilePosition - new IntVector2(0, 1));
-
-                // normal jump off the ground // not exactly the same as in jump // but the same as in vanilla code // only changed conditions
-                if (bodyChunkTile.horizontalBeam || groundTile.horizontalBeam || groundTile.Solid || groundTile.Terrain == Room.Tile.TerrainType.Slope || groundTile.Terrain == Room.Tile.TerrainType.Floor || bodyChunkTile.WaterSurface || groundTile.WaterSurface) // ||  player.bodyChunks[1].submersion > 0.1
-                {
-                    float adrenalineModifier = Mathf.Lerp(1f, 1.15f, player.Adrenaline);
-                    if (player.exhausted)
-                    {
-                        adrenalineModifier *= (float)(1.0 - 0.5 * player.aerobicLevel);
-                    }
-
-                    player.bodyChunks[0].vel.y = 8f * adrenalineModifier;
-                    player.bodyChunks[1].vel.y = 7f * adrenalineModifier;
-                    player.bodyChunks[0].pos.y += 10f * Mathf.Min(1f, adrenalineModifier);
-                    player.bodyChunks[1].pos.y += 10f * Mathf.Min(1f, adrenalineModifier);
-
-                    room.PlaySound(SoundID.Slugcat_Normal_Jump, player.mainBodyChunk, false, 1f, 1f);
-                    player.jumpBoost = 0.0f;
-                    player.simulateHoldJumpButton = 0;
-                }
-                // don't jump off the wall while climbing // x input direction == wall jump direction
-                else if (player.input[0].x == 0 || direction > 0 == player.input[0].x > 0)
-                {
-                    orig(player, direction);
-                    player.simulateHoldJumpButton = 0;
-                }
+                room.PlaySound(SoundID.Slugcat_Normal_Jump, player.mainBodyChunk, false, 1f, 1f);
+                player.jumpBoost = 0.0f;
+                player.simulateHoldJumpButton = 0;
+            }
+            // don't jump off the wall while climbing // x input direction == wall jump direction
+            else if (player.input[0].x == 0 || direction > 0 == player.input[0].x > 0)
+            {
+                orig(player, direction);
+                player.simulateHoldJumpButton = 0;
             }
         }
 

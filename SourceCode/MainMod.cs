@@ -10,7 +10,7 @@ using UnityEngine;
 [assembly: SecurityPermission(SecurityAction.RequestMinimum, SkipVerification = true)]
 namespace SimplifiedMoveset
 {
-    [BepInPlugin("SchuhBaum.SimplifiedMoveset", "SimplifiedMoveset", "2.0.4")]
+    [BepInPlugin("SchuhBaum.SimplifiedMoveset", "SimplifiedMoveset", "2.0.5")]
     public class MainMod : BaseUnityPlugin
     {
         //
@@ -19,7 +19,7 @@ namespace SimplifiedMoveset
 
         public static readonly string MOD_ID = "SimplifiedMoveset";
         public static readonly string author = "SchuhBaum";
-        public static readonly string version = "2.0.4";
+        public static readonly string version = "2.0.5";
 
         //
         // options
@@ -137,9 +137,17 @@ namespace SimplifiedMoveset
             if (isInitialized) return;
             isInitialized = true;
 
-            MachineConnector.SetRegisteredOI(MOD_ID, MainModOptions.instance);
-
             Debug.Log("SimplifiedMoveset: Version " + version);
+            // TODO temporary
+            try
+            {
+                MachineConnector.SetRegisteredOI(MOD_ID, MainModOptions.instance);
+            }
+            catch (Exception exception)
+            {
+                Debug.Log("SimplifiedMoveset: " + exception);
+            }
+
             BodyChunkMod.OnEnable();
             BodyChunkConnectionMod.OnEnable();
             PlayerMod.OnEnable();
@@ -147,6 +155,7 @@ namespace SimplifiedMoveset
             RainWorldGameMod.OnEnable();
             SlugcatHandMod.OnEnable();
             TubeWormMod.OnEnable();
+
         }
     }
 }

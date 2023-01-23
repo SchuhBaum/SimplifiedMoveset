@@ -1,5 +1,5 @@
 ## SimplifiedMoveset
-###### Version: 2.0.4
+###### Version: 2.0.5
 
 This is a mod for Rain World v1.9.
 
@@ -23,12 +23,14 @@ There are two licenses available - MIT and Unlicense. You can choose which one y
 
 ### Changelog
 #### (Rain World v1.9)
-v2.0.4:
+v2.0.5:
 - Added support for Rain World 1.9.
 - Removed AutoUpdate.
 - (wall climb / jump) Fixed a bug where you would slightly slide down without pressing down.
 - (swim) Fixed a bug where you could still dash underwater (and by doing that consume air). I included an exception when Rain World Remixes "No swim boost penalty" option is used.
 - (roll_2) This option needs to be enabled to add changes to vanilla behavior (for consistency). Before it was reversed.
+- (wall jump) Remove jumping off horizontal beams while wall climbing. I found it too hard to anticipate when it happens.
+- (wall jump) Instead standing on beams has higher priority than wall climbing. You can do a normal jump off them now even when hugging a wall.
 
 #### (Rain World v1.5)
 v0.30:
