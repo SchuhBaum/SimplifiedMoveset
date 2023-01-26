@@ -653,17 +653,26 @@ namespace SimplifiedMoveset
                 if (MainMod.Option_Roll_1 && player.animation == Player.AnimationIndex.Roll)
                 {
                     // before switch statement // vanilla code
-                    player.feetStuckPos = new Vector2?(); // what does this do?
+                    player.feetStuckPos = null; // what does this do?
+                    player.pyroJumpDropLock = 40;
+                    player.forceSleepCounter = 0;
+
+                    if (player.PainJumps && player.grasps[0]?.grabbed is not Yeek)
+                    {
+                        player.gourmandExhausted = true;
+                        player.aerobicLevel = 1f;
+                    }
+
                     float adrenalineModifier = Mathf.Lerp(1f, 1.15f, player.Adrenaline);
 
                     if (player.grasps[0] != null && player.HeavyCarry(player.grasps[0].grabbed) && player.grasps[0].grabbed is not Cicada)
                     {
                         adrenalineModifier += Mathf.Min(Mathf.Max(0.0f, player.grasps[0].grabbed.TotalMass - 0.2f) * 1.5f, 1.3f);
                     }
-                    player.AerobicIncrease(1f); // what does this do?
+                    player.AerobicIncrease(player.isGourmand ? 0.75f : 1f);// what does this do?
 
                     // switch // case: AnimationIndex.Roll
-                    player.rocketJumpFromBellySlide = true;
+                    player.rocketJumpFromBellySlide = true; // should not be needed anymore // the roll initiation logic has been modded
                     RocketJump(player, adrenalineModifier);
                     player.rollDirection = 0;
                 }
@@ -709,16 +718,14 @@ namespace SimplifiedMoveset
             // belly slide throw // removed timing
             int rollCounter = player.rollCounter;
             player.rollCounter = 10;
-
             orig(player, grasp, eu);
-
             player.rollCounter = rollCounter;
         }
 
         private static void Player_ThrowObject_Option_SpearThrow(On.Player.orig_ThrowObject orig, Player player, int grasp, bool eu)
         {
             // throw weapon // don't get forward momentum on ground or poles
-            if (player.grasps[grasp].grabbed is Weapon && player.animation != Player.AnimationIndex.BellySlide && (player.animation != Player.AnimationIndex.Flip || player.input[0].y >= 0 || player.input[0].x != 0))
+            if (player.grasps[grasp]?.grabbed is Weapon && player.animation != Player.AnimationIndex.BellySlide && (player.animation != Player.AnimationIndex.Flip || player.input[0].y >= 0 || player.input[0].x != 0))
             {
                 if (player.bodyMode == Player.BodyModeIndex.ClimbingOnBeam || player.bodyChunks[1].onSlope != 0)
                 {
@@ -729,7 +736,6 @@ namespace SimplifiedMoveset
                     player.bodyChunks[1].vel.x -= player.ThrowDirection * 4f; // total: -8f
                 }
             }
-
             orig(player, grasp, eu);
         }
 
@@ -745,6 +751,11 @@ namespace SimplifiedMoveset
             AttachedFields attachedFields = player.GetAttachedFields();
             BodyChunk bodyChunk0 = player.bodyChunks[0];
             BodyChunk bodyChunk1 = player.bodyChunks[1];
+
+            if (MainMod.Option_LedgeGrab && player.animation == Player.AnimationIndex.LedgeGrab)
+            {
+                player.animation = Player.AnimationIndex.None;
+            }
 
             if (attachedFields.getUpOnBeamAbortCounter > 0) // beam climb
             {
@@ -987,40 +998,9 @@ namespace SimplifiedMoveset
             }
 
             // ledge grab 
-            else if (player.animation == Player.AnimationIndex.LedgeGrab)
+            else if (MainMod.Option_WallJump && player.animation == Player.AnimationIndex.LedgeGrab && (player.canWallJump == 0 || Math.Sign(player.canWallJump) == -Math.Sign(player.flipDirection)))
             {
-                if (MainMod.Option_WallJump && (player.canWallJump == 0 || Math.Sign(player.canWallJump) == -Math.Sign(player.flipDirection)))
-                {
-                    player.canWallJump = player.flipDirection * -15; // you can do a (mid-air) wall jump off a ledge grab
-                }
-
-                if (MainMod.Option_LedgeGrab)
-                {
-                    if (player.input[0].jmp && attachedFields.jumpPressedCounter < 20)
-                    {
-                        attachedFields.jumpPressedCounter = 20;
-                    }
-
-                    // holds the ledge grab animation until jump is pressed
-                    if (attachedFields.jumpPressedCounter == 0 && player.IsTileSolid(0, player.flipDirection, 0) && !player.IsTileSolid(0, player.flipDirection, 1) && room.GetTile(player.abstractCreature.pos.Tile + new IntVector2(player.flipDirection * 2, 0)).Terrain != Room.Tile.TerrainType.ShortcutEntrance && room.GetTile(player.abstractCreature.pos.Tile + new IntVector2(player.flipDirection * 2, 1)).Terrain != Room.Tile.TerrainType.ShortcutEntrance) // dont stay in ledge grab when at a shortcut ledge
-                    {
-                        player.ledgeGrabCounter = 0;
-                        bodyChunk0.pos -= new Vector2(0.0f, 4f);
-                        bodyChunk1.vel.x -= player.flipDirection;
-
-                        if (player.input[0].x == player.flipDirection || player.input[0].y == 1)
-                        {
-                            bodyChunk1.vel -= new Vector2(-0.5f * player.flipDirection, -0.5f);
-                        }
-
-                        if (player.graphicsModule is PlayerGraphics playerGraphics)
-                        {
-                            // does not trigger otherwise when you "fall" onto a ledge grab
-                            playerGraphics.hands[0].mode = Limb.Mode.HuntAbsolutePosition;
-                            playerGraphics.hands[1].mode = Limb.Mode.HuntAbsolutePosition;
-                        }
-                    }
-                }
+                player.canWallJump = player.flipDirection * -15; // you can do a (mid-air) wall jump off a ledge grab
             }
 
             // beam climb 
@@ -1937,14 +1917,20 @@ namespace SimplifiedMoveset
             // normal jump off the ground // not exactly the same as in jump // but the same as in vanilla code // only changed conditions
             if (groundTile.Solid || groundTile.Terrain == Room.Tile.TerrainType.Slope || groundTile.Terrain == Room.Tile.TerrainType.Floor || bodyChunkTile.WaterSurface || groundTile.WaterSurface) // ||  player.bodyChunks[1].submersion > 0.1 // bodyChunkTile.horizontalBeam || groundTile.horizontalBeam ||
             {
+                if (player.PainJumps && player.grasps[0]?.grabbed is not Yeek)
+                {
+                    player.gourmandExhausted = true;
+                    player.aerobicLevel = 1f;
+                }
+
                 float adrenalineModifier = Mathf.Lerp(1f, 1.15f, player.Adrenaline);
                 if (player.exhausted)
                 {
                     adrenalineModifier *= 1f - 0.5f * player.aerobicLevel;
                 }
 
-                player.bodyChunks[0].vel.y = 8f * adrenalineModifier;
-                player.bodyChunks[1].vel.y = 7f * adrenalineModifier;
+                player.bodyChunks[0].vel.y = (player.isRivulet ? 9f : 8f) * adrenalineModifier;
+                player.bodyChunks[1].vel.y = (player.isRivulet ? 8f : 7f) * adrenalineModifier;
                 player.bodyChunks[0].pos.y += 10f * Mathf.Min(1f, adrenalineModifier);
                 player.bodyChunks[1].pos.y += 10f * Mathf.Min(1f, adrenalineModifier);
 

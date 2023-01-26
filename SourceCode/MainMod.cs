@@ -10,7 +10,7 @@ using UnityEngine;
 [assembly: SecurityPermission(SecurityAction.RequestMinimum, SkipVerification = true)]
 namespace SimplifiedMoveset
 {
-    [BepInPlugin("SchuhBaum.SimplifiedMoveset", "SimplifiedMoveset", "2.0.7")]
+    [BepInPlugin("SchuhBaum.SimplifiedMoveset", "SimplifiedMoveset", "2.0.8")]
     public class MainMod : BaseUnityPlugin
     {
         //
@@ -19,7 +19,7 @@ namespace SimplifiedMoveset
 
         public static readonly string MOD_ID = "SimplifiedMoveset";
         public static readonly string author = "SchuhBaum";
-        public static readonly string version = "2.0.7";
+        public static readonly string version = "2.0.8";
 
         //
         // options
@@ -134,19 +134,12 @@ namespace SimplifiedMoveset
         {
             orig(rainWorld);
 
+            MachineConnector.SetRegisteredOI(MOD_ID, MainModOptions.instance);
+
             if (isInitialized) return;
             isInitialized = true;
 
             Debug.Log("SimplifiedMoveset: Version " + version);
-            // TODO temporary
-            try
-            {
-                MachineConnector.SetRegisteredOI(MOD_ID, MainModOptions.instance);
-            }
-            catch (Exception exception)
-            {
-                Debug.Log("SimplifiedMoveset: " + exception);
-            }
 
             BodyChunkMod.OnEnable();
             BodyChunkConnectionMod.OnEnable();

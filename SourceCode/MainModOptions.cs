@@ -18,7 +18,7 @@ namespace SimplifiedMoveset
 
         public static Configurable<bool> crouchJump = instance.config.Bind("crouchJump", defaultValue: true, new ConfigurableInfo("Stand up during crouch jumps. Decreases charge time for super launch jumps.", null, "", "Crouch Jump"));
         public static Configurable<bool> grab = instance.config.Bind("grab", defaultValue: false, new ConfigurableInfo("Grab dead creatures only when crouching.", null, "", "Grab"));
-        public static Configurable<bool> ledgeGrab = instance.config.Bind("ledgeGrab", defaultValue: false, new ConfigurableInfo("Slugcat stays in the ledge grab animation until jump is pressed.", null, "", "Ledge Grab"));
+        public static Configurable<bool> ledgeGrab = instance.config.Bind("ledgeGrab", defaultValue: true, new ConfigurableInfo("Removes the ledge grab animation. Otherwise this can mess with wall jumps and can give you extra downward momentum.", null, "", "Ledge Grab"));
 
         public static Configurable<bool> roll_1 = instance.config.Bind("roll_1", defaultValue: true, new ConfigurableInfo("Stand up after rolls, and rocket jumps (same effect as with the option Belly Slide). Rocket jumps from rolls have consistent height.", null, "", "Roll 1"));
         public static Configurable<bool> roll_2 = instance.config.Bind("roll_2_", defaultValue: false, new ConfigurableInfo("When enabled, removes the ability to initiate rolls from rocket jumps.", null, "", "Roll 2"));
