@@ -76,6 +76,7 @@ namespace SimplifiedMoveset
             {
                 On.Player.Tongue.AutoAim -= Tongue_AutoAim;
                 On.Player.Tongue.Shoot -= Tongue_Shoot;
+                On.Player.TongueUpdate -= Player_TongueUpdate;
             }
         }
 
@@ -147,6 +148,7 @@ namespace SimplifiedMoveset
             {
                 On.Player.Tongue.AutoAim += Tongue_AutoAim;
                 On.Player.Tongue.Shoot += Tongue_Shoot;
+                On.Player.TongueUpdate += Player_TongueUpdate;
             }
         }
 
@@ -171,11 +173,11 @@ namespace SimplifiedMoveset
 
         // the name of the function is a bit ambiguous since one of the animations
         // is called ClimbOnBeam..
-        // public static bool IsClimbingOnBeam(this Player player)
-        // {
-        //     int player_animation = (int)player.animation;
-        //     return player_animation >= 6 && player_animation <= 12;
-        // }
+        public static bool IsClimbingOnBeam(this Player player)
+        {
+            int player_animation = (int)player.animation;
+            return player_animation >= 6 && player_animation <= 12;
+        }
 
         public static bool IsTileSolidOrSlope(this Player player, int chunkIndex, int relativeX, int relativeY)
         {
@@ -657,6 +659,13 @@ namespace SimplifiedMoveset
             if (MainMod.Option_WallJump && player.animation == Player.AnimationIndex.StandOnBeam && player.input[0].y > -1)
             {
                 player.lowerBodyFramesOffGround = 0;
+            }
+
+            // prioritize retracting over jumping off beams;
+            if (MainMod.Option_TubeWorm && player.tongue != null && player.GetAttachedFields().isTongueRetracting && player.IsClimbingOnBeam())
+            {
+                player.GetAttachedFields().isTongueRetracting = false;
+                return;
             }
 
             if (player.bodyMode != Player.BodyModeIndex.CorridorClimb && player.bodyMode != Player.BodyModeIndex.WallClimb)
@@ -1677,7 +1686,7 @@ namespace SimplifiedMoveset
                 // I want to prevent a crawl turn on ledges;
                 // not sure if the check for solid tiles are enough;
                 // seems like it works;
-                if (player.input[0].x != 0 && player.input[0].x > 0 == player.bodyChunks[0].pos.x < (double)player.bodyChunks[1].pos.x && player.crawlTurnDelay > 5 && !player.IsTileSolid(0, 0, 1) && !player.IsTileSolid(1, 0, 1) && player.IsTileSolidOrSlope(1, -1, -1) && player.IsTileSolidOrSlope(1, 0, -1) && player.IsTileSolidOrSlope(1, 1, -1))
+                if (player.input[0].x != 0 && player.input[0].x > 0 == player.bodyChunks[0].pos.x < (double)player.bodyChunks[1].pos.x && player.crawlTurnDelay > 5 && !player.IsTileSolid(0, 0, 1) && !player.IsTileSolid(1, 0, 1) && player.IsTileSolidOrSlope(1, 0, -1) && player.IsTileSolidOrSlope(1, player.input[0].x, -1))
                 {
                     AlignPosYOnSlopes(player);
                     player.dynamicRunSpeed[0] *= 0.5f; // default: 0.75f
@@ -2066,6 +2075,22 @@ namespace SimplifiedMoveset
             orig(tongue, dir);
         }
 
+        private static void Player_TongueUpdate(On.Player.orig_TongueUpdate orig, Player player) // MainMod.Option_TubeWorm
+        {
+            if (player.tongue == null || player.room == null)
+            {
+                orig(player);
+                return;
+            }
+
+            if (player.tongue.Attached && !player.Stunned && player.input[0].jmp && !player.input[1].jmp && player.tongueAttachTime >= 2 && player.IsClimbingOnBeam())
+            {
+                player.tongue.Release();
+                player.GetAttachedFields().isTongueRetracting = true;
+            }
+            orig(player);
+        }
+
         //
         //
         //
@@ -2076,6 +2101,8 @@ namespace SimplifiedMoveset
             public bool isSwitchingBeams = false;
 
             public int dontUseTubeWormCounter = 0;
+            public bool isTongueRetracting = false;
+
             public int getUpOnBeamAbortCounter = 0;
             public int getUpOnBeamDirection = 0;
             public Vector2? grabBeamCooldownPos = null;
