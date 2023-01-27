@@ -10,7 +10,7 @@ using UnityEngine;
 [assembly: SecurityPermission(SecurityAction.RequestMinimum, SkipVerification = true)]
 namespace SimplifiedMoveset
 {
-    [BepInPlugin("SchuhBaum.SimplifiedMoveset", "SimplifiedMoveset", "2.0.9")]
+    [BepInPlugin("SchuhBaum.SimplifiedMoveset", "SimplifiedMoveset", "2.1.0")]
     public class MainMod : BaseUnityPlugin
     {
         //
@@ -19,7 +19,7 @@ namespace SimplifiedMoveset
 
         public static readonly string MOD_ID = "SimplifiedMoveset";
         public static readonly string author = "SchuhBaum";
-        public static readonly string version = "2.0.9";
+        public static readonly string version = "2.1.0";
 
         //
         // options
@@ -31,17 +31,16 @@ namespace SimplifiedMoveset
 
         public static bool Option_CrouchJump => MainModOptions.crouchJump.Value;
         public static bool Option_Grab => MainModOptions.grab.Value;
-        public static bool Option_LedgeGrab => MainModOptions.ledgeGrab.Value;
-
         public static bool Option_Roll_1 => MainModOptions.roll_1.Value;
+
         public static bool Option_Roll_2 => MainModOptions.roll_2.Value;
         public static bool Option_SlideTurn => MainModOptions.slideTurn.Value;
-
         public static bool Option_SpearThrow => MainModOptions.spearThrow.Value;
+
         public static bool Option_Swim => MainModOptions.swim.Value;
         public static bool Option_TubeWorm => MainModOptions.tubeWorm.Value;
-
         public static bool Option_WallClimb => MainModOptions.wallClimb.Value;
+
         public static bool Option_WallJump => MainModOptions.wallJump.Value;
 
         //

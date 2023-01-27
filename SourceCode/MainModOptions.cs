@@ -18,17 +18,16 @@ namespace SimplifiedMoveset
 
         public static Configurable<bool> crouchJump = instance.config.Bind("crouchJump", defaultValue: true, new ConfigurableInfo("Stand up during crouch jumps. Decreases charge time for super launch jumps.", null, "", "Crouch Jump"));
         public static Configurable<bool> grab = instance.config.Bind("grab", defaultValue: false, new ConfigurableInfo("Grab dead creatures only when crouching.", null, "", "Grab"));
-        public static Configurable<bool> ledgeGrab = instance.config.Bind("ledgeGrab", defaultValue: true, new ConfigurableInfo("Removes the ledge grab animation. Otherwise this can mess with wall jumps and can give you extra downward momentum.", null, "", "Ledge Grab"));
-
         public static Configurable<bool> roll_1 = instance.config.Bind("roll_1", defaultValue: true, new ConfigurableInfo("Stand up after rolls, and rocket jumps (same effect as with the option Belly Slide). Rocket jumps from rolls have consistent height.", null, "", "Roll 1"));
+
         public static Configurable<bool> roll_2 = instance.config.Bind("roll_2_", defaultValue: false, new ConfigurableInfo("When enabled, removes the ability to initiate rolls from rocket jumps.", null, "", "Roll 2"));
         public static Configurable<bool> slideTurn = instance.config.Bind("slideTurn", defaultValue: false, new ConfigurableInfo("Reduces the requirements for slide turns. Backflips are possible earlier.", null, "", "Slide Turn"));
-
         public static Configurable<bool> spearThrow = instance.config.Bind("spearThrow", defaultValue: true, new ConfigurableInfo("The throw momentum does not affect slugcat on the ground. The momentum while climbing beams is reduced. Throw boosting in the air is still possible.", null, "", "Spear Throw"));
+
         public static Configurable<bool> swim = instance.config.Bind("swim", defaultValue: false, new ConfigurableInfo("Removes breath limit underwater. You can eat underwater. Increases swim speed. Adjusts buoyancy.", null, "", "Swim"));
         public static Configurable<bool> tubeWorm = instance.config.Bind("tubeWorm", defaultValue: true, new ConfigurableInfo("Adds auto - aim grappling to beams.", null, "", "Tube Worm"));
-
         public static Configurable<bool> wallClimb = instance.config.Bind("wallClimb", defaultValue: false, new ConfigurableInfo("Adds crawling on walls. Removes wall sliding. Normal jumps are prioritized for small obstacles instead of wall climbing / jumping.", null, "", "Wall Climb"));
+
         public static Configurable<bool> wallJump = instance.config.Bind("wallJump", defaultValue: true, new ConfigurableInfo("Only wall jump when facing away from the wall.  Wall jumps are prioritized over using tube worms. Removes wall sliding when not holding down. Normal jumps are prioritized for small obstacles instead of wall climbing / jumping.", null, "", "Wall Jump"));
 
         //
@@ -96,19 +95,17 @@ namespace SimplifiedMoveset
 
             AddCheckBox(crouchJump, (string)crouchJump.info.Tags[0]);
             AddCheckBox(grab, (string)grab.info.Tags[0]);
-            AddCheckBox(ledgeGrab, (string)ledgeGrab.info.Tags[0]);
-
             AddCheckBox(roll_1, (string)roll_1.info.Tags[0]);
+
             AddCheckBox(roll_2, (string)roll_2.info.Tags[0]);
             AddCheckBox(slideTurn, (string)slideTurn.info.Tags[0]);
-
             AddCheckBox(spearThrow, (string)spearThrow.info.Tags[0]);
+
             AddCheckBox(swim, (string)swim.info.Tags[0]);
             AddCheckBox(tubeWorm, (string)tubeWorm.info.Tags[0]);
-
             AddCheckBox(wallClimb, (string)wallClimb.info.Tags[0]);
+
             AddCheckBox(wallJump, (string)wallJump.info.Tags[0]);
-            // AddCheckBox("slopes", "Slopes", "Makes moving down slopes at higher speed possible. Animations might still slow you down. Changes collision with slopes to be identical with solid tiles. These changes only affect player bodyChunks.", defaultBool: true);
 
             DrawCheckBoxes(ref Tabs[0]);
             DrawBox(ref Tabs[0]);
@@ -122,17 +119,16 @@ namespace SimplifiedMoveset
 
             Debug.Log("SimplifiedMoveset: Option_CrouchJump " + MainMod.Option_CrouchJump);
             Debug.Log("SimplifiedMoveset: Option_Grab " + MainMod.Option_Grab);
-            Debug.Log("SimplifiedMoveset: Option_LedgeGrab " + MainMod.Option_LedgeGrab);
-
             Debug.Log("SimplifiedMoveset: Option_Roll_1 " + MainMod.Option_Roll_1);
+
             Debug.Log("SimplifiedMoveset: Option_Roll_2 " + MainMod.Option_Roll_2);
             Debug.Log("SimplifiedMoveset: Option_SlideTurn " + MainMod.Option_SlideTurn);
-
             Debug.Log("SimplifiedMoveset: Option_SpearThrow " + MainMod.Option_SpearThrow);
+
             Debug.Log("SimplifiedMoveset: Option_Swim " + MainMod.Option_Swim);
             Debug.Log("SimplifiedMoveset: Option_TubeWorm " + MainMod.Option_TubeWorm);
-
             Debug.Log("SimplifiedMoveset: Option_WallClimb " + MainMod.Option_WallClimb);
+
             Debug.Log("SimplifiedMoveset: Option_WallJump " + MainMod.Option_WallJump);
         }
 

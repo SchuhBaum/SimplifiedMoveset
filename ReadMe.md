@@ -1,12 +1,12 @@
 ## SimplifiedMoveset
-###### Version: 2.0.9
+###### Version: 2.1.0
 
 This is a mod for Rain World v1.9.
 
 ### Description
 Various movement changes. The main idea is to remove or simplify timings, making it easier to perform advanced moves consistently. In addition, includes the ability to breath underwater and crawl on walls (disabled by default).  
   
-Here is a youtube video showing Rain World 1.5 + some of the changes in action:  
+Here is a youtube video showing Rain World v1.5 + some of the changes in action:  
 https://www.youtube.com/watch?v=Jp6UyUgoWB0
 
 ### Installation
@@ -23,7 +23,7 @@ There are two licenses available - MIT and Unlicense. You can choose which one y
 
 ### Changelog
 #### (Rain World v1.9)
-v2.0.9:
+v2.1.0:
 - Added support for Rain World 1.9.
 - Removed AutoUpdate.
 - (wall climb / jump) Fixed a bug where you would slightly slide down without pressing down.
@@ -37,6 +37,8 @@ v2.0.9:
 - Removed some inconsistencies with vanilla code regarding new characters.
 - (tube worm) This option extends now to Saint's tongue.
 - Adjusted the speed of belly slides.
+- (crawl) Crawl turns can only be initiated when on (semi-)solid tiles or slopes.
+- (ledge grab) Removed this option. That what I was trying to do is related to crawl turns from ledges.
 
 #### (Rain World v1.5)
 v0.30:
