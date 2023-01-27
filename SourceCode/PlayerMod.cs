@@ -74,9 +74,12 @@ namespace SimplifiedMoveset
 
             if (MainMod.Option_TubeWorm)
             {
+                On.Player.SaintTongueCheck -= Player_SaintTongueCheck;
+                On.Player.TongueUpdate -= Player_TongueUpdate;
+
                 On.Player.Tongue.AutoAim -= Tongue_AutoAim;
                 On.Player.Tongue.Shoot -= Tongue_Shoot;
-                On.Player.TongueUpdate -= Player_TongueUpdate;
+                On.Player.Tongue.Update -= Tongue_Update;
             }
         }
 
@@ -146,9 +149,12 @@ namespace SimplifiedMoveset
 
             if (MainMod.Option_TubeWorm)
             {
+                On.Player.SaintTongueCheck += Player_SaintTongueCheck;
+                On.Player.TongueUpdate += Player_TongueUpdate;
+
                 On.Player.Tongue.AutoAim += Tongue_AutoAim;
                 On.Player.Tongue.Shoot += Tongue_Shoot;
-                On.Player.TongueUpdate += Player_TongueUpdate;
+                On.Player.Tongue.Update += Tongue_Update;
             }
         }
 
@@ -662,11 +668,7 @@ namespace SimplifiedMoveset
             }
 
             // prioritize retracting over jumping off beams;
-            if (MainMod.Option_TubeWorm && player.tongue != null && player.GetAttachedFields().isTongueRetracting && player.IsClimbingOnBeam())
-            {
-                player.GetAttachedFields().isTongueRetracting = false;
-                return;
-            }
+            if (MainMod.Option_TubeWorm && player.tongue != null && player.GetAttachedFields().dontUseTubeWormCounter > 0 && player.IsClimbingOnBeam()) return;
 
             if (player.bodyMode != Player.BodyModeIndex.CorridorClimb && player.bodyMode != Player.BodyModeIndex.WallClimb)
             {
@@ -795,9 +797,14 @@ namespace SimplifiedMoveset
                 --attachedFields.soundCooldown;
             }
 
-            if (attachedFields.jumpPressedCounter > 0) // ledge grab
+            if (attachedFields.dontUseTubeWormCounter > 0)
             {
-                --attachedFields.jumpPressedCounter;
+                --attachedFields.dontUseTubeWormCounter;
+            }
+
+            if (attachedFields.dontUseTubeWormCounter == 0 && player.canWallJump > 0)
+            {
+                attachedFields.dontUseTubeWormCounter = player.canWallJump;
             }
 
             if (player.animation == Player.AnimationIndex.None)
@@ -1123,7 +1130,7 @@ namespace SimplifiedMoveset
 
                     if (player.input[0].jmp && !player.input[1].jmp)
                     {
-                        if (player.tubeWorm?.tongues[0].Attached == true) return; // retract tubeWorm first // consistent behavior with when standing on beam and pressing jump
+                        if (player.tubeWorm?.tongues[0].Attached == true || attachedFields.isTongueRetracting) return; // retract tubeWorm first // consistent behavior with when standing on beam and pressing jump
 
                         if (player.input[0].y == 1) // only drop when pressing jump without holding up
                         {
@@ -1956,6 +1963,31 @@ namespace SimplifiedMoveset
         //
         //
 
+        private static bool Player_SaintTongueCheck(On.Player.orig_SaintTongueCheck orig, Player player) // MainMod.Option_TubeWorm
+        {
+            if (player.GetAttachedFields().dontUseTubeWormCounter > 0) return false;
+            return orig(player);
+        }
+
+        private static void Player_TongueUpdate(On.Player.orig_TongueUpdate orig, Player player) // MainMod.Option_TubeWorm
+        {
+            if (player.tongue == null || player.room == null)
+            {
+                orig(player);
+                return;
+            }
+
+            // priotize climbing and wall jumps
+            if (player.tongue.Attached && !player.Stunned && player.input[0].jmp && !player.input[1].jmp && player.tongueAttachTime >= 2 && (player.IsClimbingOnBeam() || player.bodyMode == Player.BodyModeIndex.WallClimb))
+            {
+                player.tongue.Release();
+
+                // tongue needs to retract first? => two UpdateAnimation() calls inbetween;
+                player.GetAttachedFields().dontUseTubeWormCounter = 5;
+            }
+            orig(player);
+        }
+
         private static Vector2 Tongue_AutoAim(On.Player.Tongue.orig_AutoAim orig, Player.Tongue tongue, Vector2 originalDir) // MainMod.Option_TubeWorm
         {
             Vector2 bestDirection = orig(tongue, originalDir);
@@ -2075,20 +2107,10 @@ namespace SimplifiedMoveset
             orig(tongue, dir);
         }
 
-        private static void Player_TongueUpdate(On.Player.orig_TongueUpdate orig, Player player) // MainMod.Option_TubeWorm
+        private static void Tongue_Update(On.Player.Tongue.orig_Update orig, Player.Tongue tongue) // MainMod.Option_TubeWorm
         {
-            if (player.tongue == null || player.room == null)
-            {
-                orig(player);
-                return;
-            }
-
-            if (player.tongue.Attached && !player.Stunned && player.input[0].jmp && !player.input[1].jmp && player.tongueAttachTime >= 2 && player.IsClimbingOnBeam())
-            {
-                player.tongue.Release();
-                player.GetAttachedFields().isTongueRetracting = true;
-            }
-            orig(player);
+            tongue.player.GetAttachedFields().isTongueRetracting = tongue.mode == Player.Tongue.Mode.Retracting;
+            orig(tongue);
         }
 
         //
@@ -2099,17 +2121,15 @@ namespace SimplifiedMoveset
         {
             public bool initializeHands = false;
             public bool isSwitchingBeams = false;
-
-            public int dontUseTubeWormCounter = 0;
             public bool isTongueRetracting = false;
 
+            public int dontUseTubeWormCounter = 0;
             public int getUpOnBeamAbortCounter = 0;
             public int getUpOnBeamDirection = 0;
-            public Vector2? grabBeamCooldownPos = null;
-
             public int grabBeamCounter = 0;
-            public int jumpPressedCounter = 0;
             public int soundCooldown = 0;
+
+            public Vector2? grabBeamCooldownPos = null;
         }
     }
 }

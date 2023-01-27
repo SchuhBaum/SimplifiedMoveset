@@ -1,4 +1,3 @@
-using System;
 using System.Security;
 using System.Security.Permissions;
 using BepInEx;
@@ -10,7 +9,7 @@ using UnityEngine;
 [assembly: SecurityPermission(SecurityAction.RequestMinimum, SkipVerification = true)]
 namespace SimplifiedMoveset
 {
-    [BepInPlugin("SchuhBaum.SimplifiedMoveset", "SimplifiedMoveset", "2.1.1")]
+    [BepInPlugin("SchuhBaum.SimplifiedMoveset", "SimplifiedMoveset", "2.1.2")]
     public class MainMod : BaseUnityPlugin
     {
         //
@@ -19,7 +18,7 @@ namespace SimplifiedMoveset
 
         public static readonly string MOD_ID = "SimplifiedMoveset";
         public static readonly string author = "SchuhBaum";
-        public static readonly string version = "2.1.1";
+        public static readonly string version = "2.1.2";
 
         //
         // options
@@ -147,7 +146,7 @@ namespace SimplifiedMoveset
             RainWorldGameMod.OnEnable();
             SlugcatHandMod.OnEnable();
             TubeWormMod.OnEnable();
-
+            WeaponMod.OnEnable();
         }
     }
 }

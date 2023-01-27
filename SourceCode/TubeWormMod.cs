@@ -9,8 +9,6 @@ namespace SimplifiedMoveset
         internal static void OnEnable()
         {
             On.TubeWorm.JumpButton += TubeWorm_JumpButton; // prioritize jump over using tube worm
-            On.TubeWorm.Update += TubeWorm_Update; // prioritize jump over using tube worm
-
             On.TubeWorm.Tongue.ProperAutoAim += Tongue_ProperAutoAim; // auto aim and grapple beams on contact // adjust angle based on inputs in some cases
         }
 
@@ -25,15 +23,6 @@ namespace SimplifiedMoveset
                 return player.input[0].jmp && !player.input[1].jmp;
             }
             return orig(tubeWorm, player);
-        }
-
-        private static void TubeWorm_Update(On.TubeWorm.orig_Update orig, TubeWorm tubeWorm, bool eu)
-        {
-            if (tubeWorm.grabbedBy.Count == 1 && tubeWorm.grabbedBy[0].grabber is Player player && player.GetAttachedFields().dontUseTubeWormCounter > 0)
-            {
-                --player.GetAttachedFields().dontUseTubeWormCounter;
-            }
-            orig(tubeWorm, eu);
         }
 
         private static Vector2 Tongue_ProperAutoAim(On.TubeWorm.Tongue.orig_ProperAutoAim orig, TubeWorm.Tongue tongue, Vector2 originalDir)
