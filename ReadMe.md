@@ -1,5 +1,5 @@
 ## SimplifiedMoveset
-###### Version: 2.0.8
+###### Version: 2.0.9
 
 This is a mod for Rain World v1.9.
 
@@ -23,7 +23,7 @@ There are two licenses available - MIT and Unlicense. You can choose which one y
 
 ### Changelog
 #### (Rain World v1.9)
-v2.0.8:
+v2.0.9:
 - Added support for Rain World 1.9.
 - Removed AutoUpdate.
 - (wall climb / jump) Fixed a bug where you would slightly slide down without pressing down.
@@ -35,6 +35,8 @@ v2.0.8:
 - (swim) Fixed a bug that could crash Artificer dreams.
 - (ledge grab) Changed this option. When enabled, ledge grabs are removed. These can mess your wall jumps up and give you extra downward momentum.
 - Removed some inconsistencies with vanilla code regarding new characters.
+- (tube worm) This option extends now to Saint's tongue.
+- Adjusted the speed of belly slides.
 
 #### (Rain World v1.5)
 v0.30:

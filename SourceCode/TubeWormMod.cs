@@ -45,7 +45,7 @@ namespace SimplifiedMoveset
 
             Vector2 newDir = originalDir;
             int inputX = 0;
-            bool inputY = false;
+            bool inputUp = false;
 
             // adept tongue direction to player inputs in some additional cases
             if (tongue.worm.grabbedBy.Count > 0 && tongue.worm.grabbedBy[0].grabber is Player player)
@@ -60,7 +60,7 @@ namespace SimplifiedMoveset
                     newDir = new Vector2(0.0f, 1f);
                 }
 
-                inputY = player.input[0].y > 0;
+                inputUp = player.input[0].y > 0;
                 if (newDir.y < 0.9f)
                 {
                     inputX = player.input[0].x;
@@ -79,7 +79,7 @@ namespace SimplifiedMoveset
             float deg = Custom.VecToDeg(newDir);
             bool beamFound = false;
 
-            if (!inputY)
+            if (!inputUp)
             {
                 IntVector2 tilePosition = tongue.room.GetTilePosition(tongue.baseChunk.pos + tongue.baseChunk.vel * 3f);
                 for (int index = 0; index < 10; ++index)
@@ -117,7 +117,16 @@ namespace SimplifiedMoveset
                     if (attachPos.HasValue)
                     {
                         float cost = degModifier * 1.5f;
-                        if (!inputY)
+
+                        // why do I check for inputUp?
+                        // the effect is that only the degree difference matters for the cost;
+                        // the closer you the better;
+                        // otherwise the distance gets more important;
+                        // shouldn't that be the default?
+                        //
+                        // I guess vanilla does this as well;
+                        // the goal is to extend and not to replace here;
+                        if (!inputUp)
                         {
                             cost += Mathf.Abs(idealDistance - Vector2.Distance(tongue.baseChunk.pos + tongue.baseChunk.vel * 3f, attachPos.Value));
                             if (inputX != 0)

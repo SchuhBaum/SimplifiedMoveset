@@ -71,6 +71,12 @@ namespace SimplifiedMoveset
             {
                 On.Player.GraphicsModuleUpdated -= Player_GraphicsModuleUpdated;
             }
+
+            if (MainMod.Option_TubeWorm)
+            {
+                On.Player.Tongue.AutoAim -= Tongue_AutoAim;
+                On.Player.Tongue.Shoot -= Tongue_Shoot;
+            }
         }
 
         //
@@ -135,6 +141,12 @@ namespace SimplifiedMoveset
             if (MainMod.Option_WallJump || MainMod.Option_WallClimb)
             {
                 On.Player.GraphicsModuleUpdated += Player_GraphicsModuleUpdated; // fix cicade lifting up while wall climbing
+            }
+
+            if (MainMod.Option_TubeWorm)
+            {
+                On.Player.Tongue.AutoAim += Tongue_AutoAim;
+                On.Player.Tongue.Shoot += Tongue_Shoot;
             }
         }
 
@@ -852,33 +864,27 @@ namespace SimplifiedMoveset
                     bodyChunk0.vel.y -= 3f; // default: -2.3f
                 }
 
-                float longBellySlide = 14f;
-                float normalBellySlide = 16.7f; // default: 18.1f
-
+                float bellySlideSpeed = 14f;
                 if (player.isRivulet)
                 {
-                    longBellySlide = 20f;
-                    normalBellySlide = 23.1f;
+                    bellySlideSpeed = 20f;
                 }
                 else if (player.isGourmand)
                 {
                     if (player.gourmandExhausted)
                     {
-                        longBellySlide = 10f;
-                        normalBellySlide = 12.9f;
+                        bellySlideSpeed = 10f;
                     }
                     else
                     {
-                        longBellySlide = 40f;
-                        normalBellySlide = 41.5f;
+                        bellySlideSpeed = 40f;
                     }
                 }
                 else if (player.isSlugpup)
                 {
-                    longBellySlide = 7f;
-                    normalBellySlide = 8.3f;
+                    bellySlideSpeed = 7f;
                 }
-                bodyChunk0.vel.x += (player.longBellySlide ? longBellySlide : normalBellySlide) * player.rollDirection * Mathf.Sin((float)(player.rollCounter / (player.longBellySlide ? 39.0 : 20.0) * Math.PI));
+                bodyChunk0.vel.x += bellySlideSpeed * player.rollDirection * Mathf.Sin((float)(player.rollCounter / (player.longBellySlide ? 39.0 : 19.0) * Math.PI));
 
                 foreach (BodyChunk bodyChunk in player.bodyChunks)
                 {
@@ -888,14 +894,8 @@ namespace SimplifiedMoveset
                     }
                 }
 
-                int longRollCounter = 39; // default: 34
-                int normalRollCounter = 20; // default: 12
-
-                if (player.isRivulet)
-                {
-                    longRollCounter = 23;
-                    normalRollCounter = 10;
-                }
+                int longRollCounter = 39;
+                int normalRollCounter = 19; // default: 15
 
                 // finish // abort when mid-air // don't cancel belly slides on slopes
                 if (player.rollCounter > (player.longBellySlide ? longRollCounter : normalRollCounter) || player.canJump == 0 && !player.IsTileSolidOrSlope(chunkIndex: 0, 0, -1) && !player.IsTileSolidOrSlope(chunkIndex: 1, 0, -1))
@@ -1944,6 +1944,183 @@ namespace SimplifiedMoveset
                 orig(player, direction);
                 player.simulateHoldJumpButton = 0;
             }
+        }
+
+        //
+        //
+        //
+
+        private static Vector2 Tongue_AutoAim(On.Player.Tongue.orig_AutoAim orig, Player.Tongue tongue, Vector2 originalDir) // MainMod.Option_TubeWorm
+        {
+            Vector2 bestDirection = orig(tongue, originalDir);
+            if (bestDirection != originalDir) return bestDirection;
+
+            float maxDistance = tongue.maxRopeLength;
+            if (!SharedPhysics.RayTraceTilesForTerrain(tongue.player.room, tongue.baseChunk.pos, tongue.baseChunk.pos + originalDir * maxDistance) || tongue.player?.room is not Room room)
+            {
+                return bestDirection;
+            }
+
+            float minCost = float.MaxValue;
+            float idealDistance = tongue.idealRopeLength;
+            float minDistance = 0.5f * (tongue.maxRopeLength + tongue.minRopeLength);
+            Vector2? bestAttachPos = null;
+
+            // first case needs to be executed only once => no sign required;
+            foreach (IntVector2 intAttachPos in SharedPhysics.RayTracedTilesArray(tongue.baseChunk.pos + originalDir * minDistance, tongue.baseChunk.pos + originalDir * maxDistance))
+            {
+                Room.Tile tile = room.GetTile(intAttachPos);
+                if (tile.horizontalBeam || tile.verticalBeam)
+                {
+                    bestAttachPos = room.MiddleOfTile(intAttachPos);
+                    bestDirection = originalDir;
+                    minCost = Mathf.Abs(idealDistance - Vector2.Distance(tongue.baseChunk.pos + tongue.baseChunk.vel * 3f, bestAttachPos.Value));
+                    break;
+                }
+            }
+
+            Vector2? shortAttachPos = null;
+            Vector2? shortDirection = null;
+
+            // ideally you grab something that is not too close;
+            // but when nothing is far enough away then just grab something;
+            if (!bestAttachPos.HasValue)
+            {
+                foreach (IntVector2 intAttachPos in SharedPhysics.RayTracedTilesArray(tongue.baseChunk.pos + originalDir * 0.5f * tongue.minRopeLength, tongue.baseChunk.pos + originalDir * minDistance))
+                {
+                    Room.Tile tile = room.GetTile(intAttachPos);
+                    if (tile.horizontalBeam || tile.verticalBeam)
+                    {
+                        shortAttachPos = room.MiddleOfTile(intAttachPos);
+                        shortDirection = originalDir;
+                        break;
+                    }
+                }
+            }
+
+            float deg = Custom.VecToDeg(originalDir);
+            for (float degModifier = 5f; degModifier < 30f; degModifier += 5f)
+            {
+                for (float sign = -1f; sign <= 1f; sign += 2f)
+                {
+                    Vector2? attachPos = null;
+                    Vector2 direction = Custom.DegToVec(deg + sign * degModifier);
+
+                    foreach (IntVector2 intAttachPos in SharedPhysics.RayTracedTilesArray(tongue.baseChunk.pos + direction * minDistance, tongue.baseChunk.pos + direction * maxDistance))
+                    {
+                        Room.Tile tile = room.GetTile(intAttachPos);
+                        if (tile.horizontalBeam || tile.verticalBeam)
+                        {
+                            attachPos = room.MiddleOfTile(intAttachPos);
+                            break;
+                        }
+                    }
+
+                    if (!attachPos.HasValue)
+                    {
+                        if (shortAttachPos.HasValue) continue;
+                        foreach (IntVector2 intAttachPos in SharedPhysics.RayTracedTilesArray(tongue.baseChunk.pos + direction * 0.5f * tongue.minRopeLength, tongue.baseChunk.pos + direction * minDistance))
+                        {
+                            Room.Tile tile = room.GetTile(intAttachPos);
+                            if (tile.horizontalBeam || tile.verticalBeam)
+                            {
+                                shortAttachPos = room.MiddleOfTile(intAttachPos);
+                                shortDirection = direction;
+                                break;
+                            }
+                        }
+                        continue;
+                    }
+
+                    float cost = degModifier * 1.5f + Mathf.Abs(idealDistance - Vector2.Distance(tongue.baseChunk.pos + tongue.baseChunk.vel * 3f, attachPos.Value));
+                    if (cost < minCost)
+                    {
+                        // a bit simplified compared to what tubeWorm does;
+                        bestAttachPos = attachPos;
+                        bestDirection = direction;
+                        minCost = cost;
+                    }
+                }
+            }
+
+            if (bestAttachPos.HasValue)
+            {
+                tongue.AttachToTerrain(bestAttachPos.Value);
+            }
+            else if (shortAttachPos.HasValue && shortDirection.HasValue)
+            {
+                tongue.AttachToTerrain(shortAttachPos.Value);
+                return shortDirection.Value;
+            }
+            return bestDirection;
+
+
+            //
+            // float minCost = float.MaxValue;
+            // for (float degModifier = 0.0f; degModifier < 35f; degModifier += 2.5f)
+            // {
+            //     for (float sign = -1f; sign <= 1f; sign += 2f)
+            //     {
+            //         Vector2? attachPos = null;
+            //         Vector2 direction = Custom.DegToVec(deg + sign * degModifier);
+
+            //         foreach (IntVector2 intAttachPos in SharedPhysics.RayTracedTilesArray(tongue.baseChunk.pos + direction * 30f, tongue.baseChunk.pos + direction * maxDistance)) // don't try to grapple too early, i.e. when MiddleOfTile might be already behind
+            //         {
+            //             Room.Tile tile = tongue.room.GetTile(intAttachPos);
+            //             if (tile.horizontalBeam || tile.verticalBeam)
+            //             {
+            //                 attachPos = tongue.room.MiddleOfTile(intAttachPos);
+            //                 break;
+            //             }
+            //         }
+
+            //         if (attachPos.HasValue)
+            //         {
+            //             float cost = degModifier * 1.5f;
+            //             if (!inputY)
+            //             {
+            //                 cost += Mathf.Abs(idealDistance - Vector2.Distance(tongue.baseChunk.pos + tongue.baseChunk.vel * 3f, attachPos.Value));
+            //                 if (inputX != 0)
+            //                 {
+            //                     cost += Mathf.Abs(inputX * 90f - (deg + sign * degModifier)) * 0.9f;
+            //                 }
+
+            //                 if ()
+            //                 {
+            //                     for (int index = -1; index < 2; ++index)
+            //                     {
+            //                         if (!tongue.room.VisualContact(attachPos.Value, attachPos.Value - new Vector2(40f * index, Vector2.Distance(tongue.baseChunk.pos, attachPos.Value) + 20f)))
+            //                         {
+            //                             cost += 1000f;
+            //                             break;
+            //                         }
+            //                     }
+            //                 }
+            //             }
+
+            //             if (cost < minCost)
+            //             {
+            //                 minCost = cost;
+            //                 output = direction;
+            //                 tongue.worm.playerCheatAttachPos = new Vector2?(attachPos.Value + Custom.DirVec(attachPos.Value, tongue.baseChunk.pos) * 2f);
+            //             }
+            //         }
+            //     }
+            // }
+        }
+
+        private static void Tongue_Shoot(On.Player.Tongue.orig_Shoot orig, Player.Tongue tongue, Vector2 dir) // MainMod.Option_TubeWorm
+        {
+            if (tongue.player.input[0].x != 0)
+            {
+                // used in the case where y > 0 as well
+                dir += new Vector2(tongue.player.input[0].x * 0.35f, 0.0f);
+            }
+            else
+            {
+                dir = new Vector2(0.0f, 1f);
+            }
+            orig(tongue, dir);
         }
 
         //
