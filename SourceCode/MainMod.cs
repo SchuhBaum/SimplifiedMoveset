@@ -5,11 +5,11 @@ using MonoMod.Cil;
 using UnityEngine;
 
 // temporary fix // should be added automatically //TODO
-[module: UnverifiableCode]
+#pragma warning disable CS0618
 [assembly: SecurityPermission(SecurityAction.RequestMinimum, SkipVerification = true)]
 namespace SimplifiedMoveset
 {
-    [BepInPlugin("SchuhBaum.SimplifiedMoveset", "SimplifiedMoveset", "2.1.2")]
+    [BepInPlugin("SchuhBaum.SimplifiedMoveset", "SimplifiedMoveset", "2.1.3")]
     public class MainMod : BaseUnityPlugin
     {
         //
@@ -18,7 +18,7 @@ namespace SimplifiedMoveset
 
         public static readonly string MOD_ID = "SimplifiedMoveset";
         public static readonly string author = "SchuhBaum";
-        public static readonly string version = "2.1.2";
+        public static readonly string version = "2.1.3";
 
         //
         // options

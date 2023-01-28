@@ -182,7 +182,7 @@ namespace SimplifiedMoveset
         public static bool IsClimbingOnBeam(this Player player)
         {
             int player_animation = (int)player.animation;
-            return player_animation >= 6 && player_animation <= 12;
+            return (player_animation >= 6 && player_animation <= 12) || player.bodyMode == Player.BodyModeIndex.ClimbingOnBeam;
         }
 
         public static bool IsTileSolidOrSlope(this Player player, int chunkIndex, int relativeX, int relativeY)
@@ -802,9 +802,10 @@ namespace SimplifiedMoveset
                 --attachedFields.dontUseTubeWormCounter;
             }
 
-            if (attachedFields.dontUseTubeWormCounter == 0 && player.canWallJump > 0)
+            // prioritize wall jumps
+            if (attachedFields.dontUseTubeWormCounter < Mathf.Abs(player.canWallJump))
             {
-                attachedFields.dontUseTubeWormCounter = player.canWallJump;
+                attachedFields.dontUseTubeWormCounter = Mathf.Abs(player.canWallJump);
             }
 
             if (player.animation == Player.AnimationIndex.None)
@@ -1891,6 +1892,7 @@ namespace SimplifiedMoveset
             {
                 player.GetAttachedFields().initializeHands = true;
             }
+            player.GetAttachedFields().dontUseTubeWormCounter = 0;
 
             if (!MainMod.Option_WallJump)
             {
@@ -1983,6 +1985,8 @@ namespace SimplifiedMoveset
                 player.tongue.Release();
 
                 // tongue needs to retract first? => two UpdateAnimation() calls inbetween;
+                // needed when climbing vertical beams while tongue "is" attached;
+                // it get retracted first so tongue.Attached is not useful;
                 player.GetAttachedFields().dontUseTubeWormCounter = 5;
             }
             orig(player);
@@ -1993,15 +1997,15 @@ namespace SimplifiedMoveset
             Vector2 bestDirection = orig(tongue, originalDir);
             if (bestDirection != originalDir) return bestDirection;
 
-            float maxDistance = tongue.maxRopeLength;
+            float maxDistance = 0.8f * tongue.maxRopeLength + 0.2f * tongue.minRopeLength;
             if (!SharedPhysics.RayTraceTilesForTerrain(tongue.player.room, tongue.baseChunk.pos, tongue.baseChunk.pos + originalDir * maxDistance) || tongue.player?.room is not Room room)
             {
                 return bestDirection;
             }
 
             float minCost = float.MaxValue;
-            float idealDistance = tongue.idealRopeLength;
-            float minDistance = 0.5f * (tongue.maxRopeLength + tongue.minRopeLength);
+            float minDistance = 0.4f * tongue.maxRopeLength + 0.6f * tongue.minRopeLength;
+            float idealDistance = 0.5f * (maxDistance + minDistance);
             Vector2? bestAttachPos = null;
 
             // first case needs to be executed only once => no sign required;
