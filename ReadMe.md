@@ -45,7 +45,7 @@ v2.1.3:
 - (crawl) Some adjustments for crawl turns on ledges.
 - (tube worm) Wall jumps are priotized over using tongues.
 - (spear throw) Spears and other weapons cannot change directions after they being thrown.
-- (tube worm) Fixed two bug where wall jumps were not correctly prioritized.
+- (tube worm) Fixed two bugs where wall jumps were not correctly prioritized.
 
 #### (Rain World v1.5)
 v0.30:
