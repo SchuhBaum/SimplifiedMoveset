@@ -192,6 +192,72 @@ namespace SimplifiedMoveset
             return room.GetTile(room.GetTilePosition(player.bodyChunks[chunkIndex].pos) + new IntVector2(relativeX, relativeY)).Terrain == Room.Tile.TerrainType.Slope;
         }
 
+        public static Vector2? Tongue_AutoAim_Beams(Player.Tongue tongue, Vector2 originalDir, bool prioritizeAngleOverDistance, int preferredHorizontalDirection)
+        {
+            if (tongue.player?.room is not Room room) return null;
+
+            float minDistance = 30f;
+            float maxDistance = 230f;
+            float idealDistance = tongue.idealRopeLength;
+
+            float deg = Custom.VecToDeg(originalDir);
+            float minCost = float.MaxValue;
+
+            Vector2? bestAttachPos = null;
+            Vector2? bestDirection = null;
+
+            for (float degModifier = 0.0f; degModifier < 30f; degModifier += 5f)
+            {
+                for (float sign = -1f; sign <= 1f; sign += 2f)
+                {
+                    Vector2? attachPos = null;
+                    Vector2 direction = Custom.DegToVec(deg + sign * degModifier);
+
+                    float localMinCost = float.MaxValue;
+                    float cost;
+                    foreach (IntVector2 intAttachPos in SharedPhysics.RayTracedTilesArray(tongue.baseChunk.pos + direction * minDistance, tongue.baseChunk.pos + direction * maxDistance))
+                    {
+                        Room.Tile tile = room.GetTile(intAttachPos);
+                        Vector2 middleOfTile = room.MiddleOfTile(intAttachPos);
+                        cost = Mathf.Abs(idealDistance - Vector2.Distance(tongue.baseChunk.pos + tongue.baseChunk.vel * 3f, middleOfTile));
+
+                        if ((tile.horizontalBeam || tile.verticalBeam) && cost < localMinCost)
+                        {
+                            attachPos = middleOfTile;
+                            localMinCost = cost;
+                        }
+                    }
+
+                    if (!attachPos.HasValue) continue;
+
+                    cost = degModifier * 1.5f;
+                    if (!prioritizeAngleOverDistance)
+                    {
+                        cost += Mathf.Abs(idealDistance - Vector2.Distance(tongue.baseChunk.pos + tongue.baseChunk.vel * 3f, attachPos.Value));
+                        if (preferredHorizontalDirection != 0)
+                        {
+                            cost += Mathf.Abs(preferredHorizontalDirection * 90f - (deg + sign * degModifier)) * 0.9f;
+                        }
+                    }
+
+                    if (cost < minCost)
+                    {
+                        // a bit simplified compared to what tubeWorm does;
+                        bestAttachPos = attachPos;
+                        bestDirection = direction;
+                        minCost = cost;
+                    }
+                }
+            }
+
+            if (bestAttachPos.HasValue)
+            {
+                tongue.AttachToTerrain(bestAttachPos.Value);
+                return bestDirection;
+            }
+            return null;
+        }
+
         // direction: up = 1, down = -1
         public static void PrepareGetUpOnBeamAnimation(Player? player, int direction, AttachedFields attachedFields)
         {
@@ -388,7 +454,7 @@ namespace SimplifiedMoveset
             // MainMod.LogAllInstructions(context);
         }
 
-        private static void IL_Player_MovementUpdate(ILContext context)
+        private static void IL_Player_MovementUpdate(ILContext context) // MainMod.Option_BeamClimb
         {
             ILCursor cursor = new(context);
             cursor.Goto(504);
@@ -1449,6 +1515,9 @@ namespace SimplifiedMoveset
 
                             // otherwise it might cancel the GetUpToBeamTip animation before it gets reached;
                             player.wantToJump = 0;
+
+                            // don't use Saint's tongue during GetUpToBeamTip animation
+                            attachedFields.dontUseTubeWormCounter = 6;
                         }
                         else if (player.room.GetTile(player.room.GetTilePosition(bodyChunk0.pos) + new IntVector2(0, 1)).verticalBeam)
                         {
@@ -1994,115 +2063,29 @@ namespace SimplifiedMoveset
 
         private static Vector2 Tongue_AutoAim(On.Player.Tongue.orig_AutoAim orig, Player.Tongue tongue, Vector2 originalDir) // MainMod.Option_TubeWorm
         {
-            Vector2 bestDirection = orig(tongue, originalDir);
-            if (bestDirection != originalDir) return bestDirection;
+            // here originalDir = newDir since direction is adjusted in Tongue_Shoot();
+            // newDir needs to be used in TubeWormMod;
+            if (tongue.player is not Player player) return orig(tongue, originalDir);
+            if (player.room == null) return orig(tongue, originalDir);
 
-            float maxDistance = 0.8f * tongue.maxRopeLength + 0.2f * tongue.minRopeLength;
-            if (!SharedPhysics.RayTraceTilesForTerrain(tongue.player.room, tongue.baseChunk.pos, tongue.baseChunk.pos + originalDir * maxDistance) || tongue.player?.room is not Room room)
-            {
-                return bestDirection;
-            }
+            // vanilla with new direction
+            // prioritize aiming for solid tiles
+            Vector2 output = orig(tongue, originalDir);
+            if (output != originalDir) return output;
+            if (!SharedPhysics.RayTraceTilesForTerrain(player.room, tongue.baseChunk.pos, tongue.baseChunk.pos + originalDir * 230f)) return originalDir;
 
-            float minCost = float.MaxValue;
-            float minDistance = 0.4f * tongue.maxRopeLength + 0.6f * tongue.minRopeLength;
-            float idealDistance = 0.5f * (maxDistance + minDistance);
-            Vector2? bestAttachPos = null;
-
-            // first case needs to be executed only once => no sign required;
-            foreach (IntVector2 intAttachPos in SharedPhysics.RayTracedTilesArray(tongue.baseChunk.pos + originalDir * minDistance, tongue.baseChunk.pos + originalDir * maxDistance))
-            {
-                Room.Tile tile = room.GetTile(intAttachPos);
-                if (tile.horizontalBeam || tile.verticalBeam)
-                {
-                    bestAttachPos = room.MiddleOfTile(intAttachPos);
-                    bestDirection = originalDir;
-                    minCost = Mathf.Abs(idealDistance - Vector2.Distance(tongue.baseChunk.pos + tongue.baseChunk.vel * 3f, bestAttachPos.Value));
-                    break;
-                }
-            }
-
-            Vector2? shortAttachPos = null;
-            Vector2? shortDirection = null;
-
-            // ideally you grab something that is not too close;
-            // but when nothing is far enough away then just grab something;
-            if (!bestAttachPos.HasValue)
-            {
-                foreach (IntVector2 intAttachPos in SharedPhysics.RayTracedTilesArray(tongue.baseChunk.pos + originalDir * 0.5f * tongue.minRopeLength, tongue.baseChunk.pos + originalDir * minDistance))
-                {
-                    Room.Tile tile = room.GetTile(intAttachPos);
-                    if (tile.horizontalBeam || tile.verticalBeam)
-                    {
-                        shortAttachPos = room.MiddleOfTile(intAttachPos);
-                        shortDirection = originalDir;
-                        break;
-                    }
-                }
-            }
-
-            float deg = Custom.VecToDeg(originalDir);
-            for (float degModifier = 5f; degModifier < 30f; degModifier += 5f)
-            {
-                for (float sign = -1f; sign <= 1f; sign += 2f)
-                {
-                    Vector2? attachPos = null;
-                    Vector2 direction = Custom.DegToVec(deg + sign * degModifier);
-
-                    foreach (IntVector2 intAttachPos in SharedPhysics.RayTracedTilesArray(tongue.baseChunk.pos + direction * minDistance, tongue.baseChunk.pos + direction * maxDistance))
-                    {
-                        Room.Tile tile = room.GetTile(intAttachPos);
-                        if (tile.horizontalBeam || tile.verticalBeam)
-                        {
-                            attachPos = room.MiddleOfTile(intAttachPos);
-                            break;
-                        }
-                    }
-
-                    if (!attachPos.HasValue)
-                    {
-                        if (shortAttachPos.HasValue) continue;
-                        foreach (IntVector2 intAttachPos in SharedPhysics.RayTracedTilesArray(tongue.baseChunk.pos + direction * 0.5f * tongue.minRopeLength, tongue.baseChunk.pos + direction * minDistance))
-                        {
-                            Room.Tile tile = room.GetTile(intAttachPos);
-                            if (tile.horizontalBeam || tile.verticalBeam)
-                            {
-                                shortAttachPos = room.MiddleOfTile(intAttachPos);
-                                shortDirection = direction;
-                                break;
-                            }
-                        }
-                        continue;
-                    }
-
-                    float cost = degModifier * 1.5f + Mathf.Abs(idealDistance - Vector2.Distance(tongue.baseChunk.pos + tongue.baseChunk.vel * 3f, attachPos.Value));
-                    if (cost < minCost)
-                    {
-                        // a bit simplified compared to what tubeWorm does;
-                        bestAttachPos = attachPos;
-                        bestDirection = direction;
-                        minCost = cost;
-                    }
-                }
-            }
-
-            if (bestAttachPos.HasValue)
-            {
-                tongue.AttachToTerrain(bestAttachPos.Value);
-            }
-            else if (shortAttachPos.HasValue && shortDirection.HasValue)
-            {
-                tongue.AttachToTerrain(shortAttachPos.Value);
-                return shortDirection.Value;
-            }
-            return bestDirection;
+            Vector2? newOutput = Tongue_AutoAim_Beams(tongue, originalDir, prioritizeAngleOverDistance: tongue.player.input[0].y > 0, preferredHorizontalDirection: originalDir.y >= 0.9f ? 0 : player.input[0].x);
+            if (newOutput.HasValue) return newOutput.Value;
+            return originalDir;
         }
 
         private static void Tongue_Shoot(On.Player.Tongue.orig_Shoot orig, Player.Tongue tongue, Vector2 dir) // MainMod.Option_TubeWorm
         {
+            // adept tongue direction to player inputs in some additional cases
             if (tongue.player.input[0].x != 0)
             {
                 // used in the case where y > 0 as well
-                dir += new Vector2(tongue.player.input[0].x * 0.35f, 0.0f);
+                dir += new Vector2(tongue.player.input[0].x * 0.30f, 0.0f);
             }
             else
             {

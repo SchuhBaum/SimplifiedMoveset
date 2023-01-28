@@ -19,9 +19,14 @@ namespace SimplifiedMoveset
             Debug.Log("SimplifiedMoveset: Initialize.");
             MainModOptions.instance.MainModOptions_OnConfigChanged();
             Debug.Log("SimplifiedMoveset: Add option specific hooks.");
-            PlayerMod.OnEnable_();
-            BodyChunkMod.allAttachedFields.Clear();
 
+            PlayerMod.OnEnable_();
+            if (MainMod.Option_TubeWorm)
+            {
+                TubeWormMod.OnEnable();
+            }
+
+            BodyChunkMod.allAttachedFields.Clear();
             PlayerMod.attachedFields.Clear();
             orig(game, manager);
         }
@@ -31,9 +36,13 @@ namespace SimplifiedMoveset
             Debug.Log("SimplifiedMoveset: Cleanup. Remove option specific hooks.");
             orig(game);
             BodyChunkMod.allAttachedFields.Clear();
-
             PlayerMod.attachedFields.Clear();
+
             PlayerMod.OnDisable_();
+            if (MainMod.Option_TubeWorm)
+            {
+                TubeWormMod.OnDisable();
+            }
         }
     }
 }
