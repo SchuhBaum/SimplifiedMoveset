@@ -541,8 +541,11 @@ namespace SimplifiedMoveset
                     // this check is only used under certain conditions (being upside down?);
                     // this can lead to not grabbing beams and falling down;
                     // in some modded regions this means even falling to your death;
-                    if (player.timeSinceInCorridorMode < 20) player.timeSinceInCorridorMode = 20;
+                    //
+                    // if set too high then horizontal beams inside vertical corridors might be grabbed;
+                    if (player.timeSinceInCorridorMode < 15) player.timeSinceInCorridorMode = 15;
                     if (player.input[0].y > 0 && (!ModManager.MSC || !player.monkAscension) && !(player.Submersion > 0.9f)) return true; // vanilla case
+                    if (ModManager.MSC && player.monkAscension) return false; // Saint's mode
 
                     AttachedFields attachedFields = player.GetAttachedFields();
                     if (attachedFields.grabBeamCounter > 0) return true; // automatically re-grab
