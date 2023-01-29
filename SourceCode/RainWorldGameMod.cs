@@ -16,15 +16,11 @@ namespace SimplifiedMoveset
 
         private static void RainWorldGame_ctor(On.RainWorldGame.orig_ctor orig, RainWorldGame game, ProcessManager manager)
         {
-            Debug.Log("SimplifiedMoveset: Initialize.");
+            Debug.Log("SimplifiedMoveset: Initialize. Add option specific hooks.");
             MainModOptions.instance.MainModOptions_OnConfigChanged();
-            Debug.Log("SimplifiedMoveset: Add option specific hooks.");
 
-            PlayerMod.OnEnable_();
-            if (MainMod.Option_TubeWorm)
-            {
-                TubeWormMod.OnEnable();
-            }
+            PlayerMod.OnToggle();
+            TubeWormMod.OnToggle();
 
             BodyChunkMod.allAttachedFields.Clear();
             PlayerMod.attachedFields.Clear();
@@ -38,11 +34,8 @@ namespace SimplifiedMoveset
             BodyChunkMod.allAttachedFields.Clear();
             PlayerMod.attachedFields.Clear();
 
-            PlayerMod.OnDisable_();
-            if (MainMod.Option_TubeWorm)
-            {
-                TubeWormMod.OnDisable();
-            }
+            PlayerMod.OnToggle();
+            TubeWormMod.OnToggle();
         }
     }
 }

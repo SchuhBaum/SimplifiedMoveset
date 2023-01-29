@@ -24,82 +24,37 @@ namespace SimplifiedMoveset
         internal static readonly Dictionary<Player, AttachedFields> attachedFields = new();
         public static AttachedFields GetAttachedFields(this Player player) => attachedFields[player];
 
+        private static bool isEnabled = false;
+
         //
         //
         //
 
-        internal static void OnDisable_()
+        internal static void OnToggle()
         {
-            IL.Player.UpdateAnimation -= IL_Player_UpdateAnimation;
-            if (MainMod.Option_BeamClimb)
+            if (!isEnabled)
             {
-                IL.Player.MovementUpdate -= IL_Player_MovementUpdate;
+                IL.Player.UpdateAnimation += IL_Player_UpdateAnimation;
+
+                On.Player.ctor += Player_ctor; // change stats for swimming
+                On.Player.Jump += Player_Jump;
+                On.Player.UpdateAnimation += Player_UpdateAnimation;
+
+                On.Player.UpdateBodyMode += Player_UpdateBodyMode;
+                On.Player.WallJump += Player_WallJump;
+            }
+            else
+            {
+                IL.Player.UpdateAnimation -= IL_Player_UpdateAnimation;
+
+                On.Player.ctor -= Player_ctor; // change stats for swimming
+                On.Player.Jump -= Player_Jump;
+                On.Player.UpdateAnimation -= Player_UpdateAnimation;
+
+                On.Player.UpdateBodyMode -= Player_UpdateBodyMode;
+                On.Player.WallJump -= Player_WallJump;
             }
 
-            if (MainMod.Option_BellySlide)
-            {
-                On.Player.ThrowObject -= Player_ThrowObject_Option_BellySlide;
-            }
-
-            if (MainMod.Option_Grab)
-            {
-                On.Player.Grabability -= Player_Grabability;
-            }
-
-            if (MainMod.Option_BellySlide || MainMod.Option_Crawl || MainMod.Option_Roll_1 || MainMod.Option_Roll_2)
-            {
-                IL.Player.TerrainImpact -= IL_Player_TerrainImpact;
-            }
-
-            if (MainMod.Option_SpearThrow)
-            {
-                On.Player.ThrowObject -= Player_ThrowObject_Option_SpearThrow;
-            }
-
-            if (MainMod.Option_Swim)
-            {
-                IL.Player.GrabUpdate -= IL_Player_GrabUpdate;
-                On.Player.UpdateMSC -= Player_UpdateMSC;
-            }
-
-            if (MainMod.Option_WallJump)
-            {
-                On.Player.checkInput -= Player_CheckInput;
-            }
-
-            if (MainMod.Option_WallJump || MainMod.Option_WallClimb)
-            {
-                On.Player.GraphicsModuleUpdated -= Player_GraphicsModuleUpdated;
-            }
-
-            if (MainMod.Option_TubeWorm)
-            {
-                On.Player.SaintTongueCheck -= Player_SaintTongueCheck;
-                On.Player.TongueUpdate -= Player_TongueUpdate;
-
-                On.Player.Tongue.AutoAim -= Tongue_AutoAim;
-                On.Player.Tongue.Shoot -= Tongue_Shoot;
-                On.Player.Tongue.Update -= Tongue_Update;
-            }
-        }
-
-        //
-        //
-        //
-
-        internal static void OnEnable()
-        {
-            On.Player.ctor += Player_ctor; // change stats for swimming
-            On.Player.Jump += Player_Jump;
-            On.Player.UpdateAnimation += Player_UpdateAnimation;
-
-            On.Player.UpdateBodyMode += Player_UpdateBodyMode;
-            On.Player.WallJump += Player_WallJump;
-        }
-
-        internal static void OnEnable_()
-        {
-            IL.Player.UpdateAnimation += IL_Player_UpdateAnimation;
             if (MainMod.Option_BeamClimb)
             {
                 // removes lifting your booty when being in a corner with your upper bodyChunk / head
@@ -108,59 +63,115 @@ namespace SimplifiedMoveset
                 // in this situation canceling beam climbing can be spammed
                 //
                 // grabbing beams by holding down is now implemented here instead of UpdateAnimation()
-                IL.Player.MovementUpdate += IL_Player_MovementUpdate;
-            }
-
-            if (MainMod.Option_BellySlide)
-            {
-                On.Player.ThrowObject += Player_ThrowObject_Option_BellySlide; // remove throw timing
-            }
-
-            if (MainMod.Option_Grab)
-            {
-                On.Player.Grabability += Player_Grabability; // only grab dead large creatures when crouching
+                if (!isEnabled)
+                {
+                    IL.Player.MovementUpdate += IL_Player_MovementUpdate;
+                }
+                else
+                {
+                    IL.Player.MovementUpdate -= IL_Player_MovementUpdate;
+                }
             }
 
             if (MainMod.Option_BellySlide || MainMod.Option_Crawl || MainMod.Option_Roll_1 || MainMod.Option_Roll_2)
             {
-                IL.Player.TerrainImpact += IL_Player_TerrainImpact;
+                if (!isEnabled)
+                {
+                    IL.Player.TerrainImpact += IL_Player_TerrainImpact;
+                }
+                else
+                {
+                    IL.Player.TerrainImpact -= IL_Player_TerrainImpact;
+                }
             }
 
-            if (MainMod.Option_SpearThrow)
+            if (MainMod.Option_BellySlide || MainMod.Option_SpearThrow)
             {
-                On.Player.ThrowObject += Player_ThrowObject_Option_SpearThrow; // momentum adjustment
+                if (!isEnabled)
+                {
+                    On.Player.ThrowObject += Player_ThrowObject;
+                }
+                else
+                {
+                    On.Player.ThrowObject -= Player_ThrowObject;
+                }
+            }
+
+            if (MainMod.Option_Grab)
+            {
+                if (!isEnabled)
+                {
+                    On.Player.Grabability += Player_Grabability; // only grab dead large creatures when crouching
+                }
+                else
+                {
+                    On.Player.Grabability -= Player_Grabability;
+                }
             }
 
             if (MainMod.Option_Swim)
             {
-                IL.Player.GrabUpdate += IL_Player_GrabUpdate; // can eat stuff underwater
-                On.Player.UpdateMSC += Player_UpdateMSC; // don't let MSC reset buoyancy
-            }
-
-            if (MainMod.Option_WallJump)
-            {
-                On.Player.checkInput += Player_CheckInput; // input "buffer" for wall jumping
-            }
-
-            if (MainMod.Option_WallJump || MainMod.Option_WallClimb)
-            {
-                On.Player.GraphicsModuleUpdated += Player_GraphicsModuleUpdated; // fix cicade lifting up while wall climbing
+                if (!isEnabled)
+                {
+                    IL.Player.GrabUpdate += IL_Player_GrabUpdate; // can eat stuff underwater
+                    On.Player.UpdateMSC += Player_UpdateMSC; // don't let MSC reset buoyancy
+                }
+                else
+                {
+                    IL.Player.GrabUpdate -= IL_Player_GrabUpdate;
+                    On.Player.UpdateMSC -= Player_UpdateMSC;
+                }
             }
 
             if (MainMod.Option_TubeWorm)
             {
-                On.Player.SaintTongueCheck += Player_SaintTongueCheck;
-                On.Player.TongueUpdate += Player_TongueUpdate;
-
-                On.Player.Tongue.AutoAim += Tongue_AutoAim;
-                On.Player.Tongue.Shoot += Tongue_Shoot;
-                On.Player.Tongue.Update += Tongue_Update;
+                if (!isEnabled)
+                {
+                    On.Player.SaintTongueCheck += Player_SaintTongueCheck;
+                    On.Player.TongueUpdate += Player_TongueUpdate;
+                    On.Player.Update += Player_Update;
+                    On.Player.Tongue.AutoAim += Tongue_AutoAim;
+                    On.Player.Tongue.Shoot += Tongue_Shoot;
+                }
+                else
+                {
+                    On.Player.SaintTongueCheck -= Player_SaintTongueCheck;
+                    On.Player.TongueUpdate -= Player_TongueUpdate;
+                    On.Player.Update -= Player_Update;
+                    On.Player.Tongue.AutoAim -= Tongue_AutoAim;
+                    On.Player.Tongue.Shoot -= Tongue_Shoot;
+                }
             }
+
+            if (MainMod.Option_WallJump)
+            {
+                if (!isEnabled)
+                {
+                    On.Player.checkInput += Player_CheckInput; // input "buffer" for wall jumping
+                }
+                else
+                {
+                    On.Player.checkInput -= Player_CheckInput;
+                }
+            }
+
+            if (MainMod.Option_WallJump || MainMod.Option_WallClimb)
+            {
+                if (!isEnabled)
+                {
+                    On.Player.GraphicsModuleUpdated += Player_GraphicsModuleUpdated; // fix cicade lifting up while wall climbing
+                }
+                else
+                {
+                    On.Player.GraphicsModuleUpdated -= Player_GraphicsModuleUpdated;
+                }
+            }
+            isEnabled = !isEnabled;
         }
 
-        // ---------------- //
-        // public functions //
-        // ---------------- //
+        //
+        // public
+        //
 
         // useful as a setup for some animations while on slopes
         public static void AlignPosYOnSlopes(Player? player)
@@ -185,11 +196,30 @@ namespace SimplifiedMoveset
             return (player_animation >= 6 && player_animation <= 12) || player.bodyMode == Player.BodyModeIndex.ClimbingOnBeam;
         }
 
+        public static bool IsJumpPressed(this Player player) => player.input[0].jmp && !player.input[1].jmp;
+
         public static bool IsTileSolidOrSlope(this Player player, int chunkIndex, int relativeX, int relativeY)
         {
             if (player.room is not Room room) return false;
             if (player.IsTileSolid(chunkIndex, relativeX, relativeY)) return true;
             return room.GetTile(room.GetTilePosition(player.bodyChunks[chunkIndex].pos) + new IntVector2(relativeX, relativeY)).Terrain == Room.Tile.TerrainType.Slope;
+        }
+
+        public static bool IsTongueRetracting(this Player player)
+        {
+            if (player.tubeWorm != null)
+            {
+                if (player.tubeWorm.tongues[0].mode == TubeWorm.Tongue.Mode.Retracting) return true;
+                if (player.tubeWorm.tongues[0].Attached)
+                {
+                    // the update for TubeWorm.Tongue is late in some cases;
+                    // for example: Player.UpdateAnimation() -> TubeWorm.Update() -> Player.Jump();
+                    // make sure that it is really retracting in the cases where this is used;
+                    player.GetAttachedFields().tongueNeedsToRetract = true;
+                    return true;
+                }
+            }
+            return player.tongue != null && player.tongue.mode == Player.Tongue.Mode.Retracting;
         }
 
         public static Vector2? Tongue_AutoAim_Beams(Player.Tongue tongue, Vector2 originalDir, bool prioritizeAngleOverDistance, int preferredHorizontalDirection)
@@ -374,7 +404,7 @@ namespace SimplifiedMoveset
             return false;
         }
 
-        public static void UpdateAnimationCounter(Player? player)
+        public static void UpdateAnimationCounters(Player? player)
         {
             if (player == null) return;
 
@@ -394,7 +424,7 @@ namespace SimplifiedMoveset
             }
         }
 
-        public static void UpdateBodyModeCounter(Player? player)
+        public static void UpdateBodyModeCounters(Player? player)
         {
             if (player == null) return;
 
@@ -430,11 +460,11 @@ namespace SimplifiedMoveset
             }
         }
 
-        // ----------------- //
-        // private functions //
-        // ----------------- //
+        //
+        // private
+        //
 
-        private static void IL_Player_GrabUpdate(ILContext context)
+        private static void IL_Player_GrabUpdate(ILContext context) // MainMod.Option_Swim
         {
             ILCursor cursor = new(context);
 
@@ -528,7 +558,7 @@ namespace SimplifiedMoveset
             // MainMod.LogAllInstructions(context);
         }
 
-        private static void IL_Player_TerrainImpact(ILContext context)
+        private static void IL_Player_TerrainImpact(ILContext context) // MainMod.Option_BellySlide || MainMod.Option_Crawl || MainMod.Option_Roll_1 || MainMod.Option_Roll_2
         {
             // add the ability to initiate rolls from crawl turns (Option_Crawl);
             // remove the ability to initiate rolls from rocket jumps (Option_Roll_2);
@@ -638,7 +668,7 @@ namespace SimplifiedMoveset
         //
         //
 
-        private static void Player_CheckInput(On.Player.orig_checkInput orig, Player player)
+        private static void Player_CheckInput(On.Player.orig_checkInput orig, Player player) // MainMod.Option_WallJump
         {
             orig(player);
 
@@ -652,9 +682,8 @@ namespace SimplifiedMoveset
                 {
                     player.input[0].jmp = true;
                     player.input[1].jmp = false;
-                    player.GetAttachedFields().dontUseTubeWormCounter = 2;
                 }
-                else if (player.input[0].jmp && !player.input[1].jmp)
+                else if (player.IsJumpPressed())
                 {
                     player.simulateHoldJumpButton = 6;
                 }
@@ -673,7 +702,7 @@ namespace SimplifiedMoveset
             player.buoyancy = player.gravity;
         }
 
-        private static Player.ObjectGrabability Player_Grabability(On.Player.orig_Grabability orig, Player player, PhysicalObject physicalObject)
+        private static Player.ObjectGrabability Player_Grabability(On.Player.orig_Grabability orig, Player player, PhysicalObject physicalObject) // MainMod.Option_Grab
         {
             // ignore the change when you are already grabbing it;
             // otherwise this can conflict with JollyCoopFixesAndStuff's SlugcatCollision option;
@@ -697,7 +726,7 @@ namespace SimplifiedMoveset
             return orig(player, physicalObject);
         }
 
-        private static void Player_GraphicsModuleUpdated(On.Player.orig_GraphicsModuleUpdated orig, Player player, bool actuallyViewed, bool eu)
+        private static void Player_GraphicsModuleUpdated(On.Player.orig_GraphicsModuleUpdated orig, Player player, bool actuallyViewed, bool eu) // MainMod.Option_WallJump || MainMod.Option_WallClimb
         {
             // prevent cicadas from slowly lifing player while wall climbing
             if (player.bodyMode == Player.BodyModeIndex.WallClimb)
@@ -734,7 +763,7 @@ namespace SimplifiedMoveset
             }
 
             // prioritize retracting over jumping off beams;
-            if (MainMod.Option_TubeWorm && player.tongue != null && player.GetAttachedFields().dontUseTubeWormCounter > 0 && player.IsClimbingOnBeam()) return;
+            if (MainMod.Option_TubeWorm && (player.IsClimbingOnBeam() || player.bodyMode == Player.BodyModeIndex.CorridorClimb) && player.IsTongueRetracting()) return;
 
             if (player.bodyMode != Player.BodyModeIndex.CorridorClimb && player.bodyMode != Player.BodyModeIndex.WallClimb)
             {
@@ -802,19 +831,17 @@ namespace SimplifiedMoveset
             }
         }
 
-        private static void Player_ThrowObject_Option_BellySlide(On.Player.orig_ThrowObject orig, Player player, int grasp, bool eu)
+        private static bool Player_SaintTongueCheck(On.Player.orig_SaintTongueCheck orig, Player player) // MainMod.Option_TubeWorm
         {
-            // belly slide throw // removed timing
-            int rollCounter = player.rollCounter;
-            player.rollCounter = 10;
-            orig(player, grasp, eu);
-            player.rollCounter = rollCounter;
+            if (player.IsClimbingOnBeam() || player.canWallJump != 0 || player.bodyMode == Player.BodyModeIndex.CorridorClimb) return false;
+            if (player.GetAttachedFields().isTongueDisabled) return false;
+            return orig(player);
         }
 
-        private static void Player_ThrowObject_Option_SpearThrow(On.Player.orig_ThrowObject orig, Player player, int grasp, bool eu)
+        private static void Player_ThrowObject(On.Player.orig_ThrowObject orig, Player player, int grasp, bool eu) // MainMod.Option_BellySlide || MainMod.Option_SpearThrow
         {
             // throw weapon // don't get forward momentum on ground or poles
-            if (player.grasps[grasp]?.grabbed is Weapon && player.animation != Player.AnimationIndex.BellySlide && (player.animation != Player.AnimationIndex.Flip || player.input[0].y >= 0 || player.input[0].x != 0))
+            if (MainMod.Option_SpearThrow && player.grasps[grasp]?.grabbed is Weapon && player.animation != Player.AnimationIndex.BellySlide && (player.animation != Player.AnimationIndex.Flip || player.input[0].y >= 0 || player.input[0].x != 0))
             {
                 if (player.bodyMode == Player.BodyModeIndex.ClimbingOnBeam || player.bodyChunks[1].onSlope != 0)
                 {
@@ -825,7 +852,49 @@ namespace SimplifiedMoveset
                     player.bodyChunks[1].vel.x -= player.ThrowDirection * 4f; // total: -8f
                 }
             }
+
+            if (MainMod.Option_BellySlide)
+            {
+                // belly slide throw // removed timing
+                int rollCounter = player.rollCounter;
+                player.rollCounter = 10;
+                orig(player, grasp, eu);
+                player.rollCounter = rollCounter;
+                return;
+            }
             orig(player, grasp, eu);
+        }
+
+        private static void Player_TongueUpdate(On.Player.orig_TongueUpdate orig, Player player) // MainMod.Option_TubeWorm
+        {
+            if (player.tongue == null || player.room == null)
+            {
+                orig(player);
+                return;
+            }
+
+            // priotize climbing and wall jumps
+            if (player.tongue.Attached && !player.Stunned && player.IsJumpPressed() && player.tongueAttachTime >= 2 && (player.IsClimbingOnBeam() || player.canWallJump != 0 || player.bodyMode == Player.BodyModeIndex.CorridorClimb))
+            {
+                player.tongue.Release();
+                return;
+            }
+            orig(player);
+        }
+
+        private static void Player_Update(On.Player.orig_Update orig, Player player, bool eu)
+        {
+            orig(player, eu);
+
+            // player.IsTongueRetracting() needs to be last;
+            // there are cases where the tongue update is late and retracting is forced when returning true;
+            if (player.IsJumpPressed() && (player.IsClimbingOnBeam() || player.canWallJump != 0 || player.bodyMode == Player.BodyModeIndex.CorridorClimb) && player.IsTongueRetracting())
+            {
+                // this prevents late jumps next frame;
+                // wantToJump is set before inputs are updated;
+                // => wantToJump = player.input[1].jmp && !player.input[2].jmp in most cases;
+                player.wantToJump = 1;
+            }
         }
 
         // there are cases where this function does not call orig()
@@ -863,16 +932,7 @@ namespace SimplifiedMoveset
                 --attachedFields.soundCooldown;
             }
 
-            if (attachedFields.dontUseTubeWormCounter > 0)
-            {
-                --attachedFields.dontUseTubeWormCounter;
-            }
-
-            // prioritize wall jumps
-            if (attachedFields.dontUseTubeWormCounter < Mathf.Abs(player.canWallJump))
-            {
-                attachedFields.dontUseTubeWormCounter = Mathf.Abs(player.canWallJump);
-            }
+            attachedFields.isTongueDisabled = false;
 
             if (player.animation == Player.AnimationIndex.None)
             {
@@ -893,7 +953,7 @@ namespace SimplifiedMoveset
             // belly slide // backflip always possible // do a longer version by default
             if (MainMod.Option_BellySlide && player.animation == Player.AnimationIndex.BellySlide)
             {
-                UpdateAnimationCounter(player);
+                UpdateAnimationCounters(player);
                 if (player.slideCounter > 0) // no backflips after belly slide
                 {
                     player.slideCounter = 0;
@@ -1014,65 +1074,6 @@ namespace SimplifiedMoveset
                         }
                     }
                 }
-
-                // not sure why I had these;
-                // maybe I just removed the jump boost since you can breath underwater;
-                // player.dynamicRunSpeed[0] = 0.0f;
-                // player.dynamicRunSpeed[1] = 0.0f;
-
-                // if (player.grasps[0] != null && player.grasps[0].grabbed is JetFish jetFish && jetFish.Consious)
-                // {
-                //     player.waterFriction = 1f;
-                //     return;
-                // }
-
-                // player.canJump = 0;
-                // player.standing = false;
-                // player.GoThroughFloors = true;
-
-                // float num1 = (float)((Mathf.Abs(Vector2.Dot(bodyChunk0.vel.normalized, (bodyChunk0.pos - bodyChunk1.pos).normalized)) + (double)Mathf.Abs(Vector2.Dot(bodyChunk1.vel.normalized, (bodyChunk0.pos - bodyChunk1.pos).normalized))) / 2.0);
-
-                // player.swimCycle += 0.01f;
-                // if (player.input[0].ZeroGGamePadIntVec.x != 0 || player.input[0].ZeroGGamePadIntVec.y != 0)
-                // {
-                //     float num2 = (float)(0.2 + Mathf.InverseLerp(0.0f, 12f, Vector2.Angle(bodyChunk0.lastPos - bodyChunk1.lastPos, bodyChunk0.pos - bodyChunk1.pos)) * 0.8);
-                //     if (player.slowMovementStun > 0)
-                //         num2 *= 0.5f;
-
-                //     float to = num2 * Mathf.Lerp(1f, 1.2f, player.Adrenaline);
-                //     player.swimForce = (double)to <= player.swimForce ? Mathf.Lerp(player.swimForce, to, 0.05f) : Mathf.Lerp(player.swimForce, to, 0.7f);
-                //     player.swimCycle += Mathf.Lerp(player.swimForce, 1f, 0.5f) / 10f;
-
-                //     if (player.airInLungs < 0.5 && (double)player.airInLungs > 1 / 6)
-                //         player.swimCycle += 0.05f;
-                //     if (bodyChunk0.contactPoint.x != 0 || bodyChunk0.contactPoint.y != 0)
-                //         player.swimForce *= 0.5f;
-
-                //     if (player.swimCycle > 4.0)
-                //         player.swimCycle = 0.0f;
-                //     else if (player.swimCycle > 3.0)
-                //         bodyChunk0.vel += Custom.DirVec(bodyChunk1.pos, bodyChunk0.pos) * 0.7f * Mathf.Lerp(player.swimForce, 1f, 0.5f) * bodyChunk0.submersion;
-
-                //     Vector2 vector2 = player.SwimDir(true);
-                //     if (player.airInLungs < 0.3)
-                //         vector2 = Vector3.Slerp(vector2, new Vector2(0.0f, 1f), Mathf.InverseLerp(0.3f, 0.0f, player.airInLungs));
-
-                //     bodyChunk0.vel += vector2 * 0.5f * player.swimForce * Mathf.Lerp(num1, 1f, 0.5f) * bodyChunk0.submersion;
-                //     bodyChunk1.vel -= vector2 * 0.1f * bodyChunk0.submersion;
-                //     bodyChunk0.vel += Custom.DirVec(bodyChunk1.pos, bodyChunk0.pos) * 0.4f * player.swimForce * num1 * bodyChunk0.submersion;
-
-                //     if (bodyChunk0.vel.magnitude < 6.0)
-                //     {
-                //         bodyChunk0.vel += vector2 * 0.2f * Mathf.InverseLerp(6f, 1.5f, bodyChunk0.vel.magnitude);
-                //         bodyChunk1.vel -= vector2 * 0.1f * Mathf.InverseLerp(6f, 1.5f, bodyChunk0.vel.magnitude);
-                //     }
-                // }
-
-                // player.waterFriction = Mathf.Lerp(0.92f, 0.96f, num1);
-                // if (player.bodyMode == Player.BodyModeIndex.Swimming)
-                //     return;
-                // player.animation = Player.AnimationIndex.None;
-                // return;
             }
 
             // ledge grab 
@@ -1093,50 +1094,9 @@ namespace SimplifiedMoveset
                     velXGain *= 0.4f + 0.6f * Mathf.InverseLerp(10f, 0.0f, player.slowMovementStun);
                 }
 
-                // grab beams by holding down // extends some cases when holding up -- forget which ones :/ // don't grab beams while falling inside corridors
-                // if ((player.input[0].y != 0 || attachedFields.grabBeamCounter > 0) && player.animation == Player.AnimationIndex.None && player.bodyMode == Player.BodyModeIndex.Default && (!player.IsTileSolid(bChunk: 0, -1, 0) || !player.IsTileSolid(bChunk: 0, 1, 0)) && (!player.IsTileSolid(bChunk: 1, -1, 0) || !player.IsTileSolid(bChunk: 1, 1, 0)))
-                // {
-                //     if (room.GetTile(bodyChunk0.pos).verticalBeam && (attachedFields.grabBeamCooldownPosY == null || attachedFields.grabBeamCooldownPosY - bodyChunk0.pos.y >= 20f))
-                //     {
-                //         if (attachedFields.soundCooldown == 0)
-                //         {
-                //             attachedFields.soundCooldown = 40;
-                //             room.PlaySound(SoundID.Slugcat_Grab_Beam, player.mainBodyChunk, false, 1f, 1f);
-                //         }
-
-                //         float middleOfTileX = room.MiddleOfTile(bodyChunk0.pos).x;
-                //         player.flipDirection = Mathf.Abs(bodyChunk0.vel.x) <= 5f ? (bodyChunk0.pos.x >= middleOfTileX ? 1 : -1) : (bodyChunk0.vel.x >= 0.0f ? 1 : -1);
-
-                //         bodyChunk0.pos.x = middleOfTileX;
-                //         bodyChunk0.vel = new Vector2(0.0f, 0.0f);
-                //         bodyChunk1.vel.y = 0.0f;
-                //         player.animation = Player.AnimationIndex.ClimbOnBeam;
-                //     }
-                //     else
-                //     {
-                //         int x = room.GetTilePosition(bodyChunk0.pos).x;
-                //         for (int y = room.GetTilePosition(bodyChunk0.lastPos).y; y >= room.GetTilePosition(bodyChunk0.pos).y; --y)
-                //         {
-                //             if (room.GetTile(x, y).horizontalBeam && (attachedFields.grabBeamCooldownPosY == null || attachedFields.grabBeamCooldownPosY - bodyChunk0.pos.y >= 20f))
-                //             {
-                //                 if (attachedFields.soundCooldown == 0)
-                //                 {
-                //                     attachedFields.soundCooldown = 40;
-                //                     room.PlaySound(SoundID.Slugcat_Grab_Beam, player.mainBodyChunk, false, 1f, 1f);
-                //                 }
-
-                //                 bodyChunk0.pos.y = room.MiddleOfTile(new IntVector2(x, y)).y;
-                //                 bodyChunk1.vel.y = 0.0f;
-                //                 player.animation = Player.AnimationIndex.HangFromBeam;
-                //                 break;
-                //             }
-                //         }
-                //     }
-                // }
-
                 if (player.animation == Player.AnimationIndex.HangFromBeam)
                 {
-                    UpdateAnimationCounter(player);
+                    UpdateAnimationCounters(player);
                     player.bodyMode = Player.BodyModeIndex.ClimbingOnBeam;
                     player.standing = true;
 
@@ -1195,9 +1155,10 @@ namespace SimplifiedMoveset
 
                     if (SwitchHorizontalToVerticalBeam(player, attachedFields)) return;// grab vertical beam if possible
 
-                    if (player.input[0].jmp && !player.input[1].jmp)
+                    if (player.IsJumpPressed())
                     {
-                        if (player.tubeWorm?.tongues[0].Attached == true || attachedFields.isTongueRetracting) return; // retract tubeWorm first // consistent behavior with when standing on beam and pressing jump
+                        // retract tubeWorm first // consistent behavior with when standing on beam and pressing jump
+                        if (IsTongueRetracting(player)) return;
 
                         if (player.input[0].y == 1) // only drop when pressing jump without holding up
                         {
@@ -1212,7 +1173,7 @@ namespace SimplifiedMoveset
                             // player.canJump = 0;
                         }
 
-                        attachedFields.dontUseTubeWormCounter = 2; // don't drop and shoot tubeWorm at the same time
+                        attachedFields.isTongueDisabled = true; // don't drop and shoot tubeWorm at the same time
                         attachedFields.grabBeamCooldownPos = bodyChunk0.pos;
                         player.animation = Player.AnimationIndex.None;
                         return;
@@ -1313,7 +1274,7 @@ namespace SimplifiedMoveset
                 else if (player.animation == Player.AnimationIndex.StandOnBeam)
                 {
                     // bool isWallClimbing = player.bodyMode == Player.BodyModeIndex.WallClimb && bodyChunk1.contactPoint.x != 0;
-                    UpdateAnimationCounter(player);
+                    UpdateAnimationCounters(player);
 
                     player.bodyMode = Player.BodyModeIndex.ClimbingOnBeam;
                     player.standing = true;
@@ -1337,7 +1298,7 @@ namespace SimplifiedMoveset
                         {
                             if (player.input[1].y != -1) // leaning
                             {
-                                if (player.input[0].jmp && !player.input[1].jmp) // jump from leaning
+                                if (player.IsJumpPressed()) // jump from leaning
                                 {
                                     bodyChunk0.vel.x += player.input[0].x * velXGain; // player.dynamicRunSpeed[0];
                                     bodyChunk1.vel.x += player.input[0].x * velXGain;
@@ -1392,7 +1353,7 @@ namespace SimplifiedMoveset
                     }
 
                     // move down to HangFromBeam
-                    if (player.input[0].y == -1 && (player.input[1].y == 0 || player.input[0].jmp && !player.input[1].jmp))
+                    if (player.input[0].y == -1 && (player.input[1].y == 0 || player.IsJumpPressed()))
                     {
                         PrepareGetUpOnBeamAnimation(player, -1, attachedFields);
                         return;
@@ -1409,7 +1370,7 @@ namespace SimplifiedMoveset
                 }
                 else if (player.animation == Player.AnimationIndex.ClimbOnBeam)
                 {
-                    UpdateAnimationCounter(player);
+                    UpdateAnimationCounters(player);
                     player.bodyMode = Player.BodyModeIndex.ClimbingOnBeam;
                     player.standing = true;
                     player.canJump = 1;
@@ -1515,9 +1476,6 @@ namespace SimplifiedMoveset
 
                             // otherwise it might cancel the GetUpToBeamTip animation before it gets reached;
                             player.wantToJump = 0;
-
-                            // don't use Saint's tongue during GetUpToBeamTip animation
-                            attachedFields.dontUseTubeWormCounter = 6;
                         }
                         else if (player.room.GetTile(player.room.GetTilePosition(bodyChunk0.pos) + new IntVector2(0, 1)).verticalBeam)
                         {
@@ -1552,7 +1510,7 @@ namespace SimplifiedMoveset
                             if (player.input[0].y < 0)
                             {
                                 attachedFields.grabBeamCounter = 15;
-                                attachedFields.dontUseTubeWormCounter = 2;
+                                attachedFields.isTongueDisabled = true; // used if pressing down + jump // don't fall and shoot tongue at the same time
                                 player.canJump = 0;
                                 player.animation = Player.AnimationIndex.None;
                                 break;
@@ -1570,14 +1528,20 @@ namespace SimplifiedMoveset
                 }
                 else if (player.animation == Player.AnimationIndex.HangUnderVerticalBeam)
                 {
-                    UpdateAnimationCounter(player);
+                    UpdateAnimationCounters(player);
                     player.bodyMode = Player.BodyModeIndex.ClimbingOnBeam; // gets updated and is default afterwards
                     player.standing = false;
 
+                    //
+                    // exits
+                    //
+
+                    if (player.IsJumpPressed() && player.IsTongueRetracting()) return;
+
                     // drop when pressing jump
-                    if (player.input[0].jmp && !player.input[1].jmp || bodyChunk1.vel.magnitude > 10.0 || bodyChunk0.vel.magnitude > 10.0 || !room.GetTile(bodyChunk0.pos + new Vector2(0.0f, 20f)).verticalBeam)
+                    if (player.IsJumpPressed() || bodyChunk1.vel.magnitude > 10.0 || bodyChunk0.vel.magnitude > 10.0 || !room.GetTile(bodyChunk0.pos + new Vector2(0.0f, 20f)).verticalBeam)
                     {
-                        attachedFields.dontUseTubeWormCounter = 2;
+                        attachedFields.isTongueDisabled = true;
                         player.animation = Player.AnimationIndex.None;
                         player.standing = true;
                     }
@@ -1607,7 +1571,7 @@ namespace SimplifiedMoveset
                 // BeamTip // don't drop off beam tip by leaning too much
                 if (player.animation == Player.AnimationIndex.BeamTip)
                 {
-                    UpdateAnimationCounter(player);
+                    UpdateAnimationCounters(player);
                     player.bodyMode = Player.BodyModeIndex.ClimbingOnBeam;
                     player.standing = true;
                     player.canJump = 5;
@@ -1615,7 +1579,7 @@ namespace SimplifiedMoveset
                     bodyChunk1.pos = (bodyChunk1.pos + room.MiddleOfTile(bodyChunk1.pos)) / 2f;
                     bodyChunk1.vel *= 0.5f;
 
-                    if (player.input[0].jmp && !player.input[1].jmp)
+                    if (player.IsJumpPressed())
                     {
                         bodyChunk0.vel.x += player.input[0].x * velXGain;
                         bodyChunk1.vel.x += player.input[0].x * velXGain;
@@ -1634,6 +1598,12 @@ namespace SimplifiedMoveset
                     bodyChunk0.vel.y += 1.5f;
                     bodyChunk0.vel.y += player.input[0].y * 0.1f;
 
+                    //
+                    // exits
+                    //
+
+                    if (player.IsJumpPressed() && player.IsTongueRetracting()) return;
+
                     // what does this do?
                     if (player.input[0].y > 0 && player.input[1].y == 0)
                     {
@@ -1642,10 +1612,10 @@ namespace SimplifiedMoveset
                         player.animation = Player.AnimationIndex.None;
                     }
 
-                    if (player.input[0].y == -1 && (bodyChunk0.pos.x == bodyChunk1.pos.x || player.input[0].jmp && !player.input[1].jmp)) // IsPosXAligned(player)
+                    if (player.input[0].y == -1 && (bodyChunk0.pos.x == bodyChunk1.pos.x || player.IsJumpPressed())) // IsPosXAligned(player)
                     {
                         attachedFields.grabBeamCounter = 15;
-                        attachedFields.dontUseTubeWormCounter = 2;
+                        attachedFields.isTongueDisabled = true;
                         player.canJump = 0;
                         player.animation = Player.AnimationIndex.None;
                     }
@@ -1757,13 +1727,13 @@ namespace SimplifiedMoveset
             // crawl
             if (MainMod.Option_Crawl && player.bodyMode == Player.BodyModeIndex.Crawl)
             {
-                UpdateBodyModeCounter(player);
+                UpdateBodyModeCounters(player);
                 player.dynamicRunSpeed[0] = 2.5f;
 
                 // I want to prevent a crawl turn on ledges;
                 // not sure if the check for solid tiles are enough;
                 // seems like it works;
-                if (player.input[0].x != 0 && player.input[0].x > 0 == player.bodyChunks[0].pos.x < (double)player.bodyChunks[1].pos.x && player.crawlTurnDelay > 5 && !player.IsTileSolid(0, 0, 1) && !player.IsTileSolid(1, 0, 1) && player.IsTileSolidOrSlope(1, 0, -1) && player.IsTileSolidOrSlope(1, player.input[0].x, -1))
+                if (player.input[0].x != 0 && player.input[0].x > 0 == player.bodyChunks[0].pos.x < (double)player.bodyChunks[1].pos.x && player.crawlTurnDelay > 5 && !player.IsTileSolid(0, 0, 1) && !player.IsTileSolid(1, 0, 1) && player.IsTileSolidOrSlope(1, 0, -1)) //  && player.IsTileSolidOrSlope(1, player.input[0].x, -1)
                 {
                     AlignPosYOnSlopes(player);
                     player.dynamicRunSpeed[0] *= 0.5f; // default: 0.75f
@@ -1843,9 +1813,9 @@ namespace SimplifiedMoveset
             }
 
             // wall climb & jump // crawl downwards when holding down // crawl upwards when holding up
-            if ((MainMod.Option_WallClimb || MainMod.Option_WallJump) && player.bodyMode == Player.BodyModeIndex.WallClimb)
+            else if ((MainMod.Option_WallClimb || MainMod.Option_WallJump) && player.bodyMode == Player.BodyModeIndex.WallClimb)
             {
-                UpdateBodyModeCounter(player);
+                UpdateBodyModeCounters(player);
                 player.canJump = 1;
                 player.standing = true;
 
@@ -1930,6 +1900,12 @@ namespace SimplifiedMoveset
                 bodyChunk1.vel.y += bodyChunk1.submersion * player.EffectiveRoomGravity;
                 return;
             }
+
+            else if (MainMod.Option_TubeWorm && player.bodyMode == Player.BodyModeIndex.CorridorClimb && player.IsJumpPressed() && player.IsTongueRetracting())
+            {
+                UpdateBodyModeCounters(player);
+                return;
+            }
             orig(player);
 
             // backflip // earlier timing possible
@@ -1939,7 +1915,7 @@ namespace SimplifiedMoveset
             }
         }
 
-        private static void Player_UpdateMSC(On.Player.orig_UpdateMSC orig, Player player)
+        private static void Player_UpdateMSC(On.Player.orig_UpdateMSC orig, Player player) // MainMod.Option_Swim
         {
             orig(player);
 
@@ -1961,7 +1937,6 @@ namespace SimplifiedMoveset
             {
                 player.GetAttachedFields().initializeHands = true;
             }
-            player.GetAttachedFields().dontUseTubeWormCounter = 0;
 
             if (!MainMod.Option_WallJump)
             {
@@ -2034,33 +2009,6 @@ namespace SimplifiedMoveset
         //
         //
 
-        private static bool Player_SaintTongueCheck(On.Player.orig_SaintTongueCheck orig, Player player) // MainMod.Option_TubeWorm
-        {
-            if (player.GetAttachedFields().dontUseTubeWormCounter > 0) return false;
-            return orig(player);
-        }
-
-        private static void Player_TongueUpdate(On.Player.orig_TongueUpdate orig, Player player) // MainMod.Option_TubeWorm
-        {
-            if (player.tongue == null || player.room == null)
-            {
-                orig(player);
-                return;
-            }
-
-            // priotize climbing and wall jumps
-            if (player.tongue.Attached && !player.Stunned && player.input[0].jmp && !player.input[1].jmp && player.tongueAttachTime >= 2 && (player.IsClimbingOnBeam() || player.bodyMode == Player.BodyModeIndex.WallClimb))
-            {
-                player.tongue.Release();
-
-                // tongue needs to retract first? => two UpdateAnimation() calls inbetween;
-                // needed when climbing vertical beams while tongue "is" attached;
-                // it get retracted first so tongue.Attached is not useful;
-                player.GetAttachedFields().dontUseTubeWormCounter = 5;
-            }
-            orig(player);
-        }
-
         private static Vector2 Tongue_AutoAim(On.Player.Tongue.orig_AutoAim orig, Player.Tongue tongue, Vector2 originalDir) // MainMod.Option_TubeWorm
         {
             // here originalDir = newDir since direction is adjusted in Tongue_Shoot();
@@ -2094,12 +2042,6 @@ namespace SimplifiedMoveset
             orig(tongue, dir);
         }
 
-        private static void Tongue_Update(On.Player.Tongue.orig_Update orig, Player.Tongue tongue) // MainMod.Option_TubeWorm
-        {
-            tongue.player.GetAttachedFields().isTongueRetracting = tongue.mode == Player.Tongue.Mode.Retracting;
-            orig(tongue);
-        }
-
         //
         //
         //
@@ -2108,9 +2050,9 @@ namespace SimplifiedMoveset
         {
             public bool initializeHands = false;
             public bool isSwitchingBeams = false;
-            public bool isTongueRetracting = false;
+            public bool isTongueDisabled = false;
+            public bool tongueNeedsToRetract = false;
 
-            public int dontUseTubeWormCounter = 0;
             public int getUpOnBeamAbortCounter = 0;
             public int getUpOnBeamDirection = 0;
             public int grabBeamCounter = 0;

@@ -1,4 +1,3 @@
-using System;
 using RWCustom;
 using UnityEngine;
 
@@ -6,16 +5,34 @@ namespace SimplifiedMoveset
 {
     public static class TubeWormMod
     {
-        internal static void OnDisable()
-        {
-            On.TubeWorm.JumpButton -= TubeWorm_JumpButton;
-            On.TubeWorm.Tongue.ProperAutoAim -= Tongue_ProperAutoAim;
-        }
+        //
+        // variables
+        //
 
-        internal static void OnEnable()
+        private static bool isEnabled;
+
+        //
+        //
+        //
+
+        internal static void OnToggle()
         {
-            On.TubeWorm.JumpButton += TubeWorm_JumpButton; // prioritize jump over using tube worm
-            On.TubeWorm.Tongue.ProperAutoAim += Tongue_ProperAutoAim; // auto aim and grapple beams on contact // adjust angle based on inputs in some cases
+            if (MainMod.Option_TubeWorm)
+            {
+                if (!isEnabled)
+                {
+                    On.TubeWorm.JumpButton += TubeWorm_JumpButton; // prioritize jump over using tube worm
+                    On.TubeWorm.Update += TubeWorm_Update; // force retract tongue in some cases
+                    On.TubeWorm.Tongue.ProperAutoAim += Tongue_ProperAutoAim; // auto aim and grapple beams on contact // adjust angle based on inputs in some cases
+                }
+                else
+                {
+                    On.TubeWorm.JumpButton -= TubeWorm_JumpButton;
+                    On.TubeWorm.Update -= TubeWorm_Update;
+                    On.TubeWorm.Tongue.ProperAutoAim -= Tongue_ProperAutoAim;
+                }
+            }
+            isEnabled = !isEnabled;
         }
 
         //
@@ -95,10 +112,10 @@ namespace SimplifiedMoveset
 
         private static bool TubeWorm_JumpButton(On.TubeWorm.orig_JumpButton orig, TubeWorm tubeWorm, Player player) // MainMod.Option_TubeWorm
         {
-            if ((player.tubeWorm != null && player.canWallJump != 0 && player.input[0].x != -Math.Sign(player.canWallJump)) || player.GetAttachedFields().dontUseTubeWormCounter > 0)
-            {
-                return player.input[0].jmp && !player.input[1].jmp;
-            }
+            if (player.IsClimbingOnBeam() || player.canWallJump != 0 || player.bodyMode == Player.BodyModeIndex.CorridorClimb) return player.IsJumpPressed();
+
+            // prevents falling off beams and using tongue at the same time
+            if (player.GetAttachedFields().isTongueDisabled) return player.IsJumpPressed();
             return orig(tubeWorm, player);
         }
 
@@ -128,6 +145,33 @@ namespace SimplifiedMoveset
             Vector2? newOutput = Tongue_AutoAim_Beams(tongue, newDir, prioritizeAngleOverDistance: player.input[0].y > 0, preferredHorizontalDirection: newDir.y >= 0.9f ? 0 : player.input[0].x);
             if (newOutput.HasValue) return newOutput.Value;
             return output;
+        }
+
+        private static void TubeWorm_Update(On.TubeWorm.orig_Update orig, TubeWorm tubeWorm, bool eu) // MainMod.Option_TubeWorm
+        {
+            Player? player = null;
+            foreach (Creature.Grasp? grasp in tubeWorm.grabbedBy)
+            {
+                if (grasp?.grabber is Player player_)
+                {
+                    player = player_;
+                    break;
+                }
+            }
+
+            if (player == null)
+            {
+                orig(tubeWorm, eu);
+                return;
+            }
+
+            if (player.GetAttachedFields().tongueNeedsToRetract || tubeWorm.tongues[0].Attached && player.IsJumpPressed() && (player.IsClimbingOnBeam() || player.canWallJump != 0 || player.bodyMode == Player.BodyModeIndex.CorridorClimb))
+            {
+                tubeWorm.tongues[0].Release();
+                player.GetAttachedFields().tongueNeedsToRetract = false;
+                return;
+            }
+            orig(tubeWorm, eu);
         }
     }
 }

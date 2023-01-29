@@ -1,5 +1,5 @@
 ## SimplifiedMoveset
-###### Version: 2.1.4
+###### Version: 2.1.5
 
 This is a mod for Rain World v1.9.
 
@@ -40,13 +40,15 @@ v2.1.0:
 - (crawl) Crawl turns can only be initiated when on (semi-)solid tiles or slopes.
 - (ledge grab) Removed this option. That what I was trying to do is related to crawl turns from ledges.
 
-v2.1.4:
+v2.1.5:
 - (tube worm) Retracing Saint's tongue during beam climbing is prioritized over jumping off.
 - (crawl) Some adjustments for crawl turns on ledges.
 - (tube worm) Wall jumps are priotized over using tongues.
 - (spear throw) Spears and other weapons cannot change directions after they being thrown.
 - (tube worm) Fixed two bugs where wall jumps were not correctly prioritized.
 - (tube worm) Some implementation adjustments.
+- Restructured code.
+- (tube worm) Retracting tongues is prioritized over jumping in corridors.
 
 #### (Rain World v1.5)
 v0.30:
