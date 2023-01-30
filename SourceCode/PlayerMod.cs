@@ -188,6 +188,8 @@ namespace SimplifiedMoveset
             player.bodyChunks[0].vel.y += player.dynamicRunSpeed[0];
         }
 
+        public static bool CanMidAirWallJump(this Player player) => player.bodyMode == Player.BodyModeIndex.WallClimb || player.canWallJump != 0 && player.input[0].x != -Mathf.Sign(player.canWallJump);
+
         // the name of the function is a bit ambiguous since one of the animations
         // is called ClimbOnBeam..
         public static bool IsClimbingOnBeam(this Player player)
@@ -228,7 +230,7 @@ namespace SimplifiedMoveset
 
             float minDistance = 30f;
             float maxDistance = 230f;
-            float idealDistance = tongue.idealRopeLength;
+            float idealDistance = tongue.baseIdealRopeLength;
 
             float deg = Custom.VecToDeg(originalDir);
             float minCost = float.MaxValue;
@@ -836,7 +838,7 @@ namespace SimplifiedMoveset
 
         private static bool Player_SaintTongueCheck(On.Player.orig_SaintTongueCheck orig, Player player) // MainMod.Option_TubeWorm
         {
-            if (player.IsClimbingOnBeam() || player.canWallJump != 0 || player.bodyMode == Player.BodyModeIndex.CorridorClimb) return false;
+            if (player.IsClimbingOnBeam() || player.CanMidAirWallJump() || player.bodyMode == Player.BodyModeIndex.CorridorClimb) return false;
             if (player.GetAttachedFields().isTongueDisabled) return false;
             return orig(player);
         }
@@ -877,7 +879,7 @@ namespace SimplifiedMoveset
             }
 
             // priotize climbing and wall jumps
-            if (player.tongue.Attached && !player.Stunned && player.IsJumpPressed() && player.tongueAttachTime >= 2 && (player.IsClimbingOnBeam() || player.canWallJump != 0 || player.bodyMode == Player.BodyModeIndex.CorridorClimb))
+            if (player.tongue.Attached && !player.Stunned && player.IsJumpPressed() && player.tongueAttachTime >= 2 && (player.IsClimbingOnBeam() || player.CanMidAirWallJump() || player.bodyMode == Player.BodyModeIndex.CorridorClimb))
             {
                 player.tongue.Release();
                 return;
@@ -891,7 +893,7 @@ namespace SimplifiedMoveset
 
             // player.IsTongueRetracting() needs to be last;
             // there are cases where the tongue update is late and retracting is forced when returning true;
-            if (player.IsJumpPressed() && (player.IsClimbingOnBeam() || player.canWallJump != 0 || player.bodyMode == Player.BodyModeIndex.CorridorClimb) && player.IsTongueRetracting())
+            if (player.IsJumpPressed() && (player.IsClimbingOnBeam() || player.CanMidAirWallJump() || player.bodyMode == Player.BodyModeIndex.CorridorClimb) && player.IsTongueRetracting())
             {
                 // this prevents late jumps next frame;
                 // wantToJump is set before inputs are updated;
@@ -2012,37 +2014,38 @@ namespace SimplifiedMoveset
         //
         //
 
-        private static Vector2 Tongue_AutoAim(On.Player.Tongue.orig_AutoAim orig, Player.Tongue tongue, Vector2 originalDir) // MainMod.Option_TubeWorm
+        private static Vector2 Tongue_AutoAim(On.Player.Tongue.orig_AutoAim orig, Player.Tongue tongue, Vector2 direction) // MainMod.Option_TubeWorm
         {
             // here originalDir = newDir since direction is adjusted in Tongue_Shoot();
             // newDir needs to be used in TubeWormMod;
-            if (tongue.player is not Player player) return orig(tongue, originalDir);
-            if (player.room == null) return orig(tongue, originalDir);
+            if (tongue.player is not Player player) return orig(tongue, direction);
+            if (player.room == null) return orig(tongue, direction);
 
             // vanilla with new direction
             // prioritize aiming for solid tiles
-            Vector2 output = orig(tongue, originalDir);
-            if (output != originalDir) return output;
-            if (!SharedPhysics.RayTraceTilesForTerrain(player.room, tongue.baseChunk.pos, tongue.baseChunk.pos + originalDir * 230f)) return originalDir;
+            Vector2 output = orig(tongue, direction);
+            if (output != direction) return output;
+            if (!SharedPhysics.RayTraceTilesForTerrain(player.room, tongue.baseChunk.pos, tongue.baseChunk.pos + direction * 230f)) return direction;
 
-            Vector2? newOutput = Tongue_AutoAim_Beams(tongue, originalDir, prioritizeAngleOverDistance: tongue.player.input[0].y > 0, preferredHorizontalDirection: originalDir.y >= 0.9f ? 0 : player.input[0].x);
+            Vector2? newOutput = Tongue_AutoAim_Beams(tongue, direction, prioritizeAngleOverDistance: player.input[0].x == 0 && player.input[0].y > 0, preferredHorizontalDirection: direction.y >= 0.9f ? 0 : player.input[0].x);
             if (newOutput.HasValue) return newOutput.Value;
-            return originalDir;
+            return direction;
         }
 
-        private static void Tongue_Shoot(On.Player.Tongue.orig_Shoot orig, Player.Tongue tongue, Vector2 dir) // MainMod.Option_TubeWorm
+        private static void Tongue_Shoot(On.Player.Tongue.orig_Shoot orig, Player.Tongue tongue, Vector2 direction) // MainMod.Option_TubeWorm
         {
             // adept tongue direction to player inputs in some additional cases
             if (tongue.player.input[0].x != 0)
             {
                 // used in the case where y > 0 as well
-                dir += new Vector2(tongue.player.input[0].x * 0.30f, 0.0f);
+                direction += new Vector2(tongue.player.input[0].x * 0.30f, 0.0f);
+                direction.Normalize();
             }
             else
             {
-                dir = new Vector2(0.0f, 1f);
+                direction = new Vector2(0.0f, 1f);
             }
-            orig(tongue, dir);
+            orig(tongue, direction);
         }
 
         //
