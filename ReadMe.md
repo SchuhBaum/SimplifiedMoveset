@@ -1,5 +1,5 @@
 ## SimplifiedMoveset
-###### Version: 2.1.8
+###### Version: 2.1.9
 
 This is a mod for Rain World v1.9.
 
@@ -40,7 +40,7 @@ v2.1.0:
 - (crawl) Crawl turns can only be initiated when on (semi-)solid tiles or slopes.
 - (ledge grab) Removed this option. That what I was trying to do is related to crawl turns from ledges.
 
-v2.1.8:
+v2.1.9:
 - (tube worm) Retracing Saint's tongue during beam climbing is prioritized over jumping off.
 - (crawl) Some adjustments for crawl turns on ledges.
 - (tube worm) Wall jumps are priotized over using tongues.
@@ -53,6 +53,7 @@ v2.1.8:
 - (beam climb) Fixed a bug where Saint would grab beams unintentionally.
 - (tube worm) Fixed a bug where wall jumps were not correctly detected.
 - Fixed a bug that could crash Artificer dreams.
+- (tube worm) Improved consistency for using tongues after wall jumps.
 
 #### (Rain World v1.5)
 v0.30:

@@ -188,7 +188,7 @@ namespace SimplifiedMoveset
             player.bodyChunks[0].vel.y += player.dynamicRunSpeed[0];
         }
 
-        public static bool CanMidAirWallJump(this Player player) => player.bodyMode == Player.BodyModeIndex.WallClimb || player.canWallJump != 0 && player.input[0].x != -Mathf.Sign(player.canWallJump);
+        public static bool CanWallJumpOrMidAirWallJump(this Player player) => player.canWallJump != 0 || player.animation == Player.AnimationIndex.LedgeGrab || player.bodyMode == Player.BodyModeIndex.WallClimb;
 
         // the name of the function is a bit ambiguous since one of the animations
         // is called ClimbOnBeam..
@@ -687,6 +687,10 @@ namespace SimplifiedMoveset
                 {
                     player.input[0].jmp = true;
                     player.input[1].jmp = false;
+
+                    // otherwise, you might use the tube worm instantly when
+                    // the wall jump is performed;
+                    player.GetAttachedFields().dontUseTubeWormCounter = 2;
                 }
                 else if (player.IsJumpPressed())
                 {
@@ -841,8 +845,8 @@ namespace SimplifiedMoveset
 
         private static bool Player_SaintTongueCheck(On.Player.orig_SaintTongueCheck orig, Player player) // MainMod.Option_TubeWorm
         {
-            if (player.IsClimbingOnBeam() || player.CanMidAirWallJump() || player.bodyMode == Player.BodyModeIndex.CorridorClimb) return false;
-            if (player.GetAttachedFields().isTongueDisabled) return false;
+            if (player.IsClimbingOnBeam() || player.CanWallJumpOrMidAirWallJump() || player.bodyMode == Player.BodyModeIndex.CorridorClimb) return false;
+            if (player.GetAttachedFields().dontUseTubeWormCounter > 0) return false;
             return orig(player);
         }
 
@@ -882,7 +886,7 @@ namespace SimplifiedMoveset
             }
 
             // priotize climbing and wall jumps
-            if (player.tongue.Attached && !player.Stunned && player.IsJumpPressed() && player.tongueAttachTime >= 2 && (player.IsClimbingOnBeam() || player.CanMidAirWallJump() || player.bodyMode == Player.BodyModeIndex.CorridorClimb))
+            if (player.tongue.Attached && !player.Stunned && player.IsJumpPressed() && player.tongueAttachTime >= 2 && (player.IsClimbingOnBeam() || player.CanWallJumpOrMidAirWallJump() || player.bodyMode == Player.BodyModeIndex.CorridorClimb))
             {
                 player.tongue.Release();
                 return;
@@ -890,13 +894,23 @@ namespace SimplifiedMoveset
             orig(player);
         }
 
-        private static void Player_Update(On.Player.orig_Update orig, Player player, bool eu)
+        private static void Player_Update(On.Player.orig_Update orig, Player player, bool eu) // MainMod.Option_TubeWorm
         {
             orig(player, eu);
 
+            // depending on your input in x you might not get an mid-air wall jump;
+            // make sure that you can use your tongue again next frame again;
+            if (player.canJump == 0 && player.canWallJump != 0 && player.wantToJump > 0)
+            {
+                // reset wantToJump too in order to "consume" the jump;
+                // otherwise you might still do a late jump for the same jump press;
+                player.wantToJump = 0;
+                player.canWallJump = 0;
+            }
+
             // player.IsTongueRetracting() needs to be last;
             // there are cases where the tongue update is late and retracting is forced when returning true;
-            if (player.IsJumpPressed() && (player.IsClimbingOnBeam() || player.CanMidAirWallJump() || player.bodyMode == Player.BodyModeIndex.CorridorClimb) && player.IsTongueRetracting())
+            if (player.IsJumpPressed() && (player.IsClimbingOnBeam() || player.CanWallJumpOrMidAirWallJump() || player.bodyMode == Player.BodyModeIndex.CorridorClimb) && player.IsTongueRetracting())
             {
                 // this prevents late jumps next frame;
                 // wantToJump is set before inputs are updated;
@@ -917,6 +931,11 @@ namespace SimplifiedMoveset
             AttachedFields attachedFields = player.GetAttachedFields();
             BodyChunk bodyChunk0 = player.bodyChunks[0];
             BodyChunk bodyChunk1 = player.bodyChunks[1];
+
+            if (attachedFields.dontUseTubeWormCounter > 0)
+            {
+                --attachedFields.dontUseTubeWormCounter;
+            }
 
             if (attachedFields.getUpOnBeamAbortCounter > 0) // beam climb
             {
@@ -939,8 +958,6 @@ namespace SimplifiedMoveset
             {
                 --attachedFields.soundCooldown;
             }
-
-            attachedFields.isTongueDisabled = false;
 
             if (player.animation == Player.AnimationIndex.None)
             {
@@ -1181,7 +1198,7 @@ namespace SimplifiedMoveset
                             // player.canJump = 0;
                         }
 
-                        attachedFields.isTongueDisabled = true; // don't drop and shoot tubeWorm at the same time
+                        attachedFields.dontUseTubeWormCounter = 2; // don't drop and shoot tubeWorm at the same time
                         attachedFields.grabBeamCooldownPos = bodyChunk0.pos;
                         player.animation = Player.AnimationIndex.None;
                         return;
@@ -1518,7 +1535,7 @@ namespace SimplifiedMoveset
                             if (player.input[0].y < 0)
                             {
                                 attachedFields.grabBeamCounter = 15;
-                                attachedFields.isTongueDisabled = true; // used if pressing down + jump // don't fall and shoot tongue at the same time
+                                attachedFields.dontUseTubeWormCounter = 2; // used if pressing down + jump // don't fall and shoot tongue at the same time
                                 player.canJump = 0;
                                 player.animation = Player.AnimationIndex.None;
                                 break;
@@ -1549,7 +1566,7 @@ namespace SimplifiedMoveset
                     // drop when pressing jump
                     if (player.IsJumpPressed() || bodyChunk1.vel.magnitude > 10.0 || bodyChunk0.vel.magnitude > 10.0 || !room.GetTile(bodyChunk0.pos + new Vector2(0.0f, 20f)).verticalBeam)
                     {
-                        attachedFields.isTongueDisabled = true;
+                        attachedFields.dontUseTubeWormCounter = 2;
                         player.animation = Player.AnimationIndex.None;
                         player.standing = true;
                     }
@@ -1623,7 +1640,7 @@ namespace SimplifiedMoveset
                     if (player.input[0].y == -1 && (bodyChunk0.pos.x == bodyChunk1.pos.x || player.IsJumpPressed())) // IsPosXAligned(player)
                     {
                         attachedFields.grabBeamCounter = 15;
-                        attachedFields.isTongueDisabled = true;
+                        attachedFields.dontUseTubeWormCounter = 2;
                         player.canJump = 0;
                         player.animation = Player.AnimationIndex.None;
                     }
@@ -2059,9 +2076,9 @@ namespace SimplifiedMoveset
         {
             public bool initializeHands = false;
             public bool isSwitchingBeams = false;
-            public bool isTongueDisabled = false;
             public bool tongueNeedsToRetract = false;
 
+            public int dontUseTubeWormCounter = 0;
             public int getUpOnBeamAbortCounter = 0;
             public int getUpOnBeamDirection = 0;
             public int grabBeamCounter = 0;

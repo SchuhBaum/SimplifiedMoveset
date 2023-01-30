@@ -160,10 +160,10 @@ namespace SimplifiedMoveset
 
         private static bool TubeWorm_JumpButton(On.TubeWorm.orig_JumpButton orig, TubeWorm tubeWorm, Player player) // MainMod.Option_TubeWorm
         {
-            if (player.IsClimbingOnBeam() || player.CanMidAirWallJump() || player.bodyMode == Player.BodyModeIndex.CorridorClimb) return player.IsJumpPressed();
+            if (player.IsClimbingOnBeam() || player.CanWallJumpOrMidAirWallJump() || player.bodyMode == Player.BodyModeIndex.CorridorClimb) return player.IsJumpPressed();
 
             // prevents falling off beams and using tongue at the same time
-            if (player.GetAttachedFields().isTongueDisabled) return player.IsJumpPressed();
+            if (player.GetAttachedFields().dontUseTubeWormCounter > 0) return player.IsJumpPressed();
             return orig(tubeWorm, player);
         }
         private static void TubeWorm_Update(On.TubeWorm.orig_Update orig, TubeWorm tubeWorm, bool eu) // MainMod.Option_TubeWorm
@@ -184,7 +184,7 @@ namespace SimplifiedMoveset
                 return;
             }
 
-            if (player.GetAttachedFields().tongueNeedsToRetract || tubeWorm.tongues[0].Attached && player.IsJumpPressed() && (player.IsClimbingOnBeam() || player.CanMidAirWallJump() || player.bodyMode == Player.BodyModeIndex.CorridorClimb))
+            if (player.GetAttachedFields().tongueNeedsToRetract || tubeWorm.tongues[0].Attached && player.IsJumpPressed() && (player.IsClimbingOnBeam() || player.CanWallJumpOrMidAirWallJump() || player.bodyMode == Player.BodyModeIndex.CorridorClimb))
             {
                 tubeWorm.tongues[0].Release();
                 player.GetAttachedFields().tongueNeedsToRetract = false;
