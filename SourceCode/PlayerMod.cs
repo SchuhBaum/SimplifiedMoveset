@@ -701,10 +701,13 @@ namespace SimplifiedMoveset
             attachedFields.Add(player, new AttachedFields());
 
             if (!MainMod.Option_Swim) return;
-            if (player.slugcatStats == null) return; // otherwise this can crash Artificer dreams;
+            if (player.slugcatStats == null) return;
 
+            // don't use player.gravity;
+            // this crashes Artificer dreams;
+            // gravity is a function that uses room;
+            player.buoyancy = 0.9f;
             player.slugcatStats.lungsFac = 0.0f;
-            player.buoyancy = player.gravity;
         }
 
         private static Player.ObjectGrabability Player_Grabability(On.Player.orig_Grabability orig, Player player, PhysicalObject physicalObject) // MainMod.Option_Grab

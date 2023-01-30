@@ -8,7 +8,7 @@ using UnityEngine;
 [assembly: SecurityPermission(SecurityAction.RequestMinimum, SkipVerification = true)]
 namespace SimplifiedMoveset
 {
-    [BepInPlugin("SchuhBaum.SimplifiedMoveset", "SimplifiedMoveset", "2.1.7")]
+    [BepInPlugin("SchuhBaum.SimplifiedMoveset", "SimplifiedMoveset", "2.1.8")]
     public class MainMod : BaseUnityPlugin
     {
         //
@@ -17,7 +17,7 @@ namespace SimplifiedMoveset
 
         public static readonly string MOD_ID = "SimplifiedMoveset";
         public static readonly string author = "SchuhBaum";
-        public static readonly string version = "2.1.7";
+        public static readonly string version = "2.1.8";
 
         //
         // options
