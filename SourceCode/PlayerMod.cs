@@ -32,7 +32,8 @@ namespace SimplifiedMoveset
 
         internal static void OnToggle()
         {
-            if (!isEnabled)
+            isEnabled = !isEnabled;
+            if (isEnabled)
             {
                 IL.Player.UpdateAnimation += IL_Player_UpdateAnimation;
 
@@ -63,7 +64,7 @@ namespace SimplifiedMoveset
                 // in this situation canceling beam climbing can be spammed
                 //
                 // grabbing beams by holding down is now implemented here instead of UpdateAnimation()
-                if (!isEnabled)
+                if (isEnabled)
                 {
                     IL.Player.MovementUpdate += IL_Player_MovementUpdate;
                 }
@@ -75,7 +76,7 @@ namespace SimplifiedMoveset
 
             if (MainMod.Option_BellySlide || MainMod.Option_Crawl || MainMod.Option_Roll_1 || MainMod.Option_Roll_2)
             {
-                if (!isEnabled)
+                if (isEnabled)
                 {
                     IL.Player.TerrainImpact += IL_Player_TerrainImpact;
                 }
@@ -87,7 +88,7 @@ namespace SimplifiedMoveset
 
             if (MainMod.Option_BellySlide || MainMod.Option_SpearThrow)
             {
-                if (!isEnabled)
+                if (isEnabled)
                 {
                     On.Player.ThrowObject += Player_ThrowObject;
                 }
@@ -99,7 +100,7 @@ namespace SimplifiedMoveset
 
             if (MainMod.Option_Grab)
             {
-                if (!isEnabled)
+                if (isEnabled)
                 {
                     On.Player.Grabability += Player_Grabability; // only grab dead large creatures when crouching
                 }
@@ -111,7 +112,7 @@ namespace SimplifiedMoveset
 
             if (MainMod.Option_Swim)
             {
-                if (!isEnabled)
+                if (isEnabled)
                 {
                     IL.Player.GrabUpdate += IL_Player_GrabUpdate; // can eat stuff underwater
                     On.Player.UpdateMSC += Player_UpdateMSC; // don't let MSC reset buoyancy
@@ -125,7 +126,7 @@ namespace SimplifiedMoveset
 
             if (MainMod.Option_TubeWorm)
             {
-                if (!isEnabled)
+                if (isEnabled)
                 {
                     On.Player.SaintTongueCheck += Player_SaintTongueCheck;
                     On.Player.TongueUpdate += Player_TongueUpdate;
@@ -145,7 +146,7 @@ namespace SimplifiedMoveset
 
             if (MainMod.Option_WallJump)
             {
-                if (!isEnabled)
+                if (isEnabled)
                 {
                     On.Player.checkInput += Player_CheckInput; // input "buffer" for wall jumping
                 }
@@ -157,7 +158,7 @@ namespace SimplifiedMoveset
 
             if (MainMod.Option_WallJump || MainMod.Option_WallClimb)
             {
-                if (!isEnabled)
+                if (isEnabled)
                 {
                     On.Player.GraphicsModuleUpdated += Player_GraphicsModuleUpdated; // fix cicade lifting up while wall climbing
                 }
@@ -166,7 +167,6 @@ namespace SimplifiedMoveset
                     On.Player.GraphicsModuleUpdated -= Player_GraphicsModuleUpdated;
                 }
             }
-            isEnabled = !isEnabled;
         }
 
         //
@@ -704,6 +704,10 @@ namespace SimplifiedMoveset
             orig(player, abstractCreature, world);
             attachedFields.Add(player, new AttachedFields());
 
+            // just for testing
+            // abstractCreature.world.game.wasAnArtificerDream = true;
+            // Custom.rainWorld.setup.artificerDreamTest = 4;
+
             if (!MainMod.Option_Swim) return;
             if (player.slugcatStats == null) return;
 
@@ -730,12 +734,12 @@ namespace SimplifiedMoveset
             // you can stand in vertical corridors => exclude
             // you can stand when surface swimming => exclude
             // you can stand during beam climbing => exclude
-            if (physicalObject is Creature creature && !creature.Template.smallCreature && creature.dead &&
-                player.standing && player.bodyMode != Player.BodyModeIndex.CorridorClimb && player.bodyMode != Player.BodyModeIndex.Swimming && player.bodyMode != Player.BodyModeIndex.ZeroG && ((int)player.animation < (int)Player.AnimationIndex.HangFromBeam || (int)player.animation > (int)Player.AnimationIndex.BeamTip))
+            Player.ObjectGrabability grabability = orig(player, physicalObject);
+            if (grabability == Player.ObjectGrabability.Drag && player.standing && player.bodyMode != Player.BodyModeIndex.CorridorClimb && player.bodyMode != Player.BodyModeIndex.Swimming && player.bodyMode != Player.BodyModeIndex.ZeroG && ((int)player.animation < (int)Player.AnimationIndex.HangFromBeam || (int)player.animation > (int)Player.AnimationIndex.BeamTip))
             {
                 return Player.ObjectGrabability.CantGrab;
             }
-            return orig(player, physicalObject);
+            return grabability;
         }
 
         private static void Player_GraphicsModuleUpdated(On.Player.orig_GraphicsModuleUpdated orig, Player player, bool actuallyViewed, bool eu) // MainMod.Option_WallJump || MainMod.Option_WallClimb
@@ -764,9 +768,10 @@ namespace SimplifiedMoveset
         private static void Player_Jump(On.Player.orig_Jump orig, Player player)
         {
             // don't instantly regrab vertical beams
+            AttachedFields attachedFields = player.GetAttachedFields();
             if (player.animation == Player.AnimationIndex.ClimbOnBeam)
             {
-                player.GetAttachedFields().grabBeamCooldownPos = player.bodyChunks[1].pos;
+                attachedFields.grabBeamCooldownPos = player.bodyChunks[1].pos;
             }
 
             if (MainMod.Option_WallJump && player.animation == Player.AnimationIndex.StandOnBeam && player.input[0].y > -1)
@@ -776,6 +781,7 @@ namespace SimplifiedMoveset
 
             // prioritize retracting over jumping off beams;
             if (MainMod.Option_TubeWorm && (player.IsClimbingOnBeam() || player.bodyMode == Player.BodyModeIndex.CorridorClimb) && player.IsTongueRetracting()) return;
+            attachedFields.dontUseTubeWormCounter = 2;
 
             if (player.bodyMode != Player.BodyModeIndex.CorridorClimb && player.bodyMode != Player.BodyModeIndex.WallClimb)
             {

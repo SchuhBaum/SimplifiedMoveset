@@ -1,4 +1,3 @@
-using System;
 using RWCustom;
 using UnityEngine;
 
@@ -18,9 +17,10 @@ namespace SimplifiedMoveset
 
         internal static void OnToggle()
         {
+            isEnabled = !isEnabled;
             if (MainMod.Option_TubeWorm)
             {
-                if (!isEnabled)
+                if (isEnabled)
                 {
                     On.TubeWorm.Tongue.ProperAutoAim += Tongue_ProperAutoAim; // auto aim and grapple beams on contact 
                     On.TubeWorm.Tongue.Shoot += Tongue_Shoot; // adjust angle based on inputs in some cases
@@ -37,7 +37,6 @@ namespace SimplifiedMoveset
                     On.TubeWorm.Update -= TubeWorm_Update;
                 }
             }
-            isEnabled = !isEnabled;
         }
 
         //
