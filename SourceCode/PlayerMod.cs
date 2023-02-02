@@ -580,7 +580,10 @@ namespace SimplifiedMoveset
                 {
                     if (player.animation == Player.AnimationIndex.RocketJump)
                     {
-                        if (MainMod.Option_Roll_2) return false;
+                        if (MainMod.Option_Roll_2)
+                        {
+                            return speed > 16f && player.input[0].downDiagonal != 0 && direction.y < 0 && player.animation != Player.AnimationIndex.Roll && player.allowRoll > 0 && player.consistentDownDiagonal > ((speed <= 24f) ? 6 : 1);
+                        }
 
                         if (MainMod.Option_BellySlide || MainMod.Option_Roll_1)
                         {
@@ -832,6 +835,9 @@ namespace SimplifiedMoveset
                     // BUT: this animation is also used when aborting a crawlTurn; crawlTurn + Default + input.x == 0 => None + Default => None + Stand + no inputs => DownOnFours + Stand => stand up when jumping
                     // this solution is not perfect; you can still press down shortly before crawl turn but the timing is more tight
                     // at least when the option crawl turn is used because then you start rolling by down-diagonal
+                    //
+                    // kinda annoying that this is only(?) happens on jump button release;
+                    // probably because the superLaunchJump requires holding jump;
                     if (MainMod.Option_CrouchJump && player.superLaunchJump < 20 && (player.input.All(input => input.y != -1) && (player.animation == Player.AnimationIndex.DownOnFours || player.animation == Player.AnimationIndex.None && player.bodyMode == Player.BodyModeIndex.Default) || player.animation == Player.AnimationIndex.CrawlTurn || player.bodyMode == Player.BodyModeIndex.Crawl))
                     {
                         orig(player); // uses player.standing
@@ -1131,6 +1137,9 @@ namespace SimplifiedMoveset
                     player.bodyMode = Player.BodyModeIndex.ClimbingOnBeam;
                     player.standing = true;
 
+                    // prevent additional momentum from wall jumps
+                    player.canWallJump = 0;
+
                     bodyChunk0.vel.x *= 0.2f;
                     bodyChunk0.vel.y = 0.0f;
                     bodyChunk0.pos.y = room.MiddleOfTile(bodyChunk0.pos).y;
@@ -1311,6 +1320,9 @@ namespace SimplifiedMoveset
                     player.standing = true;
                     player.canJump = 5;
                     bodyChunk1.vel.x *= 0.5f;
+
+                    // prevent additional momentum from wall jumps
+                    player.canWallJump = 0;
 
                     if (player.input[0].x != 0 && bodyChunk1.contactPoint.x != player.input[0].x)
                     {
@@ -1863,7 +1875,7 @@ namespace SimplifiedMoveset
                 if (player.input[0].x != 0)
                 {
                     // bodyMode would change when player.input[0].x != bodyChunk0.contactPoint.x // skip this check for now
-                    player.canWallJump = player.input[0].x * -15;
+                    player.canWallJump = player.IsClimbingOnBeam() ? 0 : player.input[0].x * -15;
 
                     // when upside down, flip instead of climbing
                     if (bodyChunk0.pos.y < bodyChunk1.pos.y)

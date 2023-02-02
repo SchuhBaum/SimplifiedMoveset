@@ -1,5 +1,5 @@
 ## SimplifiedMoveset
-###### Version: 2.2.0
+###### Version: 2.2.1
 
 This is a mod for Rain World v1.9.
 
@@ -55,6 +55,10 @@ v2.2.0:
 - Fixed a bug that could crash Artificer dreams.
 - (tube worm) Improved consistency for using tongues after wall jumps.
 - (grab) Fixed a bug where one-handed creatures would not be grabbed unless the player was crouching.
+
+v2.2.1:
+- (beam climb) Potentially fixed a bug where wall jumps would mess with climbing straight up beams.
+- (roll 2) Allows to initiate rolls from rocket jumps but only with enough speed. The intention is not be able to spam roll + rocket jumps not to prevent it entirely.
 
 #### (Rain World v1.5)
 v0.30:
