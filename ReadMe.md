@@ -1,5 +1,5 @@
 ## SimplifiedMoveset
-###### Version: 2.2.1
+###### Version: 2.2.2
 
 This is a mod for Rain World v1.9.
 
@@ -14,6 +14,10 @@ https://www.youtube.com/watch?v=Jp6UyUgoWB0
 1. Download the file  `SimplifiedMoveset.zip` from [Releases](https://github.com/SchuhBaum/SimplifiedMoveset/releases).
 2. Extract its content in the folder `[Steam]\SteamApps\common\Rain World\RainWorld_Data\StreamingAssets\mods`.
 3. Start the game as normal. In the main menu select `Remix` and enable the mod. 
+
+### Bug reports
+Please post bugs on the Rain World Discord server in the channel #modding-support:  
+https://discord.gg/rainworld
 
 ### Contact
 If you have feedback, you can message me on Discord `@SchuhBaum#7246` or write an email to SchuhBaum71@gmail.com.  
@@ -49,16 +53,18 @@ v2.2.0:
 - (tube worm) Some implementation adjustments.
 - Restructured code.
 - (tube worm) Retracting tongues is prioritized over jumping in corridors.
-- (beam climb) Fixed a bug where you would grab horizontal beams inside vertical corridors.
 - (beam climb) Fixed a bug where Saint would grab beams unintentionally.
 - (tube worm) Fixed a bug where wall jumps were not correctly detected.
 - Fixed a bug that could crash Artificer dreams.
 - (tube worm) Improved consistency for using tongues after wall jumps.
 - (grab) Fixed a bug where one-handed creatures would not be grabbed unless the player was crouching.
 
-v2.2.1:
+v2.2.2:
 - (beam climb) Potentially fixed a bug where wall jumps would mess with climbing straight up beams.
 - (roll 2) Allows to initiate rolls from rocket jumps but only with enough speed. The intention is not be able to spam roll + rocket jumps not to prevent it entirely.
+- (beam climb) Fixed a bug where you would grab horizontal beams inside vertical corridors.
+- (wall jump) Allow to mid-air wall jump even when changing directions.
+- (stand up) Added this option. Various situations where you would stand up are now transfered to this option and some additional are added.
 
 #### (Rain World v1.5)
 v0.30:

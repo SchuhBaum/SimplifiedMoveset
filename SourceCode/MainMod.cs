@@ -8,7 +8,7 @@ using UnityEngine;
 [assembly: SecurityPermission(SecurityAction.RequestMinimum, SkipVerification = true)]
 namespace SimplifiedMoveset
 {
-    [BepInPlugin("SchuhBaum.SimplifiedMoveset", "SimplifiedMoveset", "2.2.1")]
+    [BepInPlugin("SchuhBaum.SimplifiedMoveset", "SimplifiedMoveset", "2.2.2")]
     public class MainMod : BaseUnityPlugin
     {
         //
@@ -17,7 +17,7 @@ namespace SimplifiedMoveset
 
         public static readonly string MOD_ID = "SimplifiedMoveset";
         public static readonly string author = "SchuhBaum";
-        public static readonly string version = "2.2.1";
+        public static readonly string version = "2.2.2";
 
         //
         // options
@@ -35,10 +35,11 @@ namespace SimplifiedMoveset
         public static bool Option_SlideTurn => MainModOptions.slideTurn.Value;
         public static bool Option_SpearThrow => MainModOptions.spearThrow.Value;
 
+        public static bool Option_StandUp => MainModOptions.standUp.Value;
         public static bool Option_Swim => MainModOptions.swim.Value;
         public static bool Option_TubeWorm => MainModOptions.tubeWorm.Value;
-        public static bool Option_WallClimb => MainModOptions.wallClimb.Value;
 
+        public static bool Option_WallClimb => MainModOptions.wallClimb.Value;
         public static bool Option_WallJump => MainModOptions.wallJump.Value;
 
         //
@@ -64,7 +65,7 @@ namespace SimplifiedMoveset
             if (context == null) return;
 
             Debug.Log("-----------------------------------------------------------------");
-            Debug.Log("SimplifiedMoveset: Log all IL-instructions.");
+            Debug.Log("Log all IL-instructions.");
             Debug.Log("Index:" + new string(' ', indexStringLength - 6) + "OpCode:" + new string(' ', opCodeStringLength - 7) + "Operand:");
 
             ILCursor cursor = new(context);
@@ -149,7 +150,7 @@ namespace SimplifiedMoveset
             if (isInitialized) return;
             isInitialized = true;
 
-            Debug.Log("SimplifiedMoveset: Version " + version);
+            Debug.Log("SimplifiedMoveset: version " + version);
 
             BodyChunkMod.OnEnable();
             BodyChunkConnectionMod.OnEnable();
