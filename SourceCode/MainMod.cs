@@ -8,7 +8,7 @@ using UnityEngine;
 [assembly: SecurityPermission(SecurityAction.RequestMinimum, SkipVerification = true)]
 namespace SimplifiedMoveset
 {
-    [BepInPlugin("SchuhBaum.SimplifiedMoveset", "SimplifiedMoveset", "2.2.2")]
+    [BepInPlugin("SchuhBaum.SimplifiedMoveset", "SimplifiedMoveset", "2.2.3")]
     public class MainMod : BaseUnityPlugin
     {
         //
@@ -17,7 +17,7 @@ namespace SimplifiedMoveset
 
         public static readonly string MOD_ID = "SimplifiedMoveset";
         public static readonly string author = "SchuhBaum";
-        public static readonly string version = "2.2.2";
+        public static readonly string version = "2.2.3";
 
         //
         // options
@@ -122,19 +122,6 @@ namespace SimplifiedMoveset
                 }
             }
             Debug.Log("-----------------------------------------------------------------");
-        }
-
-        public static void LogPlayerInformation(Player player)
-        {
-            Debug.Log("player.input[0].x " + player.input[0].x);
-            Debug.Log("player.input[0].y " + player.input[0].y);
-            Debug.Log("player.input[0].jmp " + player.input[0].jmp);
-            Debug.Log("player.IsJumpPressed " + player.IsJumpPressed());
-            Debug.Log("player.canJump " + player.canJump);
-            Debug.Log("player.wantToJump " + player.wantToJump);
-            Debug.Log("player.canWallJump " + player.canWallJump);
-            Debug.Log("player.animation " + player.animation);
-            Debug.Log("player.bodyMode " + player.bodyMode);
         }
 
         //

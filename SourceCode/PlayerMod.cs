@@ -248,6 +248,24 @@ namespace SimplifiedMoveset
             return player.tongue != null && player.tongue.mode == Player.Tongue.Mode.Retracting;
         }
 
+        public static void LogPlayerInformation(this Player player)
+        {
+            Debug.Log("player.input[0].x " + player.input[0].x);
+            Debug.Log("player.input[0].y " + player.input[0].y);
+            Debug.Log("player.input[0].jmp " + player.input[0].jmp);
+
+            Debug.Log("player.IsJumpPressed " + player.IsJumpPressed());
+            Debug.Log("player.canJump " + player.canJump);
+            Debug.Log("player.wantToJump " + player.wantToJump);
+            Debug.Log("player.canWallJump " + player.canWallJump);
+
+            Debug.Log("player.shortcutDelay " + player.shortcutDelay);
+            Debug.Log("player.inShortcut " + player.inShortcut);
+
+            Debug.Log("player.animation " + player.animation);
+            Debug.Log("player.bodyMode " + player.bodyMode);
+        }
+
         public static Vector2? Tongue_AutoAim_Beams(Player.Tongue tongue, Vector2 originalDir, bool prioritizeAngleOverDistance, int preferredHorizontalDirection)
         {
             if (tongue.player?.room is not Room room) return null;
@@ -837,6 +855,7 @@ namespace SimplifiedMoveset
                 attachedFields.grabBeamCooldownPos = player.bodyChunks[1].pos;
             }
 
+            // do a normal jump off beams when WallJump() is called;
             if (MainMod.Option_WallJump && player.animation == Player.AnimationIndex.StandOnBeam && player.input[0].y > -1)
             {
                 player.lowerBodyFramesOffGround = 0;
@@ -845,6 +864,9 @@ namespace SimplifiedMoveset
             // prioritize retracting over jumping off beams;
             if (MainMod.Option_TubeWorm && (player.IsClimbingOnBeam() || player.bodyMode == Player.BodyModeIndex.CorridorClimb) && player.IsTongueRetracting()) return;
             attachedFields.dontUseTubeWormCounter = 2;
+
+            // don't do a rocket jump out of shortcuts
+            if (player.shortcutDelay > 10 && player.animation == Player.AnimationIndex.BellySlide && MainMod.Option_BellySlide) return;
 
             if (player.bodyMode != Player.BodyModeIndex.CorridorClimb && player.bodyMode != Player.BodyModeIndex.WallClimb)
             {

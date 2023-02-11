@@ -1,5 +1,5 @@
 ## SimplifiedMoveset
-###### Version: 2.2.2
+###### Version: 2.2.3
 
 This is a mod for Rain World v1.9.
 
@@ -11,7 +11,7 @@ https://www.youtube.com/watch?v=Jp6UyUgoWB0
 
 ### Installation
 0. Update Rain World to version 1.9 if needed.
-1. Download the file  `SimplifiedMoveset.zip` from [Releases](https://github.com/SchuhBaum/SimplifiedMoveset/releases).
+1. Download the file  `SimplifiedMoveset.zip` from [Releases](https://github.com/SchuhBaum/SimplifiedMoveset/releases/tags/v2.2.3).
 2. Extract its content in the folder `[Steam]\SteamApps\common\Rain World\RainWorld_Data\StreamingAssets\mods`.
 3. Start the game as normal. In the main menu select `Remix` and enable the mod. 
 
@@ -59,12 +59,13 @@ v2.2.0:
 - (tube worm) Improved consistency for using tongues after wall jumps.
 - (grab) Fixed a bug where one-handed creatures would not be grabbed unless the player was crouching.
 
-v2.2.2:
+v2.2.3:
 - (beam climb) Potentially fixed a bug where wall jumps would mess with climbing straight up beams.
 - (roll 2) Allows to initiate rolls from rocket jumps but only with enough speed. The intention is not be able to spam roll + rocket jumps not to prevent it entirely.
 - (beam climb) Fixed a bug where you would grab horizontal beams inside vertical corridors.
 - (wall jump) Allow to mid-air wall jump even when changing directions.
 - (stand up) Added this option. Various situations where you would stand up are now transfered to this option and some additional are added.
+- (belly slide) You can no longer rocket jump from belly slides out of shortcuts.
 
 #### (Rain World v1.5)
 v0.30:
