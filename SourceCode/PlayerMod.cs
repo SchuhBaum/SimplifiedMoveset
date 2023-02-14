@@ -943,6 +943,7 @@ namespace SimplifiedMoveset
         private static bool Player_SaintTongueCheck(On.Player.orig_SaintTongueCheck orig, Player player) // MainMod.Option_TubeWorm
         {
             if (player.IsClimbingOnBeam() || player.CanWallJumpOrMidAirWallJump() || player.bodyMode == Player.BodyModeIndex.CorridorClimb) return false;
+            if (player.shortcutDelay > 10) return false;
             if (player.GetAttachedFields().dontUseTubeWormCounter > 0) return false;
             return orig(player);
         }
@@ -963,6 +964,10 @@ namespace SimplifiedMoveset
 
         private static void Player_ThrowObject(On.Player.orig_ThrowObject orig, Player player, int grasp, bool eu) // MainMod.Option_BellySlide || MainMod.Option_SpearThrow
         {
+            // vanilla bug;
+            // orig assumes it to be not null;
+            if (player.grasps[grasp] == null) return;
+
             // throw weapon // don't get forward momentum on ground or poles
             if (MainMod.Option_SpearThrow && player.grasps[grasp]?.grabbed is Weapon && player.animation != Player.AnimationIndex.BellySlide && (player.animation != Player.AnimationIndex.Flip || player.input[0].y >= 0 || player.input[0].x != 0))
             {

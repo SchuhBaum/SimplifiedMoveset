@@ -160,6 +160,7 @@ namespace SimplifiedMoveset
         private static bool TubeWorm_JumpButton(On.TubeWorm.orig_JumpButton orig, TubeWorm tubeWorm, Player player) // MainMod.Option_TubeWorm
         {
             if (player.IsClimbingOnBeam() || player.CanWallJumpOrMidAirWallJump() || player.bodyMode == Player.BodyModeIndex.CorridorClimb) return player.IsJumpPressed();
+            if (player.shortcutDelay > 10) return player.IsJumpPressed();
 
             // prevents falling off beams and using tongue at the same time
             if (player.GetAttachedFields().dontUseTubeWormCounter > 0) return player.IsJumpPressed();
