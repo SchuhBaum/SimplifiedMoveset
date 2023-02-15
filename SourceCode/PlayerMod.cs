@@ -21,8 +21,8 @@ namespace SimplifiedMoveset
         // variables
         //
 
-        internal static readonly Dictionary<Player, AttachedFields> attachedFields = new();
-        public static AttachedFields GetAttachedFields(this Player player) => attachedFields[player];
+        internal static readonly Dictionary<Player, AttachedFields> attachedFieldsDictionary = new();
+        public static AttachedFields GetAttachedFields(this Player player) => attachedFieldsDictionary[player];
 
         private static bool isEnabled = false;
 
@@ -337,22 +337,21 @@ namespace SimplifiedMoveset
         {
             // trying to be more robust
             // I had cases where mods would break (but not vanilla) when trying to adjust room loading => annoying to work around
-            if (player?.room is Room room)
+            if (player?.room is not Room room) return;
+
+            int chunkIndex = direction == 1 ? 0 : 1;
+            player.bodyChunks[1 - chunkIndex].pos.x = player.bodyChunks[chunkIndex].pos.x;
+            room.PlaySound(SoundID.Slugcat_Get_Up_On_Horizontal_Beam, player.mainBodyChunk, false, 1f, 1f);
+
+            Room.Tile tile = room.GetTile(player.bodyChunks[chunkIndex].pos + new Vector2(player.flipDirection * 20f, 0.0f));
+            if (tile.Terrain == Room.Tile.TerrainType.Solid || !tile.horizontalBeam)
             {
-                int chunkIndex = direction == 1 ? 0 : 1;
-                player.bodyChunks[1 - chunkIndex].pos.x = player.bodyChunks[chunkIndex].pos.x;
-                room.PlaySound(SoundID.Slugcat_Get_Up_On_Horizontal_Beam, player.mainBodyChunk, false, 1f, 1f);
-
-                Room.Tile tile = room.GetTile(player.bodyChunks[chunkIndex].pos + new Vector2(player.flipDirection * 20f, 0.0f));
-                if (tile.Terrain == Room.Tile.TerrainType.Solid || !tile.horizontalBeam)
-                {
-                    player.flipDirection = -player.flipDirection;
-                }
-
-                player.animation = Player.AnimationIndex.GetUpOnBeam;
-                player.upOnHorizontalBeamPos = new Vector2(player.bodyChunks[chunkIndex].pos.x, room.MiddleOfTile(player.bodyChunks[chunkIndex].pos).y + direction * 20f);
-                attachedFields.getUpOnBeamDirection = direction;
+                player.flipDirection = -player.flipDirection;
             }
+
+            player.animation = Player.AnimationIndex.GetUpOnBeam;
+            player.upOnHorizontalBeamPos = new Vector2(player.bodyChunks[chunkIndex].pos.x, room.MiddleOfTile(player.bodyChunks[chunkIndex].pos).y + direction * 20f);
+            attachedFields.getUpOnBeamDirection = direction;
         }
 
         public static void RocketJump(Player? player, float adrenalineModifier, float scale = 1f, SoundID? soundID = null)
@@ -783,7 +782,9 @@ namespace SimplifiedMoveset
         private static void Player_ctor(On.Player.orig_ctor orig, Player player, AbstractCreature abstractCreature, World world)
         {
             orig(player, abstractCreature, world);
-            attachedFields.Add(player, new AttachedFields());
+
+            if (attachedFieldsDictionary.ContainsKey(player)) return;
+            attachedFieldsDictionary.Add(player, new AttachedFields());
 
             // just for testing
             // abstractCreature.world.game.wasAnArtificerDream = true;
@@ -1294,10 +1295,15 @@ namespace SimplifiedMoveset
                     {
                         player.room.PlaySound(SoundID.Slugcat_Regain_Footing, player.mainBodyChunk, false, 1f, 1f);
                         player.animation = Player.AnimationIndex.StandUp;
+                        player.animationFrame = 0;
                         return;
                     }
 
-                    if (SwitchHorizontalToVerticalBeam(player, attachedFields)) return;// grab vertical beam if possible
+                    if (SwitchHorizontalToVerticalBeam(player, attachedFields))
+                    {
+                        player.animationFrame = 0;
+                        return;// grab vertical beam if possible
+                    }
 
                     if (player.IsJumpPressed())
                     {
@@ -1307,6 +1313,7 @@ namespace SimplifiedMoveset
                         if (player.input[0].y == 1) // only drop when pressing jump without holding up
                         {
                             PrepareGetUpOnBeamAnimation(player, 1, attachedFields);
+                            player.animationFrame = 0;
                             return;
                         }
                         else if (player.input[0].y == -1 && player.IsTileSolid(1, 0, -1))
@@ -1320,18 +1327,18 @@ namespace SimplifiedMoveset
                         attachedFields.dontUseTubeWormCounter = 2; // don't drop and shoot tubeWorm at the same time
                         attachedFields.grabBeamCooldownPos = bodyChunk0.pos;
                         player.animation = Player.AnimationIndex.None;
+                        player.animationFrame = 0;
                         return;
                     }
                     else if (player.input[0].y == 1 && player.input[1].y == 0)
                     {
                         PrepareGetUpOnBeamAnimation(player, 1, attachedFields);
+                        player.animationFrame = 0;
                         return;
                     }
 
-                    if (!room.GetTile(bodyChunk0.pos).horizontalBeam)
-                    {
-                        player.animation = Player.AnimationIndex.None;
-                    }
+                    if (room.GetTile(bodyChunk0.pos).horizontalBeam) return;
+                    player.animation = Player.AnimationIndex.None;
                     return;
                 }
                 else if (player.animation == Player.AnimationIndex.GetUpOnBeam)
@@ -1475,7 +1482,11 @@ namespace SimplifiedMoveset
                     // ----- //
 
                     // grab vertical beam if possible
-                    if (SwitchHorizontalToVerticalBeam(player, attachedFields)) return;
+                    if (SwitchHorizontalToVerticalBeam(player, attachedFields))
+                    {
+                        player.animationFrame = 0;
+                        return;
+                    }
 
                     // if (isWallClimbing)
                     // {
@@ -1503,6 +1514,7 @@ namespace SimplifiedMoveset
                     if (player.input[0].y == -1 && (player.input[1].y == 0 || player.IsJumpPressed()))
                     {
                         PrepareGetUpOnBeamAnimation(player, -1, attachedFields);
+                        player.animationFrame = 0;
                         return;
                     }
 
@@ -1512,6 +1524,7 @@ namespace SimplifiedMoveset
                         bodyChunk0.pos.y += 8f;
                         bodyChunk1.pos.y += 8f;
                         player.animation = Player.AnimationIndex.HangFromBeam;
+                        player.animationFrame = 0;
                     }
                     return;
                 }
@@ -1607,32 +1620,36 @@ namespace SimplifiedMoveset
                     {
                         player.room.PlaySound(SoundID.Slugcat_Regain_Footing, player.mainBodyChunk, false, 1f, 1f);
                         player.animation = Player.AnimationIndex.StandUp;
+                        player.animationFrame = 0;
                         return;
                     }
 
                     // switch to horizontal beams
-                    if (SwitchVerticalToHorizontalBeam(player, attachedFields)) return;
+                    if (SwitchVerticalToHorizontalBeam(player, attachedFields))
+                    {
+                        player.animationFrame = 0;
+                        return;
+                    }
 
                     // lose grip
-                    if (!player.room.GetTile(bodyChunk0.pos).verticalBeam)
+                    if (player.room.GetTile(bodyChunk0.pos).verticalBeam) return;
+                    if (player.room.GetTile(player.room.GetTilePosition(bodyChunk0.pos) + new IntVector2(0, -1)).verticalBeam)
                     {
-                        if (player.room.GetTile(player.room.GetTilePosition(bodyChunk0.pos) + new IntVector2(0, -1)).verticalBeam)
-                        {
-                            player.room.PlaySound(SoundID.Slugcat_Get_Up_On_Top_Of_Vertical_Beam_Tip, player.mainBodyChunk, false, 1f, 1f);
-                            player.animation = Player.AnimationIndex.GetUpToBeamTip;
+                        player.room.PlaySound(SoundID.Slugcat_Get_Up_On_Top_Of_Vertical_Beam_Tip, player.mainBodyChunk, false, 1f, 1f);
+                        player.animation = Player.AnimationIndex.GetUpToBeamTip;
 
-                            // otherwise it might cancel the GetUpToBeamTip animation before it gets reached;
-                            player.wantToJump = 0;
-                        }
-                        else if (player.room.GetTile(player.room.GetTilePosition(bodyChunk0.pos) + new IntVector2(0, 1)).verticalBeam)
-                        {
-                            player.animation = Player.AnimationIndex.HangUnderVerticalBeam;
-                        }
-                        else
-                        {
-                            player.animation = Player.AnimationIndex.None;
-                        }
+                        // otherwise it might cancel the GetUpToBeamTip animation before it gets reached;
+                        player.wantToJump = 0;
                     }
+                    else if (player.room.GetTile(player.room.GetTilePosition(bodyChunk0.pos) + new IntVector2(0, 1)).verticalBeam)
+                    {
+                        player.animation = Player.AnimationIndex.HangUnderVerticalBeam;
+                    }
+                    else
+                    {
+                        player.animation = Player.AnimationIndex.None;
+                    }
+                    player.animationFrame = 0;
                     return;
                 }
                 else if (player.animation == Player.AnimationIndex.GetUpToBeamTip)
@@ -1871,6 +1888,9 @@ namespace SimplifiedMoveset
                 return;
             }
 
+            BodyChunk bodyChunk0 = player.bodyChunks[0];
+            BodyChunk bodyChunk1 = player.bodyChunks[1];
+
             // crawl
             if (MainMod.Option_Crawl && player.bodyMode == Player.BodyModeIndex.Crawl)
             {
@@ -1880,7 +1900,7 @@ namespace SimplifiedMoveset
                 // I want to prevent a crawl turn on ledges;
                 // not sure if the check for solid tiles are enough;
                 // seems like it works;
-                if (player.input[0].x != 0 && player.input[0].x > 0 == player.bodyChunks[0].pos.x < (double)player.bodyChunks[1].pos.x && player.crawlTurnDelay > 5 && !player.IsTileSolid(0, 0, 1) && !player.IsTileSolid(1, 0, 1) && player.IsTileSolidOrSlope(1, 0, -1)) //  && player.IsTileSolidOrSlope(1, player.input[0].x, -1)
+                if (player.input[0].x != 0 && player.input[0].x > 0 == bodyChunk0.pos.x < bodyChunk1.pos.x && player.crawlTurnDelay > 5 && !player.IsTileSolid(0, 0, 1) && !player.IsTileSolid(1, 0, 1) && player.IsTileSolidOrSlope(1, 0, -1)) //  && player.IsTileSolidOrSlope(1, player.input[0].x, -1)
                 {
                     AlignPosYOnSlopes(player);
                     player.dynamicRunSpeed[0] *= 0.5f; // default: 0.75f
@@ -1900,7 +1920,7 @@ namespace SimplifiedMoveset
                     }
                 }
                 // more requirements than vanilla // prevent collision and sound spam
-                else if ((player.bodyChunks[1].onSlope == 0 || player.input[0].x != -player.bodyChunks[1].onSlope) && (player.lowerBodyFramesOnGround >= 3 || player.bodyChunks[1].contactPoint.y < 0 && room.GetTile(room.GetTilePosition(player.bodyChunks[1].pos) + new IntVector2(0, -1)).Terrain != Room.Tile.TerrainType.Air && room.GetTile(room.GetTilePosition(player.bodyChunks[0].pos) + new IntVector2(0, -1)).Terrain != Room.Tile.TerrainType.Air))
+                else if ((bodyChunk1.onSlope == 0 || player.input[0].x != -bodyChunk1.onSlope) && (player.lowerBodyFramesOnGround >= 3 || bodyChunk1.contactPoint.y < 0 && room.GetTile(room.GetTilePosition(bodyChunk1.pos) + new IntVector2(0, -1)).Terrain != Room.Tile.TerrainType.Air && room.GetTile(room.GetTilePosition(bodyChunk0.pos) + new IntVector2(0, -1)).Terrain != Room.Tile.TerrainType.Air))
                 {
                     AlignPosYOnSlopes(player);
                     room.PlaySound(SoundID.Slugcat_Stand_Up, player.mainBodyChunk);
@@ -1908,21 +1928,28 @@ namespace SimplifiedMoveset
 
                     if (player.input[0].x == 0)
                     {
-                        if (player.bodyChunks[1].contactPoint.y == -1 && player.IsTileSolid(1, 0, -1) && !player.IsTileSolid(1, 0, 1))
+                        if (bodyChunk1.contactPoint.y == -1 && player.IsTileSolid(1, 0, -1) && !player.IsTileSolid(1, 0, 1))
                         {
-                            player.feetStuckPos = new Vector2?(room.MiddleOfTile(room.GetTilePosition(player.bodyChunks[1].pos)) + new Vector2(0.0f, player.bodyChunks[1].rad - 10f));
+                            player.feetStuckPos = new Vector2?(room.MiddleOfTile(room.GetTilePosition(bodyChunk1.pos)) + new Vector2(0.0f, bodyChunk1.rad - 10f));
                         }
-                        else if (player.bodyChunks[0].contactPoint.y == -1 && player.IsTileSolid(0, 0, -1) && !player.IsTileSolid(0, 0, 1))
+                        else if (bodyChunk0.contactPoint.y == -1 && player.IsTileSolid(0, 0, -1) && !player.IsTileSolid(0, 0, 1))
                         {
-                            player.feetStuckPos = new Vector2?(player.bodyChunks[0].pos + new Vector2(0.0f, -1f));
+                            player.feetStuckPos = new Vector2?(bodyChunk0.pos + new Vector2(0.0f, -1f));
                         }
                     }
+
+                    // otherwise the animationFrame might not get updated correctly
+                    // and PlayerGraphics might look for sprites that don't exist;
+                    // I think this happens more the other way around;
+                    // other animations have higher animationFrames and when they don't reset
+                    // the element LegsACrawlingX is not found with X > 5;
+                    player.animationFrame = 0;
                     return;
                 }
 
-                if (player.bodyChunks[0].contactPoint.y > -1 && player.input[0].x != 0 && player.bodyChunks[1].pos.y < player.bodyChunks[0].pos.y - 3.0 && player.bodyChunks[1].contactPoint.x == player.input[0].x)
+                if (bodyChunk0.contactPoint.y > -1 && player.input[0].x != 0 && bodyChunk1.pos.y < bodyChunk0.pos.y - 3.0 && bodyChunk1.contactPoint.x == player.input[0].x)
                 {
-                    ++player.bodyChunks[1].pos.y;
+                    ++bodyChunk1.pos.y;
                 }
 
                 if (player.input[0].y < 0)
@@ -1940,7 +1967,7 @@ namespace SimplifiedMoveset
                     }
                 }
 
-                if (player.input[0].x != 0 && Mathf.Abs(player.bodyChunks[1].pos.x - player.bodyChunks[1].lastPos.x) > 0.5)
+                if (player.input[0].x != 0 && Mathf.Abs(bodyChunk1.pos.x - bodyChunk1.lastPos.x) > 0.5)
                 {
                     ++player.animationFrame;
                 }
@@ -1949,11 +1976,7 @@ namespace SimplifiedMoveset
                     player.animationFrame = 0;
                 }
 
-                if (player.animationFrame <= 10)
-                {
-                    return;
-                }
-
+                if (player.animationFrame <= 10) return;
                 player.animationFrame = 0;
                 room.PlaySound(SoundID.Slugcat_Crawling_Step, player.mainBodyChunk);
                 return;
@@ -1967,14 +1990,12 @@ namespace SimplifiedMoveset
                 player.standing = true;
 
                 // don't climb on one-tile "walls" instead of crawling (for example)
-                if (player.bodyChunks[1].contactPoint.x == 0 && player.bodyChunks[1].contactPoint.y == -1)
+                if (bodyChunk1.contactPoint.x == 0 && bodyChunk1.contactPoint.y == -1)
                 {
                     player.animation = Player.AnimationIndex.StandUp;
+                    player.animationFrame = 0;
                     return;
                 }
-
-                BodyChunk bodyChunk0 = player.bodyChunks[0];
-                BodyChunk bodyChunk1 = player.bodyChunks[1];
 
                 if (player.input[0].x != 0)
                 {
@@ -2037,14 +2058,11 @@ namespace SimplifiedMoveset
                 {
                     player.slideLoop.volume = 0.0f;
                 }
-
-                if (player.animationFrame > 20)
-                {
-                    room.PlaySound(SoundID.Slugcat_Crawling_Step, player.mainBodyChunk);
-                    player.animationFrame = 0;
-                }
-
                 bodyChunk1.vel.y += bodyChunk1.submersion * player.EffectiveRoomGravity;
+
+                if (player.animationFrame <= 20) return;
+                room.PlaySound(SoundID.Slugcat_Crawling_Step, player.mainBodyChunk);
+                player.animationFrame = 0;
                 return;
             }
 

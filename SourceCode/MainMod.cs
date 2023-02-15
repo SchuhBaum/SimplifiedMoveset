@@ -8,7 +8,7 @@ using UnityEngine;
 [assembly: SecurityPermission(SecurityAction.RequestMinimum, SkipVerification = true)]
 namespace SimplifiedMoveset
 {
-    [BepInPlugin("SchuhBaum.SimplifiedMoveset", "SimplifiedMoveset", "2.2.4")]
+    [BepInPlugin("SchuhBaum.SimplifiedMoveset", "SimplifiedMoveset", "2.2.5")]
     public class MainMod : BaseUnityPlugin
     {
         //
@@ -17,7 +17,7 @@ namespace SimplifiedMoveset
 
         public static readonly string MOD_ID = "SchuhBaum.SimplifiedMoveset";
         public static readonly string author = "SchuhBaum";
-        public static readonly string version = "2.2.4";
+        public static readonly string version = "2.2.5";
 
         //
         // options
@@ -54,7 +54,6 @@ namespace SimplifiedMoveset
 
         public MainMod() { }
         public void OnEnable() => On.RainWorld.OnModsInit += RainWorld_OnModsInit; // initialize hooks
-
 
         //
         // public
@@ -138,13 +137,7 @@ namespace SimplifiedMoveset
             isInitialized = true;
 
             Debug.Log("SimplifiedMoveset: version " + version);
-
-            BodyChunkMod.OnEnable();
-            BodyChunkConnectionMod.OnEnable();
             RainWorldGameMod.OnEnable();
-
-            SlugcatHandMod.OnEnable();
-            WeaponMod.OnEnable();
         }
     }
 }

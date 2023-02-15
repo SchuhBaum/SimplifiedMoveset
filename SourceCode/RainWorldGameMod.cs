@@ -10,20 +10,26 @@ namespace SimplifiedMoveset
             On.RainWorldGame.ShutDownProcess += RainWorldGame_ShutDownProcess;
         }
 
-        // ----------------- //
-        // private functions //
-        // ----------------- //
+        //
+        // private
+        //
 
         private static void RainWorldGame_ctor(On.RainWorldGame.orig_ctor orig, RainWorldGame game, ProcessManager manager)
         {
             Debug.Log("SimplifiedMoveset: Initialize. Add option specific hooks.");
             MainModOptions.instance.MainModOptions_OnConfigChanged();
 
+            BodyChunkConnectionMod.OnToggle();
+            BodyChunkMod.OnToggle();
             PlayerMod.OnToggle();
-            TubeWormMod.OnToggle();
 
-            BodyChunkMod.allAttachedFields.Clear();
-            PlayerMod.attachedFields.Clear();
+            SlugcatHandMod.OnToggle();
+            TubeWormMod.OnToggle();
+            WeaponMod.OnToggle();
+
+            BodyChunkMod.attachedFieldsDictionary.Clear();
+            PlayerMod.attachedFieldsDictionary.Clear();
+
             orig(game, manager);
         }
 
@@ -31,11 +37,17 @@ namespace SimplifiedMoveset
         {
             Debug.Log("SimplifiedMoveset: Cleanup. Remove option specific hooks.");
             orig(game);
-            BodyChunkMod.allAttachedFields.Clear();
-            PlayerMod.attachedFields.Clear();
 
+            BodyChunkMod.attachedFieldsDictionary.Clear();
+            PlayerMod.attachedFieldsDictionary.Clear();
+
+            BodyChunkConnectionMod.OnToggle();
+            BodyChunkMod.OnToggle();
             PlayerMod.OnToggle();
+
+            SlugcatHandMod.OnToggle();
             TubeWormMod.OnToggle();
+            WeaponMod.OnToggle();
         }
     }
 }
