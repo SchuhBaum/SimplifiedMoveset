@@ -13,23 +13,23 @@ namespace SimplifiedMoveset
         //
 
         public static Configurable<bool> beamClimb = instance.config.Bind("beamClimb", defaultValue: true, new ConfigurableInfo("Climb straight up horizontal beams. Grab beams when holding down in various cases. Lean instead of dropping from beams.", null, "", "Beam Climb"));
-        public static Configurable<bool> bellySlide = instance.config.Bind("bellySlide", defaultValue: true, new ConfigurableInfo("Removes timing for rocket jumps and throwing spears during belly slides. Slope collision is adepted to faster movement.", null, "", "Belly Slide"));
+        public static Configurable<bool> bellySlide = instance.config.Bind("bellySlide", defaultValue: true, new ConfigurableInfo("Removes timing for rocket jumps and throwing spears during belly slides. Adds sliding down slopes.", null, "", "Belly Slide"));
         public static Configurable<bool> crawl = instance.config.Bind("crawl", defaultValue: true, new ConfigurableInfo("Crawl turns can be used to initiate rolls and on slopes. Increases turn rate in corridors. Removes slowdown when holding down.", null, "", "Crawl"));
 
         public static Configurable<bool> crouchJump = instance.config.Bind("crouchJump", defaultValue: true, new ConfigurableInfo("Decreases charge time for super launch jumps.", null, "", "Crouch Jump"));
-        public static Configurable<bool> grab = instance.config.Bind("grab", defaultValue: false, new ConfigurableInfo("Grab dead creatures only when crouching.", null, "", "Grab"));
+        public static Configurable<bool> grab = instance.config.Bind("grab", defaultValue: false, new ConfigurableInfo("Grab dead large creatures only when crouching.", null, "", "Grab"));
         public static Configurable<bool> roll_1 = instance.config.Bind("roll_1", defaultValue: true, new ConfigurableInfo("Rocket jumps from rolls have consistent height.", null, "", "Roll 1"));
 
-        public static Configurable<bool> roll_2 = instance.config.Bind("roll_2_", defaultValue: false, new ConfigurableInfo("When enabled, removes the ability to initiate rolls from rocket jumps.", null, "", "Roll 2"));
+        public static Configurable<bool> roll_2 = instance.config.Bind("roll_2_", defaultValue: false, new ConfigurableInfo("When enabled, removes the ability to chain rolls from rocket jumps.", null, "", "Roll 2"));
         public static Configurable<bool> slideTurn = instance.config.Bind("slideTurn", defaultValue: false, new ConfigurableInfo("Reduces the requirements for slide turns. Backflips are possible earlier.", null, "", "Slide Turn"));
-        public static Configurable<bool> spearThrow = instance.config.Bind("spearThrow", defaultValue: true, new ConfigurableInfo("The throw momentum does not affect slugcat on the ground. The momentum while climbing beams is reduced. Throw boosting in the air is still possible. Weapons cannot change direction after being thrown.", null, "", "Spear Throw"));
+        public static Configurable<bool> spearThrow = instance.config.Bind("spearThrow", defaultValue: true, new ConfigurableInfo("The throw momentum does not affect slugcats on the ground. The momentum while climbing beams is reduced. Throw boosting in the air is still possible. Weapons cannot change direction after being thrown.", null, "", "Spear Throw"));
 
         public static Configurable<bool> standUp = instance.config.Bind("standUp", defaultValue: true, new ConfigurableInfo("Stand up after various animations.", null, "", "Stand Up"));
         public static Configurable<bool> swim = instance.config.Bind("swim", defaultValue: false, new ConfigurableInfo("Removes breath limit underwater. You can eat underwater. Increases swim speed. Adjusts buoyancy.", null, "", "Swim"));
         public static Configurable<bool> tubeWorm = instance.config.Bind("tubeWorm", defaultValue: true, new ConfigurableInfo("Adds auto - aim grappling to beams. Changes affect Saint.", null, "", "Tube Worm"));
 
         public static Configurable<bool> wallClimb = instance.config.Bind("wallClimb", defaultValue: false, new ConfigurableInfo("Adds crawling on walls. Removes wall sliding. Normal jumps are prioritized for small obstacles instead of wall climbing / jumping.", null, "", "Wall Climb"));
-        public static Configurable<bool> wallJump = instance.config.Bind("wallJump", defaultValue: true, new ConfigurableInfo("Only wall jump when facing away from the wall.  Wall jumps are prioritized over using tube worms. Removes wall sliding when not holding down. Normal jumps are prioritized for small obstacles instead of wall climbing / jumping.", null, "", "Wall Jump"));
+        public static Configurable<bool> wallJump = instance.config.Bind("wallJump", defaultValue: true, new ConfigurableInfo("Only wall jump when facing away from the wall. Wall jumps are prioritized over using tube worms. Removes wall sliding when not holding down. Normal jumps are prioritized for small obstacles instead of wall climbing / jumping.", null, "", "Wall Jump"));
 
         //
         // parameters
