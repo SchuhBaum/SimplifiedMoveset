@@ -1,53 +1,52 @@
 using UnityEngine;
 
-namespace SimplifiedMoveset
+namespace SimplifiedMoveset;
+
+public static class RainWorldGameMod
 {
-    public static class RainWorldGameMod
+    internal static void OnEnable()
     {
-        internal static void OnEnable()
-        {
-            On.RainWorldGame.ctor += RainWorldGame_ctor;
-            On.RainWorldGame.ShutDownProcess += RainWorldGame_ShutDownProcess;
-        }
+        On.RainWorldGame.ctor += RainWorldGame_ctor;
+        On.RainWorldGame.ShutDownProcess += RainWorldGame_ShutDownProcess;
+    }
 
-        //
-        // private
-        //
+    //
+    // private
+    //
 
-        private static void RainWorldGame_ctor(On.RainWorldGame.orig_ctor orig, RainWorldGame game, ProcessManager manager)
-        {
-            Debug.Log("SimplifiedMoveset: Initialize. Add option specific hooks.");
-            MainModOptions.instance.MainModOptions_OnConfigChanged();
+    private static void RainWorldGame_ctor(On.RainWorldGame.orig_ctor orig, RainWorldGame game, ProcessManager manager)
+    {
+        Debug.Log("SimplifiedMoveset: Initialize. Add option specific hooks.");
+        MainModOptions.instance.MainModOptions_OnConfigChanged();
 
-            BodyChunkConnectionMod.OnToggle();
-            BodyChunkMod.OnToggle();
-            PlayerMod.OnToggle();
+        BodyChunkConnectionMod.OnToggle();
+        BodyChunkMod.OnToggle();
+        PlayerMod.OnToggle();
 
-            SlugcatHandMod.OnToggle();
-            TubeWormMod.OnToggle();
-            WeaponMod.OnToggle();
+        SlugcatHandMod.OnToggle();
+        TubeWormMod.OnToggle();
+        WeaponMod.OnToggle();
 
-            BodyChunkMod.attachedFieldsDictionary.Clear();
-            PlayerMod.attachedFieldsDictionary.Clear();
+        BodyChunkMod.attachedFieldsDictionary.Clear();
+        PlayerMod.attachedFieldsDictionary.Clear();
 
-            orig(game, manager);
-        }
+        orig(game, manager);
+    }
 
-        private static void RainWorldGame_ShutDownProcess(On.RainWorldGame.orig_ShutDownProcess orig, RainWorldGame game)
-        {
-            Debug.Log("SimplifiedMoveset: Cleanup. Remove option specific hooks.");
-            orig(game);
+    private static void RainWorldGame_ShutDownProcess(On.RainWorldGame.orig_ShutDownProcess orig, RainWorldGame game)
+    {
+        Debug.Log("SimplifiedMoveset: Cleanup. Remove option specific hooks.");
+        orig(game);
 
-            BodyChunkMod.attachedFieldsDictionary.Clear();
-            PlayerMod.attachedFieldsDictionary.Clear();
+        BodyChunkMod.attachedFieldsDictionary.Clear();
+        PlayerMod.attachedFieldsDictionary.Clear();
 
-            BodyChunkConnectionMod.OnToggle();
-            BodyChunkMod.OnToggle();
-            PlayerMod.OnToggle();
+        BodyChunkConnectionMod.OnToggle();
+        BodyChunkMod.OnToggle();
+        PlayerMod.OnToggle();
 
-            SlugcatHandMod.OnToggle();
-            TubeWormMod.OnToggle();
-            WeaponMod.OnToggle();
-        }
+        SlugcatHandMod.OnToggle();
+        TubeWormMod.OnToggle();
+        WeaponMod.OnToggle();
     }
 }

@@ -1,70 +1,71 @@
 using UnityEngine;
 
-namespace SimplifiedMoveset
+using static SimplifiedMoveset.MainMod;
+
+namespace SimplifiedMoveset;
+
+public static class SlugcatHandMod
 {
-    public static class SlugcatHandMod
+    //
+    // variables
+    //
+
+    private static bool isEnabled = false;
+
+    //
+    //
+    //
+
+    internal static void OnToggle()
     {
-        //
-        // variables
-        //
-
-        private static bool isEnabled = false;
-
-        //
-        //
-        //
-
-        internal static void OnToggle()
+        isEnabled = !isEnabled;
+        if (Option_WallClimb)
         {
-            isEnabled = !isEnabled;
-            if (MainMod.Option_WallClimb)
+            if (isEnabled)
             {
-                if (isEnabled)
-                {
-                    On.SlugcatHand.EngageInMovement += SlugcatHand_EngageInMovement;
-                }
-                else
-                {
-                    On.SlugcatHand.EngageInMovement -= SlugcatHand_EngageInMovement;
-                }
+                On.SlugcatHand.EngageInMovement += SlugcatHand_EngageInMovement;
+            }
+            else
+            {
+                On.SlugcatHand.EngageInMovement -= SlugcatHand_EngageInMovement;
             }
         }
+    }
 
-        //
-        // private
-        //
+    //
+    // private
+    //
 
-        private static bool SlugcatHand_EngageInMovement(On.SlugcatHand.orig_EngageInMovement orig, SlugcatHand slugcatHand) // MainMod.Option_WallClimb
+    private static bool SlugcatHand_EngageInMovement(On.SlugcatHand.orig_EngageInMovement orig, SlugcatHand slugcatHand) // Option_WallClimb
+    {
+        if (slugcatHand.owner.owner is not Player player) return orig(slugcatHand);
+
+        PlayerMod.AttachedFields attachedFields = player.GetAttachedFields();
+        if (player.bodyMode == Player.BodyModeIndex.WallClimb && player.input[0].y != 0 && player.animation == Player.AnimationIndex.None)
         {
-            if (slugcatHand.owner.owner is not Player player) return orig(slugcatHand);
-
-            PlayerMod.AttachedFields attachedFields = player.GetAttachedFields();
-            if (player.bodyMode == Player.BodyModeIndex.WallClimb && player.input[0].y != 0 && player.animation == Player.AnimationIndex.None)
+            if (attachedFields.initializeHands)
             {
-                if (attachedFields.initializeHands)
+                if (slugcatHand.limbNumber == 1)
                 {
-                    if (slugcatHand.limbNumber == 1)
-                    {
-                        attachedFields.initializeHands = false;
-                        player.animationFrame = 0; // not pretty
-                    }
-                    return orig(slugcatHand);
+                    attachedFields.initializeHands = false;
+                    player.animationFrame = 0; // not pretty
                 }
-
-                if ((player.animationFrame == 1 && slugcatHand.limbNumber == 0) || (player.animationFrame == 11 && slugcatHand.limbNumber == 1))
-                {
-                    slugcatHand.mode = Limb.Mode.HuntAbsolutePosition;
-                    Vector2 position = slugcatHand.connection.pos + new Vector2(player.flipDirection * 10f, 0.0f);
-                    slugcatHand.FindGrip(player.room, position, position, 100f, position + new Vector2(0.0f, player.input[0].y < 0 ? -10f : 30f), -player.flipDirection, 2, false);
-                }
-                return false;
+                return orig(slugcatHand);
             }
 
-            if (!attachedFields.initializeHands)
+            if ((player.animationFrame == 1 && slugcatHand.limbNumber == 0) || (player.animationFrame == 11 && slugcatHand.limbNumber == 1))
             {
-                attachedFields.initializeHands = true;
+                slugcatHand.mode = Limb.Mode.HuntAbsolutePosition;
+                Vector2 position = slugcatHand.connection.pos + new Vector2(player.flipDirection * 10f, 0.0f);
+                slugcatHand.FindGrip(player.room, position, position, 100f, position + new Vector2(0.0f, player.input[0].y < 0 ? -10f : 30f), -player.flipDirection, 2, false);
             }
-            return orig(slugcatHand);
+            return false;
         }
+
+        if (!attachedFields.initializeHands)
+        {
+            attachedFields.initializeHands = true;
+        }
+        return orig(slugcatHand);
     }
 }
