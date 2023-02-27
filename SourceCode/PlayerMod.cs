@@ -6,6 +6,8 @@ using MoreSlugcats;
 using RWCustom;
 using UnityEngine;
 
+using static Player;
+using static Room;
 using static SimplifiedMoveset.MainMod;
 
 namespace SimplifiedMoveset;
@@ -108,6 +110,18 @@ public static class PlayerMod
             else
             {
                 On.Player.ThrowObject -= Player_ThrowObject;
+            }
+        }
+
+        if (Option_Crawl)
+        {
+            if (isEnabled)
+            {
+                IL.Player.UpdateBodyMode += IL_Player_UpdateBodyMode;
+            }
+            else
+            {
+                IL.Player.UpdateBodyMode -= IL_Player_UpdateBodyMode;
             }
         }
 
@@ -265,6 +279,98 @@ public static class PlayerMod
 
         Debug.Log("player.animation " + player.animation);
         Debug.Log("player.bodyMode " + player.bodyMode);
+    }
+
+    public static void Player_UpdateBodyMode_Crawl(Player player)
+    {
+        if (player.room is not Room room) return;
+
+        BodyChunk bodyChunk0 = player.bodyChunks[0];
+        BodyChunk bodyChunk1 = player.bodyChunks[1];
+        player.dynamicRunSpeed[0] = 2.5f;
+
+        // I want to prevent a crawl turn on ledges;
+        // not sure if the check for solid tiles are enough;
+        // seems like it works;
+        if (player.input[0].x != 0 && player.input[0].x > 0 == bodyChunk0.pos.x < bodyChunk1.pos.x && player.crawlTurnDelay > 5 && !player.IsTileSolid(0, 0, 1) && !player.IsTileSolid(1, 0, 1) && player.IsTileSolidOrSlope(1, 0, -1)) //  && player.IsTileSolidOrSlope(1, player.input[0].x, -1)
+        {
+            AlignPosYOnSlopes(player);
+            player.dynamicRunSpeed[0] *= 0.5f; // default: 0.75f
+            player.crawlTurnDelay = 0;
+            player.animation = Player.AnimationIndex.CrawlTurn;
+        }
+        player.dynamicRunSpeed[1] = player.dynamicRunSpeed[0];
+
+        if (!player.standing)
+        {
+            foreach (BodyChunk bodyChunk in player.bodyChunks)
+            {
+                if (bodyChunk.contactPoint.y == -1) // bodyChunk.onSlope != 0
+                {
+                    bodyChunk.vel.y -= 1.5f;
+                }
+            }
+        }
+        // more requirements than vanilla // prevent collision and sound spam
+        else if ((bodyChunk1.onSlope == 0 || player.input[0].x != -bodyChunk1.onSlope) && (player.lowerBodyFramesOnGround >= 3 || bodyChunk1.contactPoint.y < 0 && room.GetTile(room.GetTilePosition(bodyChunk1.pos) + new IntVector2(0, -1)).Terrain != Room.Tile.TerrainType.Air && room.GetTile(room.GetTilePosition(bodyChunk0.pos) + new IntVector2(0, -1)).Terrain != Room.Tile.TerrainType.Air))
+        {
+            AlignPosYOnSlopes(player);
+            room.PlaySound(SoundID.Slugcat_Stand_Up, player.mainBodyChunk);
+            player.animation = Player.AnimationIndex.StandUp;
+
+            if (player.input[0].x == 0)
+            {
+                if (bodyChunk1.contactPoint.y == -1 && player.IsTileSolid(1, 0, -1) && !player.IsTileSolid(1, 0, 1))
+                {
+                    player.feetStuckPos = new Vector2?(room.MiddleOfTile(room.GetTilePosition(bodyChunk1.pos)) + new Vector2(0.0f, bodyChunk1.rad - 10f));
+                }
+                else if (bodyChunk0.contactPoint.y == -1 && player.IsTileSolid(0, 0, -1) && !player.IsTileSolid(0, 0, 1))
+                {
+                    player.feetStuckPos = new Vector2?(bodyChunk0.pos + new Vector2(0.0f, -1f));
+                }
+            }
+
+            // otherwise the animationFrame might not get updated correctly
+            // and PlayerGraphics might look for sprites that don't exist;
+            // I think this happens more the other way around;
+            // other animations have higher animationFrames and when they don't reset
+            // the element LegsACrawlingX is not found with X > 5;
+            player.animationFrame = 0;
+            return;
+        }
+
+        if (bodyChunk0.contactPoint.y > -1 && player.input[0].x != 0 && bodyChunk1.pos.y < bodyChunk0.pos.y - 3.0 && bodyChunk1.contactPoint.x == player.input[0].x)
+        {
+            ++bodyChunk1.pos.y;
+        }
+
+        if (player.input[0].y < 0)
+        {
+            player.GoThroughFloors = true;
+            for (int chunkIndex = 0; chunkIndex < 2; ++chunkIndex)
+            {
+                if (!player.IsTileSolidOrSlope(chunkIndex, 0, -1) && (player.IsTileSolidOrSlope(chunkIndex, -1, -1) || player.IsTileSolidOrSlope(chunkIndex, 1, -1))) // push into shortcuts and holes but don't stand still on slopes
+                {
+                    BodyChunk bodyChunk = player.bodyChunks[chunkIndex];
+                    bodyChunk.vel.x = 0.8f * bodyChunk.vel.x + 0.4f * (room.MiddleOfTile(bodyChunk.pos).x - bodyChunk.pos.x);
+                    --bodyChunk.vel.y;
+                    break;
+                }
+            }
+        }
+
+        if (player.input[0].x != 0 && Mathf.Abs(bodyChunk1.pos.x - bodyChunk1.lastPos.x) > 0.5)
+        {
+            ++player.animationFrame;
+        }
+        else
+        {
+            player.animationFrame = 0;
+        }
+
+        if (player.animationFrame <= 10) return;
+        player.animationFrame = 0;
+        room.PlaySound(SoundID.Slugcat_Crawling_Step, player.mainBodyChunk);
     }
 
     public static Vector2? Tongue_AutoAim_Beams(Player.Tongue tongue, Vector2 originalDir, bool prioritizeAngleOverDistance, int preferredHorizontalDirection)
@@ -478,7 +584,7 @@ public static class PlayerMod
 
         if (player.dropGrabTile.HasValue && player.bodyMode != Player.BodyModeIndex.Default && player.bodyMode != Player.BodyModeIndex.CorridorClimb)
         {
-            player.dropGrabTile = new IntVector2?();
+            player.dropGrabTile = null;
         }
 
         if (player.bodyChunks[0].contactPoint.y < 0)
@@ -750,6 +856,36 @@ public static class PlayerMod
         // LogAllInstructions(context);
     }
 
+    private static void IL_Player_UpdateBodyMode(ILContext context)
+    {
+        // LogAllInstructions(context);
+
+        ILCursor cursor = new(context);
+        if (cursor.TryGotoNext(instruction => instruction.MatchLdsfld<BodyModeIndex>("Crawl")))
+        {
+            // this replaces the crawl section in UpdateBodyMode;
+            // I put this into an IL-Hook to improve compatibility;
+            // otherwise orig() never returns;
+
+            Debug.Log("SimplifiedMoveset: IL_Player_UpdateBodyMode: Index " + cursor.Index); // 674
+
+            cursor.Goto(cursor.Index + 4);
+            cursor.EmitDelegate<Action<Player>>(player => Player_UpdateBodyMode_Crawl(player));
+
+            // skip vanilla code;
+            cursor.Emit(OpCodes.Ret);
+
+            // player was used in the function call;
+            // restore vanilla code;
+            cursor.Emit(OpCodes.Ldarg_0); // player
+        }
+        else
+        {
+            Debug.LogException(new Exception("SimplifiedMoveset: IL_Player_UpdateBodyMode failed."));
+        }
+        // LogAllInstructions(context);
+    }
+
     //
     //
     //
@@ -958,7 +1094,7 @@ public static class PlayerMod
 
         // check speed;
         // otherwise crawl turns can fulfill this sometimes as well;
-        if (player.animation == Player.AnimationIndex.None && player.bodyMode == Player.BodyModeIndex.Default && player.bodyChunks[1].vel.sqrMagnitude > 50f)
+        if (player.animation == Player.AnimationIndex.None && player.bodyMode == Player.BodyModeIndex.Default && player.bodyChunks[1].vel.sqrMagnitude > 64f)
         {
             player.standing = true;
         }
@@ -1889,99 +2025,8 @@ public static class PlayerMod
         BodyChunk bodyChunk0 = player.bodyChunks[0];
         BodyChunk bodyChunk1 = player.bodyChunks[1];
 
-        // crawl
-        if (Option_Crawl && player.bodyMode == Player.BodyModeIndex.Crawl)
-        {
-            UpdateBodyModeCounters(player);
-            player.dynamicRunSpeed[0] = 2.5f;
-
-            // I want to prevent a crawl turn on ledges;
-            // not sure if the check for solid tiles are enough;
-            // seems like it works;
-            if (player.input[0].x != 0 && player.input[0].x > 0 == bodyChunk0.pos.x < bodyChunk1.pos.x && player.crawlTurnDelay > 5 && !player.IsTileSolid(0, 0, 1) && !player.IsTileSolid(1, 0, 1) && player.IsTileSolidOrSlope(1, 0, -1)) //  && player.IsTileSolidOrSlope(1, player.input[0].x, -1)
-            {
-                AlignPosYOnSlopes(player);
-                player.dynamicRunSpeed[0] *= 0.5f; // default: 0.75f
-                player.crawlTurnDelay = 0;
-                player.animation = Player.AnimationIndex.CrawlTurn;
-            }
-            player.dynamicRunSpeed[1] = player.dynamicRunSpeed[0];
-
-            if (!player.standing)
-            {
-                foreach (BodyChunk bodyChunk in player.bodyChunks)
-                {
-                    if (bodyChunk.contactPoint.y == -1) // bodyChunk.onSlope != 0
-                    {
-                        bodyChunk.vel.y -= 1.5f;
-                    }
-                }
-            }
-            // more requirements than vanilla // prevent collision and sound spam
-            else if ((bodyChunk1.onSlope == 0 || player.input[0].x != -bodyChunk1.onSlope) && (player.lowerBodyFramesOnGround >= 3 || bodyChunk1.contactPoint.y < 0 && room.GetTile(room.GetTilePosition(bodyChunk1.pos) + new IntVector2(0, -1)).Terrain != Room.Tile.TerrainType.Air && room.GetTile(room.GetTilePosition(bodyChunk0.pos) + new IntVector2(0, -1)).Terrain != Room.Tile.TerrainType.Air))
-            {
-                AlignPosYOnSlopes(player);
-                room.PlaySound(SoundID.Slugcat_Stand_Up, player.mainBodyChunk);
-                player.animation = Player.AnimationIndex.StandUp;
-
-                if (player.input[0].x == 0)
-                {
-                    if (bodyChunk1.contactPoint.y == -1 && player.IsTileSolid(1, 0, -1) && !player.IsTileSolid(1, 0, 1))
-                    {
-                        player.feetStuckPos = new Vector2?(room.MiddleOfTile(room.GetTilePosition(bodyChunk1.pos)) + new Vector2(0.0f, bodyChunk1.rad - 10f));
-                    }
-                    else if (bodyChunk0.contactPoint.y == -1 && player.IsTileSolid(0, 0, -1) && !player.IsTileSolid(0, 0, 1))
-                    {
-                        player.feetStuckPos = new Vector2?(bodyChunk0.pos + new Vector2(0.0f, -1f));
-                    }
-                }
-
-                // otherwise the animationFrame might not get updated correctly
-                // and PlayerGraphics might look for sprites that don't exist;
-                // I think this happens more the other way around;
-                // other animations have higher animationFrames and when they don't reset
-                // the element LegsACrawlingX is not found with X > 5;
-                player.animationFrame = 0;
-                return;
-            }
-
-            if (bodyChunk0.contactPoint.y > -1 && player.input[0].x != 0 && bodyChunk1.pos.y < bodyChunk0.pos.y - 3.0 && bodyChunk1.contactPoint.x == player.input[0].x)
-            {
-                ++bodyChunk1.pos.y;
-            }
-
-            if (player.input[0].y < 0)
-            {
-                player.GoThroughFloors = true;
-                for (int chunkIndex = 0; chunkIndex < 2; ++chunkIndex)
-                {
-                    if (!player.IsTileSolidOrSlope(chunkIndex, 0, -1) && (player.IsTileSolidOrSlope(chunkIndex, -1, -1) || player.IsTileSolidOrSlope(chunkIndex, 1, -1))) // push into shortcuts and holes but don't stand still on slopes
-                    {
-                        BodyChunk bodyChunk = player.bodyChunks[chunkIndex];
-                        bodyChunk.vel.x = 0.8f * bodyChunk.vel.x + 0.4f * (room.MiddleOfTile(bodyChunk.pos).x - bodyChunk.pos.x);
-                        --bodyChunk.vel.y;
-                        break;
-                    }
-                }
-            }
-
-            if (player.input[0].x != 0 && Mathf.Abs(bodyChunk1.pos.x - bodyChunk1.lastPos.x) > 0.5)
-            {
-                ++player.animationFrame;
-            }
-            else
-            {
-                player.animationFrame = 0;
-            }
-
-            if (player.animationFrame <= 10) return;
-            player.animationFrame = 0;
-            room.PlaySound(SoundID.Slugcat_Crawling_Step, player.mainBodyChunk);
-            return;
-        }
-
         // wall climb & jump // crawl downwards when holding down // crawl upwards when holding up
-        else if ((Option_WallClimb || Option_WallJump) && player.bodyMode == Player.BodyModeIndex.WallClimb)
+        if ((Option_WallClimb || Option_WallJump) && player.bodyMode == Player.BodyModeIndex.WallClimb)
         {
             UpdateBodyModeCounters(player);
             player.canJump = 1;
@@ -2063,7 +2108,6 @@ public static class PlayerMod
             player.animationFrame = 0;
             return;
         }
-
         else if (Option_TubeWorm && player.bodyMode == Player.BodyModeIndex.CorridorClimb && player.IsJumpPressed() && player.IsTongueRetracting())
         {
             UpdateBodyModeCounters(player);
