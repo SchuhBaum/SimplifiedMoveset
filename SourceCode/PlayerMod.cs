@@ -965,10 +965,6 @@ namespace SimplifiedMoveset
 
         private static void Player_ThrowObject(On.Player.orig_ThrowObject orig, Player player, int grasp, bool eu) // MainMod.Option_BellySlide || MainMod.Option_SpearThrow
         {
-            // vanilla bug;
-            // orig assumes it to be not null;
-            if (player.grasps[grasp] == null) return;
-
             // throw weapon // don't get forward momentum on ground or poles
             if (MainMod.Option_SpearThrow && player.grasps[grasp]?.grabbed is Weapon && player.animation != Player.AnimationIndex.BellySlide && (player.animation != Player.AnimationIndex.Flip || player.input[0].y >= 0 || player.input[0].x != 0))
             {
@@ -982,16 +978,17 @@ namespace SimplifiedMoveset
                 }
             }
 
-            if (MainMod.Option_BellySlide)
+            if (!MainMod.Option_BellySlide)
             {
-                // belly slide throw // removed timing
-                int rollCounter = player.rollCounter;
-                player.rollCounter = 10;
                 orig(player, grasp, eu);
-                player.rollCounter = rollCounter;
                 return;
             }
+
+            // belly slide throw // removed timing
+            int rollCounter = player.rollCounter;
+            player.rollCounter = 10;
             orig(player, grasp, eu);
+            player.rollCounter = rollCounter;
         }
 
         private static void Player_TongueUpdate(On.Player.orig_TongueUpdate orig, Player player) // MainMod.Option_TubeWorm
