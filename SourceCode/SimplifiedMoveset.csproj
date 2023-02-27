@@ -8,7 +8,8 @@
   </PropertyGroup>
   
   <ItemGroup>
-    <Reference Include="..\..\references\PUBLIC-Assembly-CSharp.dll"/>
+    <!-- <Reference Include="..\..\references\PUBLIC-Assembly-CSharp.dll"/> -->
+    <Reference Include="..\..\references\STRIPPED-Assembly-CSharp.dll"/>
     <Reference Include="..\..\references\BepInEx.dll"/>
     <Reference Include="..\..\references\HOOKS-Assembly-CSharp.dll"/>
     <Reference Include="..\..\references\Mono.Cecil.dll"/>

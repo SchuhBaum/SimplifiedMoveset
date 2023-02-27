@@ -17,7 +17,6 @@ public static class RainWorldGameMod
     private static void RainWorldGame_ctor(On.RainWorldGame.orig_ctor orig, RainWorldGame game, ProcessManager manager)
     {
         Debug.Log("SimplifiedMoveset: Initialize. Add option specific hooks.");
-        MainModOptions.instance.MainModOptions_OnConfigChanged();
 
         BodyChunkConnectionMod.OnToggle();
         BodyChunkMod.OnToggle();

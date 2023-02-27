@@ -59,11 +59,7 @@ public class MainModOptions : OptionInterface
     // main
     //
 
-    public MainModOptions()
-    {
-        // ambiguity error // why? TODO
-        // OnConfigChanged += MainModOptions_OnConfigChanged;
-    }
+    public MainModOptions() => OnConfigChanged += MainModOptions_OnConfigChanged;
 
     //
     // public
