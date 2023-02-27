@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using RWCustom;
 using UnityEngine;
 
+using static Room;
 using static SimplifiedMoveset.MainMod;
 
 namespace SimplifiedMoveset;
@@ -55,20 +56,20 @@ public static class BodyChunkMod
 
         IntVector2 tilePosition = room.GetTilePosition(bodyChunk.pos);
         Vector2 middleOfTile = room.MiddleOfTile(tilePosition);
-        Room.SlopeDirection slopeDirection = room.IdentifySlope(tilePosition);
+        SlopeDirection slopeDirection = room.IdentifySlope(tilePosition);
         AttachedFields attachedFields = bodyChunk.GetAttachedFields();
 
         // smooth moving down slopes
-        if (slopeDirection == Room.SlopeDirection.Broken && attachedFields.lastOnSlopeTilePos is IntVector2 lastOnSlopeTilePos && attachedFields.lastOnSlope * (bodyChunk.vel.x - attachedFields.bodyChunkConnectionVel.x) > 0.0f && bodyChunk.vel.y - attachedFields.bodyChunkConnectionVel.y < -player.gravity)
+        if (slopeDirection == SlopeDirection.Broken && attachedFields.lastOnSlopeTilePos is IntVector2 lastOnSlopeTilePos && attachedFields.lastOnSlope * (bodyChunk.vel.x - attachedFields.bodyChunkConnectionVel.x) > 0.0f && bodyChunk.vel.y - attachedFields.bodyChunkConnectionVel.y < -player.gravity)
         {
             tilePosition.y = lastOnSlopeTilePos.y + attachedFields.lastOnSlope * (lastOnSlopeTilePos.x - tilePosition.x); // project tilePosition.y down to the slope surface line // check later at this position a slope tile exists and do some other checks
-            Room.Tile? nonAirTileBelow = RoomMod.GetNonAirTileBelow(room, tilePosition);
+            Tile? nonAirTileBelow = RoomMod.GetNonAirTileBelow(room, tilePosition);
 
             if (nonAirTileBelow == null || nonAirTileBelow.Y < tilePosition.y) // enough air tiles available // can project down to the slope surface line
             {
                 tilePosition = lastOnSlopeTilePos;
             }
-            else if (nonAirTileBelow.Terrain == Room.Tile.TerrainType.Slope) // slope // project down to this slope surface line instead // can be a differenct one and closer in distance
+            else if (nonAirTileBelow.Terrain == Tile.TerrainType.Slope) // slope // project down to this slope surface line instead // can be a differenct one and closer in distance
             {
                 tilePosition.y = nonAirTileBelow.Y;
             }
@@ -82,13 +83,13 @@ public static class BodyChunkMod
             bodyChunk.pos.y = middleOfTile.y;
         }
 
-        if (slopeDirection == Room.SlopeDirection.Broken)
+        if (slopeDirection == SlopeDirection.Broken)
         {
             // look horizontal first to anticipate colliding with slopes ahead
             for (int modifierX = -1; modifierX <= 1; modifierX += 2)
             {
-                Room.SlopeDirection slopeDirection_ = room.IdentifySlope(tilePosition.x + modifierX, tilePosition.y);
-                if (slopeDirection_ != Room.SlopeDirection.Broken && modifierX * (bodyChunk.pos.x - middleOfTile.x) >= 10.0 - bodyChunk.slopeRad) // bodyChunk is "peeking out" of the tile at tilePosition (right side when modifierX == 1)
+                SlopeDirection slopeDirection_ = room.IdentifySlope(tilePosition.x + modifierX, tilePosition.y);
+                if (slopeDirection_ != SlopeDirection.Broken && modifierX * (bodyChunk.pos.x - middleOfTile.x) >= 10.0 - bodyChunk.slopeRad) // bodyChunk is "peeking out" of the tile at tilePosition (right side when modifierX == 1)
                 {
                     tilePosition.x += modifierX;
                     middleOfTile = room.MiddleOfTile(tilePosition);
@@ -98,12 +99,12 @@ public static class BodyChunkMod
             }
         }
 
-        if (slopeDirection == Room.SlopeDirection.Broken)
+        if (slopeDirection == SlopeDirection.Broken)
         {
             for (int modifierY = -1; modifierY <= 1; modifierY += 2)
             {
-                Room.SlopeDirection slopeDirection_ = room.IdentifySlope(tilePosition.x, tilePosition.y + modifierY);
-                if (slopeDirection_ != Room.SlopeDirection.Broken && modifierY * (bodyChunk.pos.y - middleOfTile.y) > 10.0 - bodyChunk.slopeRad) // > to smooth out transition from slope to solid
+                SlopeDirection slopeDirection_ = room.IdentifySlope(tilePosition.x, tilePosition.y + modifierY);
+                if (slopeDirection_ != SlopeDirection.Broken && modifierY * (bodyChunk.pos.y - middleOfTile.y) > 10.0 - bodyChunk.slopeRad) // > to smooth out transition from slope to solid
                 {
                     tilePosition.y += modifierY;
                     middleOfTile = room.MiddleOfTile(tilePosition);
@@ -114,7 +115,7 @@ public static class BodyChunkMod
         }
 
         attachedFields.lastOnSlopeTilePos = null;
-        if (slopeDirection == Room.SlopeDirection.Broken)
+        if (slopeDirection == SlopeDirection.Broken)
         {
             return;
         }
@@ -123,19 +124,19 @@ public static class BodyChunkMod
         float posYFromX;
         int slopeVerticalPosition;
 
-        if (slopeDirection == Room.SlopeDirection.UpLeft) // oO
+        if (slopeDirection == SlopeDirection.UpLeft) // oO
         {
             posYFromX = (float)(middleOfTile.y + bodyChunk.pos.x - middleOfTile.x); // project down to the slope surface line
             onSlope = -1;
             slopeVerticalPosition = -1;
         }
-        else if (slopeDirection == Room.SlopeDirection.UpRight) // Oo
+        else if (slopeDirection == SlopeDirection.UpRight) // Oo
         {
             posYFromX = (float)(middleOfTile.y + middleOfTile.x - bodyChunk.pos.x); // project down to the slope surface line // pos.x stays constant // pos.y moves down when bodyChunk.pos.x > middleOfTile.x otherwise up to slope surface
             onSlope = 1;
             slopeVerticalPosition = -1;
         }
-        else if (slopeDirection == Room.SlopeDirection.DownLeft) // �O
+        else if (slopeDirection == SlopeDirection.DownLeft) // �O
         {
             posYFromX = (float)(middleOfTile.y + middleOfTile.x - bodyChunk.pos.x);
             slopeVerticalPosition = 1;

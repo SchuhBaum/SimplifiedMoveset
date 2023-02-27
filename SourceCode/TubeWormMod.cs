@@ -1,6 +1,8 @@
 using RWCustom;
 using UnityEngine;
 
+using static Player;
+using static Room;
 using static SimplifiedMoveset.MainMod;
 
 namespace SimplifiedMoveset;
@@ -74,7 +76,7 @@ public static class TubeWormMod
 
                 foreach (IntVector2 intAttachPos in SharedPhysics.RayTracedTilesArray(tongue.baseChunk.pos + direction * minDistance, tongue.baseChunk.pos + direction * maxDistance)) // don't try to grapple too early, i.e. when MiddleOfTile might be already behind
                 {
-                    Room.Tile tile = room.GetTile(intAttachPos);
+                    Tile tile = room.GetTile(intAttachPos);
                     Vector2 middleOfTile = room.MiddleOfTile(intAttachPos);
                     cost = Mathf.Abs(idealDistance - Vector2.Distance(tongue.baseChunk.pos + tongue.baseChunk.vel * 3f, middleOfTile));
 
@@ -161,7 +163,7 @@ public static class TubeWormMod
 
     private static bool TubeWorm_JumpButton(On.TubeWorm.orig_JumpButton orig, TubeWorm tubeWorm, Player player) // Option_TubeWorm
     {
-        if (player.IsClimbingOnBeam() || player.CanWallJumpOrMidAirWallJump() || player.bodyMode == Player.BodyModeIndex.CorridorClimb) return player.IsJumpPressed();
+        if (player.IsClimbingOnBeam() || player.CanWallJumpOrMidAirWallJump() || player.bodyMode == BodyModeIndex.CorridorClimb) return player.IsJumpPressed();
         if (player.shortcutDelay > 10) return player.IsJumpPressed();
 
         // prevents falling off beams and using tongue at the same time
@@ -187,7 +189,7 @@ public static class TubeWormMod
             return;
         }
 
-        if (player.GetAttachedFields().tongueNeedsToRetract || tubeWorm.tongues[0].Attached && player.IsJumpPressed() && (player.IsClimbingOnBeam() || player.CanWallJumpOrMidAirWallJump() || player.bodyMode == Player.BodyModeIndex.CorridorClimb))
+        if (player.GetAttachedFields().tongueNeedsToRetract || tubeWorm.tongues[0].Attached && player.IsJumpPressed() && (player.IsClimbingOnBeam() || player.CanWallJumpOrMidAirWallJump() || player.bodyMode == BodyModeIndex.CorridorClimb))
         {
             tubeWorm.tongues[0].Release();
             player.GetAttachedFields().tongueNeedsToRetract = false;

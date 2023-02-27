@@ -1,5 +1,6 @@
 using UnityEngine;
 
+using static Player;
 using static SimplifiedMoveset.MainMod;
 
 namespace SimplifiedMoveset;
@@ -41,7 +42,7 @@ public static class SlugcatHandMod
         if (slugcatHand.owner.owner is not Player player) return orig(slugcatHand);
 
         PlayerMod.AttachedFields attachedFields = player.GetAttachedFields();
-        if (player.bodyMode == Player.BodyModeIndex.WallClimb && player.input[0].y != 0 && player.animation == Player.AnimationIndex.None)
+        if (player.bodyMode == BodyModeIndex.WallClimb && player.input[0].y != 0 && player.animation == AnimationIndex.None)
         {
             if (attachedFields.initializeHands)
             {
