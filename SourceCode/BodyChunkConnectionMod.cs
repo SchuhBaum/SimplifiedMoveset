@@ -40,7 +40,7 @@ public static class BodyChunkConnectionMod
 
     private static void BodyChunkConnection_Update(On.PhysicalObject.BodyChunkConnection.orig_Update orig, PhysicalObject.BodyChunkConnection bodyChunkConnection) // Option_BellySlide // Option_Crawl
     {
-        if (!bodyChunkConnection.active || bodyChunkConnection.chunk1.Get_Attached_Fields() is not Attached_Fields attached_fields_1 || bodyChunkConnection.chunk2.Get_Attached_Fields() is not Attached_Fields attached_fields_2)
+        if (!bodyChunkConnection.active || bodyChunkConnection.chunk1.Get_Attached_Fields() is not BodyChunk_Attached_Fields attached_fields_1 || bodyChunkConnection.chunk2.Get_Attached_Fields() is not BodyChunk_Attached_Fields attached_fields_2)
         {
             orig(bodyChunkConnection);
             return;

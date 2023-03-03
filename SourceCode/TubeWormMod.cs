@@ -166,7 +166,7 @@ public static class TubeWormMod
     {
         if (player.IsClimbingOnBeam() || player.CanWallJumpOrMidAirWallJump() || player.bodyMode == BodyModeIndex.CorridorClimb) return player.IsJumpPressed();
         if (player.shortcutDelay > 10) return player.IsJumpPressed();
-        if (player.Get_Attached_Fields() is not Attached_Fields attached_fields) return orig(tube_worm, player);
+        if (player.Get_Attached_Fields() is not Player_Attached_Fields attached_fields) return orig(tube_worm, player);
 
         // prevents falling off beams and using tongue at the same time
         if (attached_fields.dontUseTubeWormCounter > 0) return player.IsJumpPressed();
@@ -185,7 +185,7 @@ public static class TubeWormMod
             }
         }
 
-        if (player == null || player.Get_Attached_Fields() is not Attached_Fields attached_fields)
+        if (player == null || player.Get_Attached_Fields() is not Player_Attached_Fields attached_fields)
         {
             orig(tubeWorm, eu);
             return;

@@ -13,10 +13,10 @@ public static class BodyChunkMod
     // variables
     //
 
-    internal static readonly Dictionary<BodyChunk, Attached_Fields> all_attached_fields = new();
-    public static Attached_Fields? Get_Attached_Fields(this BodyChunk bodyChunk)
+    internal static readonly Dictionary<BodyChunk, BodyChunk_Attached_Fields> all_attached_fields = new();
+    public static BodyChunk_Attached_Fields? Get_Attached_Fields(this BodyChunk bodyChunk)
     {
-        all_attached_fields.TryGetValue(bodyChunk, out Attached_Fields? attached_fields);
+        all_attached_fields.TryGetValue(bodyChunk, out BodyChunk_Attached_Fields? attached_fields);
         return attached_fields;
     }
 
@@ -52,7 +52,7 @@ public static class BodyChunkMod
 
     private static void BodyChunk_checkAgainstSlopesVertically(On.BodyChunk.orig_checkAgainstSlopesVertically orig, BodyChunk bodyChunk) // Option_BellySlide // Option_Crawl
     {
-        if (bodyChunk.owner is not Player player || player.room is not Room room || bodyChunk.Get_Attached_Fields() is not Attached_Fields attached_fields)
+        if (bodyChunk.owner is not Player player || player.room is not Room room || bodyChunk.Get_Attached_Fields() is not BodyChunk_Attached_Fields attached_fields)
         {
             orig(bodyChunk);
             return;
@@ -195,12 +195,12 @@ public static class BodyChunkMod
 
         if (owner is not Player) return;
         if (all_attached_fields.ContainsKey(bodyChunk)) return;
-        all_attached_fields.Add(bodyChunk, new Attached_Fields());
+        all_attached_fields.Add(bodyChunk, new BodyChunk_Attached_Fields());
     }
 
     private static void BodyChunk_Update(On.BodyChunk.orig_Update orig, BodyChunk bodyChunk) // Option_BellySlide // Option_Crawl
     {
-        if (bodyChunk.Get_Attached_Fields() is not Attached_Fields attached_fields)
+        if (bodyChunk.Get_Attached_Fields() is not BodyChunk_Attached_Fields attached_fields)
         {
             orig(bodyChunk);
             return;
@@ -214,7 +214,7 @@ public static class BodyChunkMod
     //
     //
 
-    public sealed class Attached_Fields
+    public sealed class BodyChunk_Attached_Fields
     {
         // variables are initialized in BodyChunk_ctor() and cleared in RainWorldGameMod
         public int lastOnSlope = 0;

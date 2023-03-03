@@ -40,7 +40,7 @@ public static class SlugcatHandMod
 
     private static bool SlugcatHand_EngageInMovement(On.SlugcatHand.orig_EngageInMovement orig, SlugcatHand slugcat_hand) // Option_WallClimb
     {
-        if (slugcat_hand.owner.owner is not Player player || player.Get_Attached_Fields() is not Attached_Fields attached_fields)
+        if (slugcat_hand.owner.owner is not Player player || player.Get_Attached_Fields() is not Player_Attached_Fields attached_fields)
         {
             return orig(slugcat_hand);
         }
