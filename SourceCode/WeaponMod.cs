@@ -11,7 +11,7 @@ public static class WeaponMod
     // variables
     //
 
-    private static bool isEnabled = false;
+    private static bool is_enabled = false;
 
     //
     //
@@ -19,10 +19,10 @@ public static class WeaponMod
 
     internal static void OnToggle()
     {
-        isEnabled = !isEnabled;
+        is_enabled = !is_enabled;
         if (Option_SpearThrow)
         {
-            if (isEnabled)
+            if (is_enabled)
             {
                 On.Weapon.Shoot += Weapon_Shoot;
                 On.Weapon.Thrown += Weapon_Thrown;

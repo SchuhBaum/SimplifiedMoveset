@@ -2,6 +2,7 @@ using UnityEngine;
 
 using static Player;
 using static SimplifiedMoveset.MainMod;
+using static SimplifiedMoveset.PlayerMod;
 
 namespace SimplifiedMoveset;
 
@@ -11,7 +12,7 @@ public static class SlugcatHandMod
     // variables
     //
 
-    private static bool isEnabled = false;
+    private static bool is_enabled = false;
 
     //
     //
@@ -19,10 +20,10 @@ public static class SlugcatHandMod
 
     internal static void OnToggle()
     {
-        isEnabled = !isEnabled;
+        is_enabled = !is_enabled;
         if (Option_WallClimb)
         {
-            if (isEnabled)
+            if (is_enabled)
             {
                 On.SlugcatHand.EngageInMovement += SlugcatHand_EngageInMovement;
             }
@@ -37,36 +38,33 @@ public static class SlugcatHandMod
     // private
     //
 
-    private static bool SlugcatHand_EngageInMovement(On.SlugcatHand.orig_EngageInMovement orig, SlugcatHand slugcatHand) // Option_WallClimb
+    private static bool SlugcatHand_EngageInMovement(On.SlugcatHand.orig_EngageInMovement orig, SlugcatHand slugcat_hand) // Option_WallClimb
     {
-        if (slugcatHand.owner.owner is not Player player) return orig(slugcatHand);
-
-        PlayerMod.AttachedFields attachedFields = player.GetAttachedFields();
-        if (player.bodyMode == BodyModeIndex.WallClimb && player.input[0].y != 0 && player.animation == AnimationIndex.None)
+        if (slugcat_hand.owner.owner is not Player player || player.Get_Attached_Fields() is not Attached_Fields attached_fields)
         {
-            if (attachedFields.initializeHands)
-            {
-                if (slugcatHand.limbNumber == 1)
-                {
-                    attachedFields.initializeHands = false;
-                    player.animationFrame = 0; // not pretty
-                }
-                return orig(slugcatHand);
-            }
-
-            if ((player.animationFrame == 1 && slugcatHand.limbNumber == 0) || (player.animationFrame == 11 && slugcatHand.limbNumber == 1))
-            {
-                slugcatHand.mode = Limb.Mode.HuntAbsolutePosition;
-                Vector2 position = slugcatHand.connection.pos + new Vector2(player.flipDirection * 10f, 0.0f);
-                slugcatHand.FindGrip(player.room, position, position, 100f, position + new Vector2(0.0f, player.input[0].y < 0 ? -10f : 30f), -player.flipDirection, 2, false);
-            }
-            return false;
+            return orig(slugcat_hand);
         }
 
-        if (!attachedFields.initializeHands)
+        if (player.bodyMode != BodyModeIndex.WallClimb || player.input[0].y == 0 || player.animation != AnimationIndex.None)
         {
-            attachedFields.initializeHands = true;
+            attached_fields.initialize_hands = true;
+            return orig(slugcat_hand);
         }
-        return orig(slugcatHand);
+
+        if (attached_fields.initialize_hands)
+        {
+            if (slugcat_hand.limbNumber == 1)
+            {
+                attached_fields.initialize_hands = false;
+                player.animationFrame = 0; // not pretty
+            }
+            return orig(slugcat_hand);
+        }
+
+        if (!(player.animationFrame == 1 && slugcat_hand.limbNumber == 0 || player.animationFrame == 11 && slugcat_hand.limbNumber == 1)) return false;
+        slugcat_hand.mode = Limb.Mode.HuntAbsolutePosition;
+        Vector2 position = slugcat_hand.connection.pos + new Vector2(player.flipDirection * 10f, 0.0f);
+        slugcat_hand.FindGrip(player.room, position, position, 100f, position + new Vector2(0.0f, player.input[0].y < 0 ? -10f : 30f), -player.flipDirection, 2, false);
+        return false;
     }
 }

@@ -4,6 +4,7 @@ using UnityEngine;
 using static Player;
 using static Room;
 using static SimplifiedMoveset.MainMod;
+using static SimplifiedMoveset.PlayerMod;
 
 namespace SimplifiedMoveset;
 
@@ -13,7 +14,7 @@ public static class TubeWormMod
     // variables
     //
 
-    private static bool isEnabled;
+    private static bool is_enabled;
 
     //
     //
@@ -21,10 +22,10 @@ public static class TubeWormMod
 
     internal static void OnToggle()
     {
-        isEnabled = !isEnabled;
+        is_enabled = !is_enabled;
         if (Option_TubeWorm)
         {
-            if (isEnabled)
+            if (is_enabled)
             {
                 On.TubeWorm.Tongue.ProperAutoAim += Tongue_ProperAutoAim; // auto aim and grapple beams on contact 
                 On.TubeWorm.Tongue.Shoot += Tongue_Shoot; // adjust angle based on inputs in some cases
@@ -161,14 +162,15 @@ public static class TubeWormMod
     //
     //
 
-    private static bool TubeWorm_JumpButton(On.TubeWorm.orig_JumpButton orig, TubeWorm tubeWorm, Player player) // Option_TubeWorm
+    private static bool TubeWorm_JumpButton(On.TubeWorm.orig_JumpButton orig, TubeWorm tube_worm, Player player) // Option_TubeWorm
     {
         if (player.IsClimbingOnBeam() || player.CanWallJumpOrMidAirWallJump() || player.bodyMode == BodyModeIndex.CorridorClimb) return player.IsJumpPressed();
         if (player.shortcutDelay > 10) return player.IsJumpPressed();
+        if (player.Get_Attached_Fields() is not Attached_Fields attached_fields) return orig(tube_worm, player);
 
         // prevents falling off beams and using tongue at the same time
-        if (player.GetAttachedFields().dontUseTubeWormCounter > 0) return player.IsJumpPressed();
-        return orig(tubeWorm, player);
+        if (attached_fields.dontUseTubeWormCounter > 0) return player.IsJumpPressed();
+        return orig(tube_worm, player);
     }
 
     private static void TubeWorm_Update(On.TubeWorm.orig_Update orig, TubeWorm tubeWorm, bool eu) // Option_TubeWorm
@@ -183,16 +185,16 @@ public static class TubeWormMod
             }
         }
 
-        if (player == null)
+        if (player == null || player.Get_Attached_Fields() is not Attached_Fields attached_fields)
         {
             orig(tubeWorm, eu);
             return;
         }
 
-        if (player.GetAttachedFields().tongueNeedsToRetract || tubeWorm.tongues[0].Attached && player.IsJumpPressed() && (player.IsClimbingOnBeam() || player.CanWallJumpOrMidAirWallJump() || player.bodyMode == BodyModeIndex.CorridorClimb))
+        if (attached_fields.tongueNeedsToRetract || tubeWorm.tongues[0].Attached && player.IsJumpPressed() && (player.IsClimbingOnBeam() || player.CanWallJumpOrMidAirWallJump() || player.bodyMode == BodyModeIndex.CorridorClimb))
         {
             tubeWorm.tongues[0].Release();
-            player.GetAttachedFields().tongueNeedsToRetract = false;
+            attached_fields.tongueNeedsToRetract = false;
             return;
         }
         orig(tubeWorm, eu);

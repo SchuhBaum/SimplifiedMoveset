@@ -13,10 +13,14 @@ public static class BodyChunkMod
     // variables
     //
 
-    internal static readonly Dictionary<BodyChunk, AttachedFields> attachedFieldsDictionary = new();
-    public static AttachedFields GetAttachedFields(this BodyChunk bodyChunk) => attachedFieldsDictionary[bodyChunk];
+    internal static readonly Dictionary<BodyChunk, Attached_Fields> all_attached_fields = new();
+    public static Attached_Fields? Get_Attached_Fields(this BodyChunk bodyChunk)
+    {
+        all_attached_fields.TryGetValue(bodyChunk, out Attached_Fields? attached_fields);
+        return attached_fields;
+    }
 
-    private static bool isEnabled = false;
+    private static bool is_enabled = false;
 
     //
     //
@@ -24,10 +28,10 @@ public static class BodyChunkMod
 
     internal static void OnToggle()
     {
-        isEnabled = !isEnabled;
+        is_enabled = !is_enabled;
         if (Option_BellySlide || Option_Crawl)
         {
-            if (isEnabled)
+            if (is_enabled)
             {
                 On.BodyChunk.checkAgainstSlopesVertically += BodyChunk_checkAgainstSlopesVertically;
                 On.BodyChunk.ctor += BodyChunk_ctor;
@@ -48,7 +52,7 @@ public static class BodyChunkMod
 
     private static void BodyChunk_checkAgainstSlopesVertically(On.BodyChunk.orig_checkAgainstSlopesVertically orig, BodyChunk bodyChunk) // Option_BellySlide // Option_Crawl
     {
-        if (bodyChunk.owner is not Player player || player.room is not Room room)
+        if (bodyChunk.owner is not Player player || player.room is not Room room || bodyChunk.Get_Attached_Fields() is not Attached_Fields attached_fields)
         {
             orig(bodyChunk);
             return;
@@ -57,12 +61,11 @@ public static class BodyChunkMod
         IntVector2 tilePosition = room.GetTilePosition(bodyChunk.pos);
         Vector2 middleOfTile = room.MiddleOfTile(tilePosition);
         SlopeDirection slopeDirection = room.IdentifySlope(tilePosition);
-        AttachedFields attachedFields = bodyChunk.GetAttachedFields();
 
         // smooth moving down slopes
-        if (slopeDirection == SlopeDirection.Broken && attachedFields.lastOnSlopeTilePos is IntVector2 lastOnSlopeTilePos && attachedFields.lastOnSlope * (bodyChunk.vel.x - attachedFields.bodyChunkConnectionVel.x) > 0.0f && bodyChunk.vel.y - attachedFields.bodyChunkConnectionVel.y < -player.gravity)
+        if (slopeDirection == SlopeDirection.Broken && attached_fields.lastOnSlopeTilePos is IntVector2 lastOnSlopeTilePos && attached_fields.lastOnSlope * (bodyChunk.vel.x - attached_fields.body_chunk_connection_velocity.x) > 0.0f && bodyChunk.vel.y - attached_fields.body_chunk_connection_velocity.y < -player.gravity)
         {
-            tilePosition.y = lastOnSlopeTilePos.y + attachedFields.lastOnSlope * (lastOnSlopeTilePos.x - tilePosition.x); // project tilePosition.y down to the slope surface line // check later at this position a slope tile exists and do some other checks
+            tilePosition.y = lastOnSlopeTilePos.y + attached_fields.lastOnSlope * (lastOnSlopeTilePos.x - tilePosition.x); // project tilePosition.y down to the slope surface line // check later at this position a slope tile exists and do some other checks
             Tile? nonAirTileBelow = RoomMod.GetNonAirTileBelow(room, tilePosition);
 
             if (nonAirTileBelow == null || nonAirTileBelow.Y < tilePosition.y) // enough air tiles available // can project down to the slope surface line
@@ -114,7 +117,7 @@ public static class BodyChunkMod
             }
         }
 
-        attachedFields.lastOnSlopeTilePos = null;
+        attached_fields.lastOnSlopeTilePos = null;
         if (slopeDirection == SlopeDirection.Broken)
         {
             return;
@@ -165,7 +168,7 @@ public static class BodyChunkMod
 
             bodyChunk.contactPoint.y = -1;
             bodyChunk.onSlope = onSlope;
-            attachedFields.lastOnSlopeTilePos = tilePosition;
+            attached_fields.lastOnSlopeTilePos = tilePosition;
         }
         else if (slopeVerticalPosition == 1 && bodyChunk.pos.y >= posYFromX - bodyChunk.slopeRad - bodyChunk.slopeRad)
         {
@@ -191,19 +194,19 @@ public static class BodyChunkMod
         orig(bodyChunk, owner, index, pos, rad, mass);
 
         if (owner is not Player) return;
-        if (attachedFieldsDictionary.ContainsKey(bodyChunk)) return;
-        attachedFieldsDictionary.Add(bodyChunk, new AttachedFields());
+        if (all_attached_fields.ContainsKey(bodyChunk)) return;
+        all_attached_fields.Add(bodyChunk, new Attached_Fields());
     }
 
     private static void BodyChunk_Update(On.BodyChunk.orig_Update orig, BodyChunk bodyChunk) // Option_BellySlide // Option_Crawl
     {
-        if (bodyChunk.owner is not Player)
+        if (bodyChunk.Get_Attached_Fields() is not Attached_Fields attached_fields)
         {
             orig(bodyChunk);
             return;
         }
 
-        bodyChunk.GetAttachedFields().lastOnSlope = bodyChunk.onSlope;
+        attached_fields.lastOnSlope = bodyChunk.onSlope;
         orig(bodyChunk);
     }
 
@@ -211,11 +214,11 @@ public static class BodyChunkMod
     //
     //
 
-    public sealed class AttachedFields
+    public sealed class Attached_Fields
     {
         // variables are initialized in BodyChunk_ctor() and cleared in RainWorldGameMod
         public int lastOnSlope = 0;
         public IntVector2? lastOnSlopeTilePos = null;
-        public Vector2 bodyChunkConnectionVel = new();
+        public Vector2 body_chunk_connection_velocity = new();
     }
 }

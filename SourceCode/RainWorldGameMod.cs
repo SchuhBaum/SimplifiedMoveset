@@ -26,8 +26,8 @@ public static class RainWorldGameMod
         TubeWormMod.OnToggle();
         WeaponMod.OnToggle();
 
-        BodyChunkMod.attachedFieldsDictionary.Clear();
-        PlayerMod.attachedFieldsDictionary.Clear();
+        BodyChunkMod.all_attached_fields.Clear();
+        PlayerMod.all_attached_fields.Clear();
 
         orig(game, manager);
     }
@@ -37,8 +37,8 @@ public static class RainWorldGameMod
         Debug.Log("SimplifiedMoveset: Cleanup. Remove option specific hooks.");
         orig(game);
 
-        BodyChunkMod.attachedFieldsDictionary.Clear();
-        PlayerMod.attachedFieldsDictionary.Clear();
+        BodyChunkMod.all_attached_fields.Clear();
+        PlayerMod.all_attached_fields.Clear();
 
         BodyChunkConnectionMod.OnToggle();
         BodyChunkMod.OnToggle();
