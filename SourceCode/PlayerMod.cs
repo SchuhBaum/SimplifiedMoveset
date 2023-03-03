@@ -1360,9 +1360,9 @@ public static class PlayerMod
         cursor.Goto(504);
         if (cursor.TryGotoNext(instruction => instruction.MatchLdfld<InputPackage>("y"))) // 604
         {
+            Debug.Log("SimplifiedMoveset: IL_Player_MovementUpdate: Index " + cursor.Index);
             if (Option_BeamClimb)
             {
-                Debug.Log("SimplifiedMoveset: IL_Player_MovementUpdate: Index " + cursor.Index);
                 cursor.Goto(cursor.Index + 2); // 606
                 object label = cursor.Next.Operand;
                 cursor.Goto(cursor.Index - 6); // 600
@@ -1388,12 +1388,12 @@ public static class PlayerMod
         cursor.Goto(1829);
         if (cursor.TryGotoNext(MoveType.After,
             instruction => instruction.MatchCall<PhysicalObject>("get_Submersion"),
-            instruction => instruction.MatchLdcR4(0.9f)))
+            instruction => instruction.MatchLdcR4(0.9f)
+            ))
         {
+            Debug.Log("SimplifiedMoveset: IL_Player_MovementUpdate: Index " + cursor.Index); // 1929
             if (Option_BeamClimb)
             {
-                Debug.Log("SimplifiedMoveset: IL_Player_MovementUpdate: Index " + cursor.Index); // 1929
-
                 //
                 // // this.wantToGrab = 1 when EmitDelegate() returns true
                 //
@@ -1430,10 +1430,9 @@ public static class PlayerMod
 
         if (cursor.TryGotoNext(instruction => instruction.MatchLdfld<Player>("canWallJump")))
         {
+            Debug.Log("SimplifiedMoveset: IL_Player_MovementUpdate: Index " + cursor.Index); // 3319
             if (Option_WallJump)
             {
-                Debug.Log("SimplifiedMoveset: IL_Player_MovementUpdate: Index " + cursor.Index); // 3319
-
                 cursor.Goto(cursor.Index + 7);
                 cursor.RemoveRange(8); // 3326-3333
                 cursor.Next.OpCode = OpCodes.Brfalse;
@@ -1506,66 +1505,111 @@ public static class PlayerMod
         // LogAllInstructions(context);
     }
 
-    //TODO put option checks inside if statements
     private static void IL_Player_UpdateAnimation(ILContext context)
     {
-        ILCursor cursor = new(context);
-        if (Option_BeamClimb)
-        {
-            cursor.Goto(2384);
+        // LogAllInstructions(context);
 
-            // case AnimationIndex.GetUpToBeamTip:
-            // prevent jumping during animation
-            if (cursor.TryGotoNext(instruction => instruction.MatchStfld<Player>("canJump"))) // 2484
-            {
-                Debug.Log("SimplifiedMoveset: IL_Player_UpdateAnimation: Index " + cursor.Index);
-                cursor.Prev.OpCode = OpCodes.Ldc_I4_0; // player.canJump = 0
-            }
-            else
-            {
-                Debug.LogException(new Exception("SimplifiedMoveset: IL_Player_UpdateAnimation failed."));
-            }
+        ILCursor cursor = new(context);
+
+        if (cursor.TryGotoNext(
+            instruction => instruction.MatchLdsfld<AnimationIndex>("GetUpToBeamTip"),
+            instruction => instruction.MatchCall("ExtEnum`1<Player/AnimationIndex>", "op_Equality")
+            ))
+        {
+            Debug.Log("SimplifiedMoveset: IL_Player_UpdateAnimation: Index " + cursor.Index); // 2473
         }
 
-        if (Option_Swim)
+        if (cursor.TryGotoNext(instruction => instruction.MatchStfld<Player>("canJump")))
         {
-            cursor.Goto(3122);
-
-            // case AnimationIndex.DeepSwim:
-            // prevent dashing under water by pressing jump;
-            // unless remix is used and dashes are free;
-            if (cursor.TryGotoNext(MoveType.After, instruction => instruction.MatchLdfld<InputPackage>("jmp"))) // 3223
+            Debug.Log("SimplifiedMoveset: IL_Player_UpdateAnimation: Index " + cursor.Index); // 2484
+            if (Option_BeamClimb)
             {
-                Debug.Log("SimplifiedMoveset: IL_Player_UpdateAnimation: Index " + cursor.Index);
+                // case AnimationIndex.GetUpToBeamTip:
+                // prevent jumping during animation
+                cursor.Prev.OpCode = OpCodes.Ldc_I4_0; // player.canJump = 0
+            }
+        }
+        else
+        {
+            Debug.LogException(new Exception("SimplifiedMoveset: IL_Player_UpdateAnimation failed."));
+        }
+
+        if (cursor.TryGotoNext(
+            instruction => instruction.MatchLdsfld<AnimationIndex>("DeepSwim"),
+            instruction => instruction.MatchCall("ExtEnum`1<Player/AnimationIndex>", "op_Equality")
+            ))
+        {
+            Debug.Log("SimplifiedMoveset: IL_Player_UpdateAnimation: Index " + cursor.Index); // 3113
+        }
+
+        if (cursor.TryGotoNext(MoveType.After, instruction => instruction.MatchLdfld<InputPackage>("jmp")))
+        {
+            Debug.Log("SimplifiedMoveset: IL_Player_UpdateAnimation: Index " + cursor.Index); // 3223
+            if (Option_Swim)
+            {
+                // case AnimationIndex.DeepSwim:
+                // prevent dashing under water by pressing jump;
+                // unless remix is used and dashes are free;
+
                 object label = cursor.Next.Operand;
                 cursor.GotoNext();
                 cursor.GotoNext();
                 cursor.EmitDelegate(() => ModManager.MMF && MMF.cfgFreeSwimBoosts.Value);
                 cursor.Emit(OpCodes.Brfalse, label);
             }
-            else
-            {
-                Debug.LogException(new Exception("SimplifiedMoveset: IL_Player_UpdateAnimation failed."));
-            }
+        }
+        else
+        {
+            Debug.LogException(new Exception("SimplifiedMoveset: IL_Player_UpdateAnimation failed."));
         }
 
-        if (Option_StandUp)
+        if (cursor.TryGotoNext(
+            instruction => instruction.MatchLdsfld<AnimationIndex>("Roll"),
+            instruction => instruction.MatchCall("ExtEnum`1<Player/AnimationIndex>", "op_Equality")
+            ))
         {
-            cursor.Goto(4732);
+            Debug.Log("SimplifiedMoveset: IL_Player_UpdateAnimation: Index " + cursor.Index); // 4343
+        }
 
-            // case AnimationIndex.Roll:
-            // always stand up when roll has finished
-            // prevent chain rolling on slopes
-            if (cursor.TryGotoNext(instruction => instruction.MatchStfld<Player>("standing"))) // 4832
+        if (cursor.TryGotoNext(instruction => instruction.MatchStfld<Player>("standing")))
+        {
+            Debug.Log("SimplifiedMoveset: IL_Player_UpdateAnimation: Index " + cursor.Index); // 4828
+            if (Option_StandUp)
             {
-                Debug.Log("SimplifiedMoveset: IL_Player_UpdateAnimation: Index " + cursor.Index);
+                // case AnimationIndex.Roll:
+                // always stand up when roll has finished
+                // prevent chain rolling on slopes
+
                 cursor.Prev.Previous.OpCode = OpCodes.Pop;
                 cursor.Prev.OpCode = OpCodes.Ldc_I4_1; // player.standing = 1;
             }
-            else
+        }
+        else
+        {
+            Debug.LogException(new Exception("SimplifiedMoveset: IL_Player_UpdateAnimation failed."));
+        }
+
+        if (cursor.TryGotoNext(
+            instruction => instruction.MatchLdsfld<AnimationIndex>("BellySlide"),
+            instruction => instruction.MatchCall("ExtEnum`1<Player/AnimationIndex>", "op_Equality")
+            ))
+        {
+            Debug.Log("SimplifiedMoveset: IL_Player_UpdateAnimation: Index " + cursor.Index); // 5036
+            if (Option_BellySlide)
             {
-                Debug.LogException(new Exception("SimplifiedMoveset: IL_Player_UpdateAnimation failed."));
+                // belly slide 
+                // backflip always possible 
+                // do a longer version by default
+
+                cursor.Goto(cursor.Index + 4);
+                cursor.EmitDelegate<Action<Player>>(player => Player_UpdateAnimation_BellySlide(player));
+                cursor.Emit(OpCodes.Ret);
+                cursor.Emit(OpCodes.Ldarg_0); // player
             }
+        }
+        else
+        {
+            Debug.LogException(new Exception("SimplifiedMoveset: IL_Player_UpdateAnimation failed."));
         }
         // LogAllInstructions(context);
     }
@@ -1580,13 +1624,12 @@ public static class PlayerMod
         // otherwise CorridorClimb will be found in line 28 instead of 1988;
         if (cursor.TryGotoNext(instruction => instruction.MatchLdsfld<BodyModeIndex>("Crawl")))
         {
+            Debug.Log("SimplifiedMoveset: IL_Player_UpdateBodyMode: Index " + cursor.Index); // 674
             if (Option_Crawl)
             {
                 // this replaces the crawl section in UpdateBodyMode;
                 // I put this into an IL-Hook to improve compatibility;
                 // otherwise orig() never returns;
-
-                Debug.Log("SimplifiedMoveset: IL_Player_UpdateBodyMode: Index " + cursor.Index); // 674
 
                 cursor.Goto(cursor.Index + 4);
                 cursor.EmitDelegate<Action<Player>>(player => Player_UpdateBodyMode_Crawl(player));
@@ -1606,10 +1649,9 @@ public static class PlayerMod
 
         if (cursor.TryGotoNext(instruction => instruction.MatchLdsfld<BodyModeIndex>("CorridorClimb")))
         {
+            Debug.Log("SimplifiedMoveset: IL_Player_UpdateBodyMode: Index " + cursor.Index); // 1988
             if (Option_TubeWorm)
             {
-                Debug.Log("SimplifiedMoveset: IL_Player_UpdateBodyMode: Index " + cursor.Index); // 1988
-
                 cursor.Goto(cursor.Index + 4);
                 cursor.EmitDelegate<Func<Player, bool>>(player => player.IsJumpPressed() && player.IsTongueRetracting());
 
@@ -1630,12 +1672,11 @@ public static class PlayerMod
 
         if (cursor.TryGotoNext(instruction => instruction.MatchLdsfld<BodyModeIndex>("WallClimb")))
         {
+            Debug.Log("SimplifiedMoveset: IL_Player_UpdateBodyMode: Index " + cursor.Index); // 4074
             if (Option_WallClimb || Option_WallJump)
             {
                 // crawl downwards when holding down;
                 // crawl upwards when holding up;
-
-                Debug.Log("SimplifiedMoveset: IL_Player_UpdateBodyMode: Index " + cursor.Index); // 4074
 
                 cursor.Goto(cursor.Index + 4);
                 cursor.EmitDelegate<Action<Player>>(player => Player_UpdateBodyMode_WallClimb(player));
@@ -1989,14 +2030,6 @@ public static class PlayerMod
         if (Option_CrouchJump && player.bodyMode == BodyModeIndex.Crawl && player.superLaunchJump > 0 && player.superLaunchJump < 10)
         {
             player.superLaunchJump = 10;
-        }
-
-        // belly slide // backflip always possible // do a longer version by default
-        if (Option_BellySlide && player.animation == AnimationIndex.BellySlide)
-        {
-            UpdateAnimationCounters(player);
-            Player_UpdateAnimation_BellySlide(player);
-            return;
         }
 
         // deep swim // ignore jump input // increase speed 
