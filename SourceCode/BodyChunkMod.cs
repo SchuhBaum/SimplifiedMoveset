@@ -50,6 +50,7 @@ public static class BodyChunkMod
     // private
     //
 
+    // there are cases where this function does not call orig() //TODO
     private static void BodyChunk_checkAgainstSlopesVertically(On.BodyChunk.orig_checkAgainstSlopesVertically orig, BodyChunk bodyChunk) // Option_BellySlide // Option_Crawl
     {
         if (bodyChunk.owner is not Player player || player.room is not Room room || bodyChunk.Get_Attached_Fields() is not BodyChunk_Attached_Fields attached_fields)

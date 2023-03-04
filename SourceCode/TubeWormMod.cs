@@ -150,11 +150,11 @@ public static class TubeWormMod
             // used in the case where y > 0 as well
             direction += new Vector2(player.input[0].x * 0.35f, 0.0f);
             direction.Normalize();
+            orig(tongue, direction);
+            return;
         }
-        else
-        {
-            direction = new Vector2(0.0f, 1f);
-        }
+
+        direction = new Vector2(0.0f, 1f);
         orig(tongue, direction);
     }
 
@@ -164,15 +164,18 @@ public static class TubeWormMod
 
     private static bool TubeWorm_JumpButton(On.TubeWorm.orig_JumpButton orig, TubeWorm tube_worm, Player player) // Option_TubeWorm
     {
+        bool vanilla_result = orig(tube_worm, player);
+
         if (player.IsClimbingOnBeam() || player.CanWallJumpOrMidAirWallJump() || player.bodyMode == BodyModeIndex.CorridorClimb) return player.IsJumpPressed();
         if (player.shortcutDelay > 10) return player.IsJumpPressed();
-        if (player.Get_Attached_Fields() is not Player_Attached_Fields attached_fields) return orig(tube_worm, player);
+        if (player.Get_Attached_Fields() is not Player_Attached_Fields attached_fields) return vanilla_result;
 
         // prevents falling off beams and using tongue at the same time
         if (attached_fields.dontUseTubeWormCounter > 0) return player.IsJumpPressed();
-        return orig(tube_worm, player);
+        return vanilla_result;
     }
 
+    // there are cases where this function does not call orig() //TODO
     private static void TubeWorm_Update(On.TubeWorm.orig_Update orig, TubeWorm tubeWorm, bool eu) // Option_TubeWorm
     {
         Player? player = null;

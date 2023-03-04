@@ -8,7 +8,7 @@ using UnityEngine;
 [assembly: SecurityPermission(SecurityAction.RequestMinimum, SkipVerification = true)]
 namespace SimplifiedMoveset;
 
-[BepInPlugin("SchuhBaum.SimplifiedMoveset", "SimplifiedMoveset", "2.2.7")]
+[BepInPlugin("SchuhBaum.SimplifiedMoveset", "SimplifiedMoveset", "2.2.8")]
 public class MainMod : BaseUnityPlugin
 {
     //
@@ -17,7 +17,7 @@ public class MainMod : BaseUnityPlugin
 
     public static readonly string MOD_ID = "SchuhBaum.SimplifiedMoveset";
     public static readonly string author = "SchuhBaum";
-    public static readonly string version = "2.2.7";
+    public static readonly string version = "2.2.8";
 
     //
     // options
@@ -121,6 +121,26 @@ public class MainMod : BaseUnityPlugin
             }
         }
         Debug.Log("-----------------------------------------------------------------");
+    }
+
+    public static void LogPlayerInformation(Player? player)
+    {
+        if (player == null) return;
+
+        Debug.Log("player.input[0].x " + player.input[0].x);
+        Debug.Log("player.input[0].y " + player.input[0].y);
+        Debug.Log("player.input[0].jmp " + player.input[0].jmp);
+
+        Debug.Log("player.IsJumpPressed " + player.IsJumpPressed());
+        Debug.Log("player.canJump " + player.canJump);
+        Debug.Log("player.wantToJump " + player.wantToJump);
+        Debug.Log("player.canWallJump " + player.canWallJump);
+
+        Debug.Log("player.shortcutDelay " + player.shortcutDelay);
+        Debug.Log("player.inShortcut " + player.inShortcut);
+
+        Debug.Log("player.animation " + player.animation);
+        Debug.Log("player.bodyMode " + player.bodyMode);
     }
 
     //
