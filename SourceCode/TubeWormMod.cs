@@ -1,3 +1,6 @@
+using System;
+using Mono.Cecil.Cil;
+using MonoMod.Cil;
 using RWCustom;
 using UnityEngine;
 
@@ -30,16 +33,16 @@ public static class TubeWormMod
                 On.TubeWorm.Tongue.ProperAutoAim += Tongue_ProperAutoAim; // auto aim and grapple beams on contact 
                 On.TubeWorm.Tongue.Shoot += Tongue_Shoot; // adjust angle based on inputs in some cases
 
+                IL.TubeWorm.Update += IL_TubeWorm_Update; // force retract tongue in some cases
                 On.TubeWorm.JumpButton += TubeWorm_JumpButton; // prioritize jump over using tube worm
-                On.TubeWorm.Update += TubeWorm_Update; // force retract tongue in some cases
             }
             else
             {
                 On.TubeWorm.Tongue.ProperAutoAim -= Tongue_ProperAutoAim;
                 On.TubeWorm.Tongue.Shoot -= Tongue_Shoot;
 
+                IL.TubeWorm.Update -= IL_TubeWorm_Update;
                 On.TubeWorm.JumpButton -= TubeWorm_JumpButton;
-                On.TubeWorm.Update -= TubeWorm_Update;
             }
         }
     }
@@ -162,44 +165,54 @@ public static class TubeWormMod
     //
     //
 
-    private static bool TubeWorm_JumpButton(On.TubeWorm.orig_JumpButton orig, TubeWorm tube_worm, Player player) // Option_TubeWorm
+    private static void IL_TubeWorm_Update(ILContext context) // Option_TubeWorm
     {
-        bool vanilla_result = orig(tube_worm, player);
+        // LogAllInstructions(context);
+        ILCursor cursor = new(context);
+
+        cursor.Emit(OpCodes.Ldarg_0);
+        cursor.EmitDelegate<Func<TubeWorm, bool>>(tubeworm =>
+        {
+            Player? player = null;
+            foreach (Creature.Grasp? grasp in tubeworm.grabbedBy)
+            {
+                if (grasp?.grabber is Player player_)
+                {
+                    player = player_;
+                    break;
+                }
+            }
+
+            // "call" orig() when returning true;
+            if (player == null || player.Get_Attached_Fields() is not Player_Attached_Fields attached_fields) return true;
+
+            if (attached_fields.tubeworm_tongue_needs_to_retract || tubeworm.tongues[0].Attached && player.IsJumpPressed() && (player.IsClimbingOnBeam() || player.CanWallJumpOrMidAirWallJump() || player.bodyMode == BodyModeIndex.CorridorClimb))
+            {
+                tubeworm.tongues[0].Release();
+                attached_fields.tubeworm_tongue_needs_to_retract = false;
+                return false;
+            }
+            return true;
+        });
+
+        ILLabel label = cursor.DefineLabel();
+        cursor.Emit(OpCodes.Brtrue, label);
+        cursor.Emit(OpCodes.Ret);
+        cursor.MarkLabel(label);
+
+        // LogAllInstructions(context);
+    }
+
+    private static bool TubeWorm_JumpButton(On.TubeWorm.orig_JumpButton orig, TubeWorm tubeworm, Player player) // Option_TubeWorm
+    {
+        bool vanilla_result = orig(tubeworm, player);
 
         if (player.IsClimbingOnBeam() || player.CanWallJumpOrMidAirWallJump() || player.bodyMode == BodyModeIndex.CorridorClimb) return player.IsJumpPressed();
         if (player.shortcutDelay > 10) return player.IsJumpPressed();
         if (player.Get_Attached_Fields() is not Player_Attached_Fields attached_fields) return vanilla_result;
 
         // prevents falling off beams and using tongue at the same time
-        if (attached_fields.dontUseTubeWormCounter > 0) return player.IsJumpPressed();
+        if (attached_fields.dont_use_tubeworm_counter > 0) return player.IsJumpPressed();
         return vanilla_result;
-    }
-
-    // there are cases where this function does not call orig() //TODO
-    private static void TubeWorm_Update(On.TubeWorm.orig_Update orig, TubeWorm tubeWorm, bool eu) // Option_TubeWorm
-    {
-        Player? player = null;
-        foreach (Creature.Grasp? grasp in tubeWorm.grabbedBy)
-        {
-            if (grasp?.grabber is Player player_)
-            {
-                player = player_;
-                break;
-            }
-        }
-
-        if (player == null || player.Get_Attached_Fields() is not Player_Attached_Fields attached_fields)
-        {
-            orig(tubeWorm, eu);
-            return;
-        }
-
-        if (attached_fields.tongueNeedsToRetract || tubeWorm.tongues[0].Attached && player.IsJumpPressed() && (player.IsClimbingOnBeam() || player.CanWallJumpOrMidAirWallJump() || player.bodyMode == BodyModeIndex.CorridorClimb))
-        {
-            tubeWorm.tongues[0].Release();
-            attached_fields.tongueNeedsToRetract = false;
-            return;
-        }
-        orig(tubeWorm, eu);
     }
 }
