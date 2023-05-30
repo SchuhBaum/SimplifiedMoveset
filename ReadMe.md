@@ -12,7 +12,7 @@ Here is a youtube video showing some of the changes: https://www.youtube.com/wat
 1. (ModLoader) `BepInEx` and `BOI` can be downloaded from [RainDB](https://www.raindb.net/) under `Tools`.  
   **NOTE:** Rain World's BepInEx is a modified version. Don't download it from GitHub.  
 2. (Dependency) The mod `ConfigMachine` can be downloaded from [RainDB](https://www.raindb.net/) under `Tools`.
-3. Download the file  `SimplifiedMoveset.dll` from [Releases](https://github.com/SchuhBaum/SimplifiedMoveset/releases) and place it in the folder `[Steam]\SteamApps\common\Rain World\Mods`.  
+3. Download the file  `SimplifiedMoveset.dll` from [Releases](https://github.com/SchuhBaum/SimplifiedMoveset/releases/tag/v0.86) and place it in the folder `[Steam]\SteamApps\common\Rain World\Mods`.  
 4. Start `[Steam]\SteamApps\common\Rain World\BOI\BlepOutIn.exe`.  
 5. Click `Select path` and enter the game's path `[Steam]\SteamApps\common\Rain World`. Enable the mod `SimplifiedMoveset.dll` and its dependencies. Then launch the game as normal. 
 
