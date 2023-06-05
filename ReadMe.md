@@ -1,5 +1,5 @@
 ## SimplifiedMoveset
-###### Version: 2.2.9
+###### Version: 2.3.0
 
 This is a mod for Rain World v1.9.
 
@@ -11,9 +11,12 @@ https://www.youtube.com/watch?v=Jp6UyUgoWB0
 
 ### Installation
 0. Update Rain World to version 1.9 if needed.
-1. Download the file  `SimplifiedMoveset.zip` from [Releases](https://github.com/SchuhBaum/SimplifiedMoveset/releases/tag/v2.2.9).
+1. Download the file  `SimplifiedMoveset.zip` from [Releases](https://github.com/SchuhBaum/SimplifiedMoveset/releases/tag/v2.3.0).
 2. Extract its content in the folder `[Steam]\SteamApps\common\Rain World\RainWorld_Data\StreamingAssets\mods`.
 3. Start the game as normal. In the main menu select `Remix` and enable the mod. 
+
+### Bug reports & FAQ
+See the corresponding sections on the [Steam Workshop page](https://steamcommunity.com/sharedfiles/filedetails/?id=2928752589) for the mod SBCameraScroll.
 
 ### Bug reports
 Please post bugs on the Rain World Discord server in the channel #modding-support:  
@@ -59,7 +62,7 @@ v2.2.0:
 - (tube worm) Improved consistency for using tongues after wall jumps.
 - (grab) Fixed a bug where one-handed creatures would not be grabbed unless the player was crouching.
 
-v2.2.9:
+v2.3.0:
 - (beam climb) Potentially fixed a bug where wall jumps would mess with climbing straight up beams.
 - (roll 2) Allows to initiate rolls from rocket jumps but only with enough speed. The intention is not be able to spam roll + rocket jumps not to prevent it entirely.
 - (beam climb) Fixed a bug where you would grab horizontal beams inside vertical corridors.
@@ -73,6 +76,8 @@ v2.2.9:
 - (crawl) Wrapped the code for the crawl option in UpdateBodyMode() inside an IL-Hook to improve compatibility with the mod "The Friend".
 - Some more IL-Hook wrapping to improve compatibility in general.
 - (roll_1) Rocket jumps from rolls are adjusted for Rivulet and slug pups (for consistency).
+- (crawl) Fixed a bug that would break the movement sequence in the Hunter cutscene.
+- Logging the mod options should be more reliable now.
 
 #### (Rain World v1.5)
 v0.30:

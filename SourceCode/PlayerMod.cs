@@ -1157,7 +1157,11 @@ public static class PlayerMod
         {
             foreach (BodyChunk body_chunk in player.bodyChunks)
             {
-                if (body_chunk.contactPoint.y == -1) // bodyChunk.onSlope != 0
+                // this makes you less floaty when crawl turning;
+                // in vanilla this is only applied when on slopes;
+                // this messes up the Hunter start script
+                // => change the super launch jump in order to cancel this out;
+                if (body_chunk.contactPoint.y == -1) // && body_chunk.onSlope != 0
                 {
                     body_chunk.vel.y -= 1.5f;
                 }
@@ -1392,6 +1396,7 @@ public static class PlayerMod
 
     private static void IL_Player_GrabUpdate(ILContext context) // Option_Swim
     {
+        // LogAllInstructions(context);
         ILCursor cursor = new(context);
 
         // allow to eat underwater
@@ -1405,7 +1410,7 @@ public static class PlayerMod
         }
         else
         {
-            Debug.LogException(new Exception("SimplifiedMoveset: IL_Player_GrabUpdate failed."));
+            Debug.Log("SimplifiedMoveset: IL_Player_GrabUpdate failed.");
         }
         // LogAllInstructions(context);
     }
@@ -1475,7 +1480,38 @@ public static class PlayerMod
         }
         else
         {
-            Debug.LogException(new Exception("SimplifiedMoveset: IL_Player_Jump failed."));
+            Debug.Log("SimplifiedMoveset: IL_Player_Jump failed.");
+        }
+
+        if (cursor.TryGotoNext(MoveType.After,
+              instruction => instruction.MatchLdcI4(0),
+              instruction => instruction.MatchStfld<Player>("superLaunchJump")
+            ))
+        {
+            Debug.Log("SimplifiedMoveset: IL_Player_Jump: Index " + cursor.Index); // 1843
+            if (Option_Crawl)
+            {
+                cursor.Emit(OpCodes.Ldarg_0); // player
+                cursor.EmitDelegate<Action<Player>>(player =>
+                {
+                    if (player.bodyMode != BodyModeIndex.Crawl) return;
+                    if (player.standing) return;
+
+                    foreach (BodyChunk body_chunk in player.bodyChunks)
+                    {
+                        // compensate for the change made in UpdateBodyMode_Crawl();
+                        // otherwise the Hunter cutscene fails;
+                        if (body_chunk.contactPoint.y == -1 && body_chunk.onSlope == 0)
+                        {
+                            body_chunk.vel.y += 1.5f;
+                        }
+                    }
+                });
+            }
+        }
+        else
+        {
+            Debug.Log("SimplifiedMoveset: IL_Player_Jump failed.");
         }
         // LogAllInstructions(context);
     }
@@ -2531,7 +2567,7 @@ public static class PlayerMod
     {
         orig(player, direction);
 
-        // not sure if this was requied;
+        // not sure if this was required;
         player.simulateHoldJumpButton = 0;
     }
 

@@ -3,12 +3,14 @@ using BepInEx;
 using MonoMod.Cil;
 using UnityEngine;
 
-// temporary fix // should be added automatically //TODO
+// allows access to private members;
 #pragma warning disable CS0618
 [assembly: SecurityPermission(SecurityAction.RequestMinimum, SkipVerification = true)]
+#pragma warning restore CS0618
+
 namespace SimplifiedMoveset;
 
-[BepInPlugin("SchuhBaum.SimplifiedMoveset", "SimplifiedMoveset", "2.2.9")]
+[BepInPlugin("SchuhBaum.SimplifiedMoveset", "SimplifiedMoveset", "2.3.0")]
 public class MainMod : BaseUnityPlugin
 {
     //
@@ -17,7 +19,7 @@ public class MainMod : BaseUnityPlugin
 
     public static readonly string MOD_ID = "SchuhBaum.SimplifiedMoveset";
     public static readonly string author = "SchuhBaum";
-    public static readonly string version = "2.2.9";
+    public static readonly string version = "2.3.0";
 
     //
     // options
@@ -151,12 +153,13 @@ public class MainMod : BaseUnityPlugin
     {
         orig(rainWorld);
 
-        MachineConnector.SetRegisteredOI(MOD_ID, MainModOptions.instance);
+        MachineConnector.SetRegisteredOI(MOD_ID, MainModOptions.main_mod_options);
 
         if (isInitialized) return;
         isInitialized = true;
 
         Debug.Log("SimplifiedMoveset: version " + version);
+        ProcessManagerMod.OnEnable();
         RainWorldGameMod.OnEnable();
     }
 }
