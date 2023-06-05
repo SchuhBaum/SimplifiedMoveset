@@ -19,19 +19,17 @@ public static class TubeWormMod
 
     internal static void On_Config_Changed()
     {
+        IL.TubeWorm.Update -= IL_TubeWorm_Update;
+        On.TubeWorm.JumpButton -= TubeWorm_JumpButton;
         On.TubeWorm.Tongue.ProperAutoAim -= Tongue_ProperAutoAim;
         On.TubeWorm.Tongue.Shoot -= Tongue_Shoot;
 
-        IL.TubeWorm.Update -= IL_TubeWorm_Update;
-        On.TubeWorm.JumpButton -= TubeWorm_JumpButton;
-
         if (Option_TubeWorm)
         {
-            On.TubeWorm.Tongue.ProperAutoAim += Tongue_ProperAutoAim; // auto aim and grapple beams on contact 
-            On.TubeWorm.Tongue.Shoot += Tongue_Shoot; // adjust angle based on inputs in some cases
-
             IL.TubeWorm.Update += IL_TubeWorm_Update; // force retract tongue in some cases
             On.TubeWorm.JumpButton += TubeWorm_JumpButton; // prioritize jump over using tube worm
+            On.TubeWorm.Tongue.ProperAutoAim += Tongue_ProperAutoAim; // auto aim and grapple beams on contact 
+            On.TubeWorm.Tongue.Shoot += Tongue_Shoot; // adjust angle based on inputs in some cases
         }
     }
 

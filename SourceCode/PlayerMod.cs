@@ -1339,9 +1339,13 @@ public static class PlayerMod
             cursor.Next.OpCode = OpCodes.Ldc_R4;
             cursor.Next.Operand = 2f;
         }
-        else if (can_log_il_hooks)
+        else
         {
-            Debug.Log("SimplifiedMoveset: IL_Player_GrabUpdate failed.");
+            if (can_log_il_hooks)
+            {
+                Debug.Log("SimplifiedMoveset: IL_Player_GrabUpdate failed.");
+            }
+            return;
         }
         // LogAllInstructions(context);
     }
@@ -1412,9 +1416,13 @@ public static class PlayerMod
                 cursor.Emit(OpCodes.Ldarg_0); // player
             }
         }
-        else if (can_log_il_hooks)
+        else
         {
-            Debug.Log("SimplifiedMoveset: IL_Player_Jump failed.");
+            if (can_log_il_hooks)
+            {
+                Debug.Log("SimplifiedMoveset: IL_Player_Jump failed.");
+            }
+            return;
         }
 
         if (cursor.TryGotoNext(MoveType.After,
@@ -1447,9 +1455,13 @@ public static class PlayerMod
                 });
             }
         }
-        else if (can_log_il_hooks)
+        else
         {
-            Debug.Log("SimplifiedMoveset: IL_Player_Jump failed.");
+            if (can_log_il_hooks)
+            {
+                Debug.Log("SimplifiedMoveset: IL_Player_Jump failed.");
+            }
+            return;
         }
         // LogAllInstructions(context);
     }
@@ -1487,9 +1499,13 @@ public static class PlayerMod
                 cursor.Emit(OpCodes.Ldarg_0); // 601
             }
         }
-        else if (can_log_il_hooks)
+        else
         {
-            Debug.LogException(new Exception("SimplifiedMoveset: IL_Player_MovementUpdate failed."));
+            if (can_log_il_hooks)
+            {
+                Debug.Log("SimplifiedMoveset: IL_Player_MovementUpdate failed.");
+            }
+            return;
         }
 
         //
@@ -1534,9 +1550,13 @@ public static class PlayerMod
                 });
             }
         }
-        else if (can_log_il_hooks)
+        else
         {
-            Debug.LogException(new Exception("SimplifiedMoveset: IL_Player_MovementUpdate failed."));
+            if (can_log_il_hooks)
+            {
+                Debug.Log("SimplifiedMoveset: IL_Player_MovementUpdate failed.");
+            }
+            return;
         }
 
         //
@@ -1571,9 +1591,13 @@ public static class PlayerMod
                 });
             }
         }
-        else if (can_log_il_hooks)
+        else
         {
-            Debug.LogException(new Exception("SimplifiedMoveset: IL_Player_MovementUpdate failed."));
+            if (can_log_il_hooks)
+            {
+                Debug.Log("SimplifiedMoveset: IL_Player_MovementUpdate failed.");
+            }
+            return;
         }
         // LogAllInstructions(context);
     }
@@ -1621,9 +1645,13 @@ public static class PlayerMod
             cursor.GotoNext();
             cursor.Next.OpCode = OpCodes.Brfalse;
         }
-        else if (can_log_il_hooks)
+        else
         {
-            Debug.LogException(new Exception("SimplifiedMoveset: IL_Player_TerrainImpact failed."));
+            if (can_log_il_hooks)
+            {
+                Debug.Log("SimplifiedMoveset: IL_Player_TerrainImpact failed.");
+            }
+            return;
         }
         // LogAllInstructions(context);
     }
@@ -1665,7 +1693,11 @@ public static class PlayerMod
                     instruction => instruction.MatchCall("ExtEnum`1<Player/AnimationIndex>", "op_Equality")
                     ))
         {
-            Debug.Log("SimplifiedMoveset: IL_Player_UpdateAnimation: Index " + cursor.Index); // 636
+            if (can_log_il_hooks)
+            {
+                Debug.Log("SimplifiedMoveset: IL_Player_UpdateAnimation: Index " + cursor.Index); // 636
+            }
+
             if (Option_BeamClimb)
             {
                 cursor.Goto(cursor.Index + 4);
@@ -1687,7 +1719,11 @@ public static class PlayerMod
         }
         else
         {
-            Debug.LogException(new Exception("SimplifiedMoveset: IL_Player_UpdateAnimation failed."));
+            if (can_log_il_hooks)
+            {
+                Debug.Log("SimplifiedMoveset: IL_Player_UpdateAnimation failed.");
+            }
+            return;
         }
 
         if (cursor.TryGotoNext(
@@ -1695,7 +1731,11 @@ public static class PlayerMod
                     instruction => instruction.MatchCall("ExtEnum`1<Player/AnimationIndex>", "op_Equality")
                     ))
         {
-            Debug.Log("SimplifiedMoveset: IL_Player_UpdateAnimation: Index " + cursor.Index); // 1081
+            if (can_log_il_hooks)
+            {
+                Debug.Log("SimplifiedMoveset: IL_Player_UpdateAnimation: Index " + cursor.Index); // 1081
+            }
+
             if (Option_BeamClimb)
             {
                 cursor.Goto(cursor.Index + 4);
@@ -1716,7 +1756,11 @@ public static class PlayerMod
         }
         else
         {
-            Debug.LogException(new Exception("SimplifiedMoveset: IL_Player_UpdateAnimation failed."));
+            if (can_log_il_hooks)
+            {
+                Debug.Log("SimplifiedMoveset: IL_Player_UpdateAnimation failed.");
+            }
+            return;
         }
 
         if (cursor.TryGotoNext(
@@ -1724,7 +1768,11 @@ public static class PlayerMod
                     instruction => instruction.MatchCall("ExtEnum`1<Player/AnimationIndex>", "op_Equality")
                     ))
         {
-            Debug.Log("SimplifiedMoveset: IL_Player_UpdateAnimation: Index " + cursor.Index); // 1563
+            if (can_log_il_hooks)
+            {
+                Debug.Log("SimplifiedMoveset: IL_Player_UpdateAnimation: Index " + cursor.Index); // 1563
+            }
+
             if (Option_BeamClimb)
             {
                 cursor.Goto(cursor.Index + 4);
@@ -1746,7 +1794,11 @@ public static class PlayerMod
         }
         else
         {
-            Debug.LogException(new Exception("SimplifiedMoveset: IL_Player_UpdateAnimation failed."));
+            if (can_log_il_hooks)
+            {
+                Debug.Log("SimplifiedMoveset: IL_Player_UpdateAnimation failed.");
+            }
+            return;
         }
 
         if (cursor.TryGotoNext(
@@ -1754,7 +1806,11 @@ public static class PlayerMod
                     instruction => instruction.MatchCall("ExtEnum`1<Player/AnimationIndex>", "op_Equality")
                     ))
         {
-            Debug.Log("SimplifiedMoveset: IL_Player_UpdateAnimation: Index " + cursor.Index); // 1766
+            if (can_log_il_hooks)
+            {
+                Debug.Log("SimplifiedMoveset: IL_Player_UpdateAnimation: Index " + cursor.Index); // 1766
+            }
+
             if (Option_BeamClimb)
             {
                 cursor.Goto(cursor.Index + 4);
@@ -1776,7 +1832,11 @@ public static class PlayerMod
         }
         else
         {
-            Debug.LogException(new Exception("SimplifiedMoveset: IL_Player_UpdateAnimation failed."));
+            if (can_log_il_hooks)
+            {
+                Debug.Log("SimplifiedMoveset: IL_Player_UpdateAnimation failed.");
+            }
+            return;
         }
 
         cursor.TryGotoNext(
@@ -1785,7 +1845,11 @@ public static class PlayerMod
             );
         if (cursor.TryGotoNext(instruction => instruction.MatchStfld<Player>("canJump")))
         {
-            Debug.Log("SimplifiedMoveset: IL_Player_UpdateAnimation: Index " + cursor.Index); // 2484
+            if (can_log_il_hooks)
+            {
+                Debug.Log("SimplifiedMoveset: IL_Player_UpdateAnimation: Index " + cursor.Index); // 2484
+            }
+
             if (Option_BeamClimb)
             {
                 // case AnimationIndex.GetUpToBeamTip:
@@ -1795,7 +1859,11 @@ public static class PlayerMod
         }
         else
         {
-            Debug.LogException(new Exception("SimplifiedMoveset: IL_Player_UpdateAnimation failed."));
+            if (can_log_il_hooks)
+            {
+                Debug.Log("SimplifiedMoveset: IL_Player_UpdateAnimation failed.");
+            }
+            return;
         }
 
         if (cursor.TryGotoNext(
@@ -1803,7 +1871,11 @@ public static class PlayerMod
                     instruction => instruction.MatchCall("ExtEnum`1<Player/AnimationIndex>", "op_Equality")
                     ))
         {
-            Debug.Log("SimplifiedMoveset: IL_Player_UpdateAnimation: Index " + cursor.Index); // 2662
+            if (can_log_il_hooks)
+            {
+                Debug.Log("SimplifiedMoveset: IL_Player_UpdateAnimation: Index " + cursor.Index); // 2662
+            }
+
             if (Option_BeamClimb)
             {
                 // don't drop off beam tip by leaning too much;
@@ -1827,7 +1899,11 @@ public static class PlayerMod
         }
         else
         {
-            Debug.LogException(new Exception("SimplifiedMoveset: IL_Player_UpdateAnimation failed."));
+            if (can_log_il_hooks)
+            {
+                Debug.Log("SimplifiedMoveset: IL_Player_UpdateAnimation failed.");
+            }
+            return;
         }
 
         if (cursor.TryGotoNext(
@@ -1835,7 +1911,11 @@ public static class PlayerMod
                     instruction => instruction.MatchCall("ExtEnum`1<Player/AnimationIndex>", "op_Equality")
                     ))
         {
-            Debug.Log("SimplifiedMoveset: IL_Player_UpdateAnimation: Index " + cursor.Index); // 2827
+            if (can_log_il_hooks)
+            {
+                Debug.Log("SimplifiedMoveset: IL_Player_UpdateAnimation: Index " + cursor.Index); // 2827
+            }
+
             if (Option_BeamClimb)
             {
                 cursor.Goto(cursor.Index + 4);
@@ -1857,7 +1937,11 @@ public static class PlayerMod
         }
         else
         {
-            Debug.LogException(new Exception("SimplifiedMoveset: IL_Player_UpdateAnimation failed."));
+            if (can_log_il_hooks)
+            {
+                Debug.Log("SimplifiedMoveset: IL_Player_UpdateAnimation failed.");
+            }
+            return;
         }
 
         cursor.TryGotoNext(
@@ -1866,7 +1950,11 @@ public static class PlayerMod
             );
         if (cursor.TryGotoNext(MoveType.After, instruction => instruction.MatchLdfld<InputPackage>("jmp")))
         {
-            Debug.Log("SimplifiedMoveset: IL_Player_UpdateAnimation: Index " + cursor.Index); // 3223
+            if (can_log_il_hooks)
+            {
+                Debug.Log("SimplifiedMoveset: IL_Player_UpdateAnimation: Index " + cursor.Index); // 3223
+            }
+
             if (Option_Swim)
             {
                 // case AnimationIndex.DeepSwim:
@@ -1882,7 +1970,11 @@ public static class PlayerMod
         }
         else
         {
-            Debug.LogException(new Exception("SimplifiedMoveset: IL_Player_UpdateAnimation failed."));
+            if (can_log_il_hooks)
+            {
+                Debug.Log("SimplifiedMoveset: IL_Player_UpdateAnimation failed.");
+            }
+            return;
         }
 
         cursor.TryGotoNext(
@@ -1891,7 +1983,11 @@ public static class PlayerMod
             );
         if (cursor.TryGotoNext(instruction => instruction.MatchStfld<Player>("standing")))
         {
-            Debug.Log("SimplifiedMoveset: IL_Player_UpdateAnimation: Index " + cursor.Index); // 4828
+            if (can_log_il_hooks)
+            {
+                Debug.Log("SimplifiedMoveset: IL_Player_UpdateAnimation: Index " + cursor.Index); // 4828
+            }
+
             if (Option_StandUp)
             {
                 // case AnimationIndex.Roll:
@@ -1904,7 +2000,11 @@ public static class PlayerMod
         }
         else
         {
-            Debug.LogException(new Exception("SimplifiedMoveset: IL_Player_UpdateAnimation failed."));
+            if (can_log_il_hooks)
+            {
+                Debug.Log("SimplifiedMoveset: IL_Player_UpdateAnimation failed.");
+            }
+            return;
         }
 
         if (cursor.TryGotoNext(
@@ -1912,7 +2012,11 @@ public static class PlayerMod
             instruction => instruction.MatchCall("ExtEnum`1<Player/AnimationIndex>", "op_Equality")
             ))
         {
-            Debug.Log("SimplifiedMoveset: IL_Player_UpdateAnimation: Index " + cursor.Index); // 5036
+            if (can_log_il_hooks)
+            {
+                Debug.Log("SimplifiedMoveset: IL_Player_UpdateAnimation: Index " + cursor.Index); // 5036
+            }
+
             if (Option_BellySlide)
             {
                 // belly slide 
@@ -1927,7 +2031,11 @@ public static class PlayerMod
         }
         else
         {
-            Debug.LogException(new Exception("SimplifiedMoveset: IL_Player_UpdateAnimation failed."));
+            if (can_log_il_hooks)
+            {
+                Debug.Log("SimplifiedMoveset: IL_Player_UpdateAnimation failed.");
+            }
+            return;
         }
         // LogAllInstructions(context);
     }
@@ -1942,7 +2050,11 @@ public static class PlayerMod
         // otherwise CorridorClimb will be found in line 28 instead of 1988;
         if (cursor.TryGotoNext(instruction => instruction.MatchLdsfld<BodyModeIndex>("Crawl")))
         {
-            Debug.Log("SimplifiedMoveset: IL_Player_UpdateBodyMode: Index " + cursor.Index); // 674
+            if (can_log_il_hooks)
+            {
+                Debug.Log("SimplifiedMoveset: IL_Player_UpdateBodyMode: Index " + cursor.Index); // 674
+            }
+
             if (Option_Crawl)
             {
                 // this replaces the crawl section in UpdateBodyMode;
@@ -1962,12 +2074,20 @@ public static class PlayerMod
         }
         else
         {
-            Debug.LogException(new Exception("SimplifiedMoveset: IL_Player_UpdateBodyMode failed."));
+            if (can_log_il_hooks)
+            {
+                Debug.Log("SimplifiedMoveset: IL_Player_UpdateBodyMode failed.");
+            }
+            return;
         }
 
         if (cursor.TryGotoNext(instruction => instruction.MatchLdsfld<BodyModeIndex>("CorridorClimb")))
         {
-            Debug.Log("SimplifiedMoveset: IL_Player_UpdateBodyMode: Index " + cursor.Index); // 1988
+            if (can_log_il_hooks)
+            {
+                Debug.Log("SimplifiedMoveset: IL_Player_UpdateBodyMode: Index " + cursor.Index); // 1988
+            }
+
             if (Option_TubeWorm)
             {
                 cursor.Goto(cursor.Index + 4);
@@ -1985,12 +2105,20 @@ public static class PlayerMod
         }
         else
         {
-            Debug.LogException(new Exception("SimplifiedMoveset: IL_Player_UpdateBodyMode failed."));
+            if (can_log_il_hooks)
+            {
+                Debug.Log("SimplifiedMoveset: IL_Player_UpdateBodyMode failed.");
+            }
+            return;
         }
 
         if (cursor.TryGotoNext(instruction => instruction.MatchLdsfld<BodyModeIndex>("WallClimb")))
         {
-            Debug.Log("SimplifiedMoveset: IL_Player_UpdateBodyMode: Index " + cursor.Index); // 4074
+            if (can_log_il_hooks)
+            {
+                Debug.Log("SimplifiedMoveset: IL_Player_UpdateBodyMode: Index " + cursor.Index); // 4074
+            }
+
             if (Option_WallClimb || Option_WallJump)
             {
                 // crawl downwards when holding down;
@@ -2004,7 +2132,11 @@ public static class PlayerMod
         }
         else
         {
-            Debug.LogException(new Exception("SimplifiedMoveset: IL_Player_UpdateBodyMode failed."));
+            if (can_log_il_hooks)
+            {
+                Debug.Log("SimplifiedMoveset: IL_Player_UpdateBodyMode failed.");
+            }
+            return;
         }
         // LogAllInstructions(context);
     }
