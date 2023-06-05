@@ -46,11 +46,13 @@ public static class PlayerMod
 
         IL.Player.Jump -= IL_Player_Jump;
         IL.Player.GrabUpdate -= IL_Player_GrabUpdate;
+        IL.Player.GrabVerticalPole -= IL_Player_GrabVerticalPole;
         IL.Player.MovementUpdate -= IL_Player_MovementUpdate;
-        IL.Player.TerrainImpact -= IL_Player_TerrainImpact;
 
+        IL.Player.TerrainImpact -= IL_Player_TerrainImpact;
         IL.Player.TongueUpdate -= IL_Player_TongueUpdate;
         IL.Player.UpdateAnimation -= IL_Player_UpdateAnimation;
+
         IL.Player.UpdateBodyMode -= IL_Player_UpdateBodyMode;
         IL.Player.WallJump -= IL_Player_WallJump;
 
@@ -86,6 +88,7 @@ public static class PlayerMod
 
         if (Option_BeamClimb)
         {
+            IL.Player.GrabVerticalPole += IL_Player_GrabVerticalPole;
             On.Player.MovementUpdate += Player_MovementUpdate;
         }
 
@@ -1344,6 +1347,40 @@ public static class PlayerMod
             if (can_log_il_hooks)
             {
                 Debug.Log("SimplifiedMoveset: IL_Player_GrabUpdate failed.");
+            }
+            return;
+        }
+        // LogAllInstructions(context);
+    }
+
+    private static void IL_Player_GrabVerticalPole(ILContext context) // Option_BeamClimb
+    {
+        // this makes grabbing vertical poles less sensitive;
+        // in vanilla when standing still you reach vertical
+        // poles further;
+        // this changes this such that you never reach further;
+
+        // LogAllInstructions(context);
+        ILCursor cursor = new(context);
+
+        if (cursor.TryGotoNext(
+            instruction => instruction.MatchCeq(),
+            instruction => instruction.MatchBr(out _)
+        ))
+        {
+            if (can_log_il_hooks)
+            {
+                Debug.Log("SimplifiedMoveset: IL_Player_GrabVerticalPole: Index " + cursor.Index);
+            }
+            cursor.Goto(cursor.Index + 1);
+            cursor.Emit(OpCodes.Pop);
+            cursor.Emit(OpCodes.Ldc_I4_0);
+        }
+        else
+        {
+            if (can_log_il_hooks)
+            {
+                Debug.Log("SimplifiedMoveset: IL_Player_GrabVerticalPole failed.");
             }
             return;
         }

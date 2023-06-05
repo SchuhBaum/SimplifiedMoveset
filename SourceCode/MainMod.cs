@@ -10,16 +10,16 @@ using UnityEngine;
 
 namespace SimplifiedMoveset;
 
-[BepInPlugin("SchuhBaum.SimplifiedMoveset", "SimplifiedMoveset", "2.3.3")]
+[BepInPlugin("SimplifiedMoveset", "SimplifiedMoveset", "2.3.4")]
 public class MainMod : BaseUnityPlugin
 {
     //
     // meta data
     //
 
-    public static readonly string MOD_ID = "SchuhBaum.SimplifiedMoveset";
+    public static readonly string MOD_ID = "SimplifiedMoveset";
     public static readonly string author = "SchuhBaum";
-    public static readonly string version = "2.3.3";
+    public static readonly string version = "2.3.4";
 
     //
     // options
