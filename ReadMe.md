@@ -16,11 +16,7 @@ https://www.youtube.com/watch?v=Jp6UyUgoWB0
 3. Start the game as normal. In the main menu select `Remix` and enable the mod. 
 
 ### Bug reports & FAQ
-See the corresponding sections on the [Steam Workshop page](https://steamcommunity.com/sharedfiles/filedetails/?id=2928752589) for the mod SBCameraScroll.
-
-### Bug reports
-Please post bugs on the Rain World Discord server in the channel #modding-support:  
-https://discord.gg/rainworld
+See the corresponding sections on the [Steam Workshop page](https://steamcommunity.com/sharedfiles/filedetails/?id=2928752589) for the mod `SBCameraScroll`.
 
 ### Contact
 If you have feedback, you can message me on Discord `@SchuhBaum#7246` or write an email to SchuhBaum71@gmail.com.  
