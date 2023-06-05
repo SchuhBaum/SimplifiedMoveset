@@ -31,42 +31,62 @@ public static class PlayerMod
         return attached_fields;
     }
 
-    private static bool is_enabled = false;
-
     //
-    //
+    // main
     //
 
-    internal static void OnToggle()
+    internal static void On_Config_Changed()
     {
-        is_enabled = !is_enabled;
-        if (is_enabled)
-        {
-            IL.Player.UpdateAnimation += IL_Player_UpdateAnimation;
+        // 
+        // prevent hooks from getting added more than once;
+        // I can remove them as often as I want without error
+        // but I can't add them as often as I want;
+        // otherwise they get called multiple times;
+        // 
 
-            On.Player.ctor += Player_ctor; // change stats for swimming
-            On.Player.Jump += Player_Jump;
-            On.Player.UpdateAnimation += Player_UpdateAnimation;
-        }
-        else
-        {
-            IL.Player.UpdateAnimation -= IL_Player_UpdateAnimation;
+        IL.Player.Jump -= IL_Player_Jump;
+        IL.Player.GrabUpdate -= IL_Player_GrabUpdate;
+        IL.Player.MovementUpdate -= IL_Player_MovementUpdate;
+        IL.Player.TerrainImpact -= IL_Player_TerrainImpact;
 
-            On.Player.ctor -= Player_ctor; // change stats for swimming
-            On.Player.Jump -= Player_Jump;
-            On.Player.UpdateAnimation -= Player_UpdateAnimation;
-        }
+        IL.Player.TongueUpdate -= IL_Player_TongueUpdate;
+        IL.Player.UpdateAnimation -= IL_Player_UpdateAnimation;
+        IL.Player.UpdateBodyMode -= IL_Player_UpdateBodyMode;
+        IL.Player.WallJump -= IL_Player_WallJump;
+
+        On.Player.checkInput -= Player_CheckInput;
+        On.Player.ctor -= Player_ctor;
+        On.Player.Grabability -= Player_Grabability;
+        On.Player.GraphicsModuleUpdated -= Player_GraphicsModuleUpdated;
+
+        On.Player.Jump -= Player_Jump;
+        On.Player.MovementUpdate -= Player_MovementUpdate;
+        On.Player.SaintTongueCheck -= Player_SaintTongueCheck;
+        On.Player.TerrainImpact -= Player_TerrainImpact;
+
+        On.Player.ThrowObject -= Player_ThrowObject;
+        On.Player.Update -= Player_Update;
+        On.Player.UpdateAnimation -= Player_UpdateAnimation;
+        On.Player.UpdateBodyMode -= Player_UpdateBodyMode;
+
+        On.Player.UpdateMSC -= Player_UpdateMSC;
+        On.Player.WallJump -= Player_WallJump;
+        On.Player.Tongue.AutoAim -= Tongue_AutoAim;
+        On.Player.Tongue.Shoot -= Tongue_Shoot;
+
+        //
+        // add hooks
+        //
+
+        IL.Player.UpdateAnimation += IL_Player_UpdateAnimation;
+
+        On.Player.ctor += Player_ctor; // change stats for swimming
+        On.Player.Jump += Player_Jump;
+        On.Player.UpdateAnimation += Player_UpdateAnimation;
 
         if (Option_BeamClimb)
         {
-            if (is_enabled)
-            {
-                On.Player.MovementUpdate += Player_MovementUpdate;
-            }
-            else
-            {
-                On.Player.MovementUpdate -= Player_MovementUpdate;
-            }
+            On.Player.MovementUpdate += Player_MovementUpdate;
         }
 
         if (Option_BeamClimb || Option_WallJump)
@@ -77,164 +97,72 @@ public static class PlayerMod
             // in this situation canceling beam climbing can be spammed
             //
             // grabbing beams by holding down is now implemented here instead of UpdateAnimation()
-            if (is_enabled)
-            {
-                IL.Player.MovementUpdate += IL_Player_MovementUpdate;
-            }
-            else
-            {
-                IL.Player.MovementUpdate -= IL_Player_MovementUpdate;
-            }
+            IL.Player.MovementUpdate += IL_Player_MovementUpdate;
         }
 
         if (Option_BellySlide || Option_Crawl || Option_Roll_1 || Option_Roll_2)
         {
-            if (is_enabled)
-            {
-                IL.Player.TerrainImpact += IL_Player_TerrainImpact;
-            }
-            else
-            {
-                IL.Player.TerrainImpact -= IL_Player_TerrainImpact;
-            }
+            IL.Player.TerrainImpact += IL_Player_TerrainImpact;
         }
 
         if (Option_BellySlide || Option_Crawl || Option_Roll_1 || Option_TubeWorm)
         {
-            if (is_enabled)
-            {
-                IL.Player.Jump += IL_Player_Jump;
-            }
-            else
-            {
-                IL.Player.Jump -= IL_Player_Jump;
-            }
+            IL.Player.Jump += IL_Player_Jump;
         }
 
         if (Option_BellySlide || Option_SpearThrow)
         {
-            if (is_enabled)
-            {
-                On.Player.ThrowObject += Player_ThrowObject;
-            }
-            else
-            {
-                On.Player.ThrowObject -= Player_ThrowObject;
-            }
+            On.Player.ThrowObject += Player_ThrowObject;
         }
 
         if (Option_Crawl || Option_TubeWorm || Option_WallClimb || Option_WallJump)
         {
-            if (is_enabled)
-            {
-                IL.Player.UpdateBodyMode += IL_Player_UpdateBodyMode;
-            }
-            else
-            {
-                IL.Player.UpdateBodyMode -= IL_Player_UpdateBodyMode;
-            }
+            IL.Player.UpdateBodyMode += IL_Player_UpdateBodyMode;
         }
 
         if (Option_Grab)
         {
-            if (is_enabled)
-            {
-                On.Player.Grabability += Player_Grabability; // only grab dead large creatures when crouching
-            }
-            else
-            {
-                On.Player.Grabability -= Player_Grabability;
-            }
+            On.Player.Grabability += Player_Grabability; // only grab dead large creatures when crouching
         }
 
         if (Option_SlideTurn)
         {
-            if (is_enabled)
-            {
-                On.Player.UpdateBodyMode += Player_UpdateBodyMode;
-            }
-            else
-            {
-                On.Player.UpdateBodyMode -= Player_UpdateBodyMode;
-            }
+            On.Player.UpdateBodyMode += Player_UpdateBodyMode;
         }
 
         if (Option_StandUp)
         {
-            if (is_enabled)
-            {
-                On.Player.TerrainImpact += Player_TerrainImpact;
-            }
-            else
-            {
-                On.Player.TerrainImpact -= Player_TerrainImpact;
-            }
+            On.Player.TerrainImpact += Player_TerrainImpact;
         }
 
         if (Option_Swim)
         {
-            if (is_enabled)
-            {
-                IL.Player.GrabUpdate += IL_Player_GrabUpdate; // can eat stuff underwater
-                On.Player.UpdateMSC += Player_UpdateMSC; // don't let MSC reset buoyancy
-            }
-            else
-            {
-                IL.Player.GrabUpdate -= IL_Player_GrabUpdate;
-                On.Player.UpdateMSC -= Player_UpdateMSC;
-            }
+            IL.Player.GrabUpdate += IL_Player_GrabUpdate; // can eat stuff underwater
+            On.Player.UpdateMSC += Player_UpdateMSC; // don't let MSC reset buoyancy
         }
 
         if (Option_TubeWorm)
         {
-            if (is_enabled)
-            {
-                IL.Player.TongueUpdate += IL_Player_TongueUpdate;
+            IL.Player.TongueUpdate += IL_Player_TongueUpdate;
 
-                On.Player.SaintTongueCheck += Player_SaintTongueCheck;
-                On.Player.Update += Player_Update;
-                On.Player.Tongue.AutoAim += Tongue_AutoAim;
-                On.Player.Tongue.Shoot += Tongue_Shoot;
-            }
-            else
-            {
-                IL.Player.TongueUpdate -= IL_Player_TongueUpdate;
-
-                On.Player.SaintTongueCheck -= Player_SaintTongueCheck;
-                On.Player.Update -= Player_Update;
-                On.Player.Tongue.AutoAim -= Tongue_AutoAim;
-                On.Player.Tongue.Shoot -= Tongue_Shoot;
-            }
+            On.Player.SaintTongueCheck += Player_SaintTongueCheck;
+            On.Player.Update += Player_Update;
+            On.Player.Tongue.AutoAim += Tongue_AutoAim;
+            On.Player.Tongue.Shoot += Tongue_Shoot;
         }
 
         if (Option_WallClimb || Option_WallJump)
         {
-            if (is_enabled)
-            {
-                IL.Player.WallJump += IL_Player_WallJump;
+            IL.Player.WallJump += IL_Player_WallJump;
 
-                // fix cicade lifting up while wall climbing;
-                On.Player.GraphicsModuleUpdated += Player_GraphicsModuleUpdated;
-            }
-            else
-            {
-                IL.Player.WallJump -= IL_Player_WallJump;
-                On.Player.GraphicsModuleUpdated -= Player_GraphicsModuleUpdated;
-            }
+            // fix cicade lifting up while wall climbing;
+            On.Player.GraphicsModuleUpdated += Player_GraphicsModuleUpdated;
         }
 
         if (Option_WallJump)
         {
-            if (is_enabled)
-            {
-                On.Player.checkInput += Player_CheckInput; // input "buffer" for wall jumping
-                On.Player.WallJump += Player_WallJump;
-            }
-            else
-            {
-                On.Player.checkInput -= Player_CheckInput;
-                On.Player.WallJump -= Player_WallJump;
-            }
+            On.Player.checkInput += Player_CheckInput; // input "buffer" for wall jumping
+            On.Player.WallJump += Player_WallJump;
         }
     }
 
@@ -1403,11 +1331,15 @@ public static class PlayerMod
 
         if (cursor.TryGotoNext(MoveType.After, instruction => instruction.MatchCallvirt<BodyChunk>("get_submersion"))) // 87
         {
-            Debug.Log("SimplifiedMoveset: IL_Player_GrabUpdate: Index " + cursor.Index);
+            if (can_log_il_hooks)
+            {
+                Debug.Log("SimplifiedMoveset: IL_Player_GrabUpdate: Index " + cursor.Index);
+            }
+
             cursor.Next.OpCode = OpCodes.Ldc_R4;
             cursor.Next.Operand = 2f;
         }
-        else
+        else if (can_log_il_hooks)
         {
             Debug.Log("SimplifiedMoveset: IL_Player_GrabUpdate failed.");
         }
@@ -1447,7 +1379,10 @@ public static class PlayerMod
 
         if (cursor.TryGotoNext(instruction => instruction.MatchLdsfld<AnimationIndex>("Roll")))
         {
-            Debug.Log("SimplifiedMoveset: IL_Player_Jump: Index " + cursor.Index); // 517
+            if (can_log_il_hooks)
+            {
+                Debug.Log("SimplifiedMoveset: IL_Player_Jump: Index " + cursor.Index); // 517
+            }
 
             if (Option_Roll_1)
             {
@@ -1477,7 +1412,7 @@ public static class PlayerMod
                 cursor.Emit(OpCodes.Ldarg_0); // player
             }
         }
-        else
+        else if (can_log_il_hooks)
         {
             Debug.Log("SimplifiedMoveset: IL_Player_Jump failed.");
         }
@@ -1487,7 +1422,11 @@ public static class PlayerMod
               instruction => instruction.MatchStfld<Player>("superLaunchJump")
             ))
         {
-            Debug.Log("SimplifiedMoveset: IL_Player_Jump: Index " + cursor.Index); // 1843
+            if (can_log_il_hooks)
+            {
+                Debug.Log("SimplifiedMoveset: IL_Player_Jump: Index " + cursor.Index); // 1843
+            }
+
             if (Option_Crawl)
             {
                 // compensate for the change made in UpdateBodyMode_Crawl();
@@ -1508,7 +1447,7 @@ public static class PlayerMod
                 });
             }
         }
-        else
+        else if (can_log_il_hooks)
         {
             Debug.Log("SimplifiedMoveset: IL_Player_Jump failed.");
         }
@@ -1528,7 +1467,11 @@ public static class PlayerMod
         cursor.Goto(504);
         if (cursor.TryGotoNext(instruction => instruction.MatchLdfld<InputPackage>("y"))) // 604
         {
-            Debug.Log("SimplifiedMoveset: IL_Player_MovementUpdate: Index " + cursor.Index);
+            if (can_log_il_hooks)
+            {
+                Debug.Log("SimplifiedMoveset: IL_Player_MovementUpdate: Index " + cursor.Index);
+            }
+
             if (Option_BeamClimb)
             {
                 cursor.Goto(cursor.Index + 2); // 606
@@ -1544,7 +1487,7 @@ public static class PlayerMod
                 cursor.Emit(OpCodes.Ldarg_0); // 601
             }
         }
-        else
+        else if (can_log_il_hooks)
         {
             Debug.LogException(new Exception("SimplifiedMoveset: IL_Player_MovementUpdate failed."));
         }
@@ -1559,7 +1502,11 @@ public static class PlayerMod
             instruction => instruction.MatchLdcR4(0.9f)
             ))
         {
-            Debug.Log("SimplifiedMoveset: IL_Player_MovementUpdate: Index " + cursor.Index); // 1929
+            if (can_log_il_hooks)
+            {
+                Debug.Log("SimplifiedMoveset: IL_Player_MovementUpdate: Index " + cursor.Index); // 1929
+            }
+
             if (Option_BeamClimb)
             {
                 //
@@ -1587,7 +1534,7 @@ public static class PlayerMod
                 });
             }
         }
-        else
+        else if (can_log_il_hooks)
         {
             Debug.LogException(new Exception("SimplifiedMoveset: IL_Player_MovementUpdate failed."));
         }
@@ -1598,7 +1545,11 @@ public static class PlayerMod
 
         if (cursor.TryGotoNext(instruction => instruction.MatchLdfld<Player>("canWallJump")))
         {
-            Debug.Log("SimplifiedMoveset: IL_Player_MovementUpdate: Index " + cursor.Index); // 3319
+            if (can_log_il_hooks)
+            {
+                Debug.Log("SimplifiedMoveset: IL_Player_MovementUpdate: Index " + cursor.Index); // 3319
+            }
+
             if (Option_WallJump)
             {
                 cursor.Goto(cursor.Index + 7);
@@ -1620,7 +1571,7 @@ public static class PlayerMod
                 });
             }
         }
-        else
+        else if (can_log_il_hooks)
         {
             Debug.LogException(new Exception("SimplifiedMoveset: IL_Player_MovementUpdate failed."));
         }
@@ -1635,7 +1586,11 @@ public static class PlayerMod
         ILCursor cursor = new(context);
         if (cursor.TryGotoNext(instruction => instruction.MatchCall<Player>("get_input")))
         {
-            Debug.Log("SimplifiedMoveset: IL_Player_TerrainImpact: Index " + cursor.Index); // 13
+            if (can_log_il_hooks)
+            {
+                Debug.Log("SimplifiedMoveset: IL_Player_TerrainImpact: Index " + cursor.Index); // 13
+            }
+
             cursor.RemoveRange(42); // 55
             cursor.Emit(OpCodes.Ldarg_2);
             cursor.Emit(OpCodes.Ldarg_3);
@@ -1666,7 +1621,7 @@ public static class PlayerMod
             cursor.GotoNext();
             cursor.Next.OpCode = OpCodes.Brfalse;
         }
-        else
+        else if (can_log_il_hooks)
         {
             Debug.LogException(new Exception("SimplifiedMoveset: IL_Player_TerrainImpact failed."));
         }
@@ -1703,7 +1658,6 @@ public static class PlayerMod
     private static void IL_Player_UpdateAnimation(ILContext context)
     {
         // LogAllInstructions(context);
-
         ILCursor cursor = new(context);
 
         if (cursor.TryGotoNext(

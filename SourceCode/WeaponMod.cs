@@ -8,30 +8,18 @@ namespace SimplifiedMoveset;
 public static class WeaponMod
 {
     //
-    // variables
+    // main
     //
 
-    private static bool is_enabled = false;
-
-    //
-    //
-    //
-
-    internal static void OnToggle()
+    internal static void On_Config_Changed()
     {
-        is_enabled = !is_enabled;
+        On.Weapon.Shoot -= Weapon_Shoot;
+        On.Weapon.Thrown -= Weapon_Thrown;
+
         if (Option_SpearThrow)
         {
-            if (is_enabled)
-            {
-                On.Weapon.Shoot += Weapon_Shoot;
-                On.Weapon.Thrown += Weapon_Thrown;
-            }
-            else
-            {
-                On.Weapon.Shoot -= Weapon_Shoot;
-                On.Weapon.Thrown -= Weapon_Thrown;
-            }
+            On.Weapon.Shoot += Weapon_Shoot;
+            On.Weapon.Thrown += Weapon_Thrown;
         }
     }
 

@@ -10,7 +10,7 @@ using UnityEngine;
 
 namespace SimplifiedMoveset;
 
-[BepInPlugin("SchuhBaum.SimplifiedMoveset", "SimplifiedMoveset", "2.3.1")]
+[BepInPlugin("SchuhBaum.SimplifiedMoveset", "SimplifiedMoveset", "2.3.2")]
 public class MainMod : BaseUnityPlugin
 {
     //
@@ -19,7 +19,7 @@ public class MainMod : BaseUnityPlugin
 
     public static readonly string MOD_ID = "SchuhBaum.SimplifiedMoveset";
     public static readonly string author = "SchuhBaum";
-    public static readonly string version = "2.3.1";
+    public static readonly string version = "2.3.2";
 
     //
     // options
@@ -48,7 +48,8 @@ public class MainMod : BaseUnityPlugin
     // variables
     //
 
-    public static bool isInitialized = false;
+    public static bool is_initialized = false;
+    public static bool can_log_il_hooks = false;
 
     //
     // main
@@ -155,8 +156,8 @@ public class MainMod : BaseUnityPlugin
 
         MachineConnector.SetRegisteredOI(MOD_ID, MainModOptions.main_mod_options);
 
-        if (isInitialized) return;
-        isInitialized = true;
+        if (is_initialized) return;
+        is_initialized = true;
 
         Debug.Log("SimplifiedMoveset: version " + version);
         ProcessManagerMod.OnEnable();

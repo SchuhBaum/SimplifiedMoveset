@@ -9,28 +9,15 @@ namespace SimplifiedMoveset;
 public static class SlugcatHandMod
 {
     //
-    // variables
+    // main
     //
 
-    private static bool is_enabled = false;
-
-    //
-    //
-    //
-
-    internal static void OnToggle()
+    internal static void On_Config_Changed()
     {
-        is_enabled = !is_enabled;
+        On.SlugcatHand.EngageInMovement -= SlugcatHand_EngageInMovement;
         if (Option_WallClimb)
         {
-            if (is_enabled)
-            {
-                On.SlugcatHand.EngageInMovement += SlugcatHand_EngageInMovement;
-            }
-            else
-            {
-                On.SlugcatHand.EngageInMovement -= SlugcatHand_EngageInMovement;
-            }
+            On.SlugcatHand.EngageInMovement += SlugcatHand_EngageInMovement;
         }
     }
 

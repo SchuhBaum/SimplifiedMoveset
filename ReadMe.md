@@ -1,5 +1,5 @@
 ## SimplifiedMoveset
-###### Version: 2.3.1
+###### Version: 2.3.2
 
 This is a mod for Rain World v1.9.
 
@@ -11,7 +11,7 @@ https://www.youtube.com/watch?v=Jp6UyUgoWB0
 
 ### Installation
 0. Update Rain World to version 1.9 if needed.
-1. Download the file  `SimplifiedMoveset.zip` from [Releases](https://github.com/SchuhBaum/SimplifiedMoveset/releases/tag/v2.3.1).
+1. Download the file  `SimplifiedMoveset.zip` from [Releases](https://github.com/SchuhBaum/SimplifiedMoveset/releases/tag/v2.3.2).
 2. Extract its content in the folder `[Steam]\SteamApps\common\Rain World\RainWorld_Data\StreamingAssets\mods`.
 3. Start the game as normal. In the main menu select `Remix` and enable the mod. 
 
@@ -79,8 +79,9 @@ v2.3.0:
 - (crawl) Fixed a bug that would break the movement sequence in the Hunter cutscene.
 - Logging the mod options should be more reliable now.
 
-v2.3.1:
+v2.3.2:
 - (crawl) Forgot to add an option check for the last change.
+- Changed the hook initialization logic. This should reduce the log spam from IL hooks. Instead of doing it every cycle while in-game they are initialized when starting the game or when changing the options.
 
 #### (Rain World v1.5)
 v0.30:

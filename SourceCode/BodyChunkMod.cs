@@ -23,31 +23,21 @@ public static class BodyChunkMod
         return attached_fields;
     }
 
-    private static bool is_enabled = false;
-
     //
-    //
+    // main
     //
 
-    internal static void OnToggle()
+    internal static void On_Config_Changed()
     {
-        is_enabled = !is_enabled;
+        IL.BodyChunk.checkAgainstSlopesVertically -= IL_BodyChunk_CheckAgainstSlopesVertically;
+        On.BodyChunk.ctor -= BodyChunk_ctor;
+        On.BodyChunk.Update -= BodyChunk_Update;
+
         if (Option_BellySlide || Option_Crawl)
         {
-            if (is_enabled)
-            {
-                IL.BodyChunk.checkAgainstSlopesVertically += IL_BodyChunk_CheckAgainstSlopesVertically;
-
-                On.BodyChunk.ctor += BodyChunk_ctor;
-                On.BodyChunk.Update += BodyChunk_Update;
-            }
-            else
-            {
-                IL.BodyChunk.checkAgainstSlopesVertically -= IL_BodyChunk_CheckAgainstSlopesVertically;
-
-                On.BodyChunk.ctor -= BodyChunk_ctor;
-                On.BodyChunk.Update -= BodyChunk_Update;
-            }
+            IL.BodyChunk.checkAgainstSlopesVertically += IL_BodyChunk_CheckAgainstSlopesVertically;
+            On.BodyChunk.ctor += BodyChunk_ctor;
+            On.BodyChunk.Update += BodyChunk_Update;
         }
     }
 

@@ -14,36 +14,24 @@ namespace SimplifiedMoveset;
 public static class TubeWormMod
 {
     //
-    // variables
+    // main
     //
 
-    private static bool is_enabled;
-
-    //
-    //
-    //
-
-    internal static void OnToggle()
+    internal static void On_Config_Changed()
     {
-        is_enabled = !is_enabled;
+        On.TubeWorm.Tongue.ProperAutoAim -= Tongue_ProperAutoAim;
+        On.TubeWorm.Tongue.Shoot -= Tongue_Shoot;
+
+        IL.TubeWorm.Update -= IL_TubeWorm_Update;
+        On.TubeWorm.JumpButton -= TubeWorm_JumpButton;
+
         if (Option_TubeWorm)
         {
-            if (is_enabled)
-            {
-                On.TubeWorm.Tongue.ProperAutoAim += Tongue_ProperAutoAim; // auto aim and grapple beams on contact 
-                On.TubeWorm.Tongue.Shoot += Tongue_Shoot; // adjust angle based on inputs in some cases
+            On.TubeWorm.Tongue.ProperAutoAim += Tongue_ProperAutoAim; // auto aim and grapple beams on contact 
+            On.TubeWorm.Tongue.Shoot += Tongue_Shoot; // adjust angle based on inputs in some cases
 
-                IL.TubeWorm.Update += IL_TubeWorm_Update; // force retract tongue in some cases
-                On.TubeWorm.JumpButton += TubeWorm_JumpButton; // prioritize jump over using tube worm
-            }
-            else
-            {
-                On.TubeWorm.Tongue.ProperAutoAim -= Tongue_ProperAutoAim;
-                On.TubeWorm.Tongue.Shoot -= Tongue_Shoot;
-
-                IL.TubeWorm.Update -= IL_TubeWorm_Update;
-                On.TubeWorm.JumpButton -= TubeWorm_JumpButton;
-            }
+            IL.TubeWorm.Update += IL_TubeWorm_Update; // force retract tongue in some cases
+            On.TubeWorm.JumpButton += TubeWorm_JumpButton; // prioritize jump over using tube worm
         }
     }
 

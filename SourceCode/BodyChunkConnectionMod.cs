@@ -7,30 +7,17 @@ namespace SimplifiedMoveset;
 public static class BodyChunkConnectionMod
 {
     //
-    // variables
+    // main
     //
 
-    private static bool is_enabled = false;
-
-    //
-    //
-    //
-
-    internal static void OnToggle()
+    internal static void On_Config_Changed()
     {
-        is_enabled = !is_enabled;
+        On.PhysicalObject.BodyChunkConnection.Update -= BodyChunkConnection_Update;
         if (Option_BellySlide || Option_Crawl)
         {
-            if (is_enabled)
-            {
-                // save body_chunk_connection_velocity;
-                // used in bodyChunks to be aware of pulling and pushing effects;
-                On.PhysicalObject.BodyChunkConnection.Update += BodyChunkConnection_Update;
-            }
-            else
-            {
-                On.PhysicalObject.BodyChunkConnection.Update -= BodyChunkConnection_Update;
-            }
+            // save body_chunk_connection_velocity;
+            // used in bodyChunks to be aware of pulling and pushing effects;
+            On.PhysicalObject.BodyChunkConnection.Update += BodyChunkConnection_Update;
         }
     }
 
