@@ -99,7 +99,7 @@ public static class PlayerMod
             }
         }
 
-        if (Option_BellySlide || Option_Roll_1 || Option_TubeWorm)
+        if (Option_BellySlide || Option_Crawl || Option_Roll_1 || Option_TubeWorm)
         {
             if (is_enabled)
             {
@@ -1161,10 +1161,9 @@ public static class PlayerMod
                 // in vanilla this is only applied when on slopes;
                 // this messes up the Hunter start script
                 // => change the super launch jump in order to cancel this out;
-                if (body_chunk.contactPoint.y == -1) // && body_chunk.onSlope != 0
-                {
-                    body_chunk.vel.y -= 1.5f;
-                }
+                if (body_chunk.contactPoint.y != -1) continue;
+                // if (body_chunk.onSlope == 0) continue;
+                body_chunk.vel.y -= 1.5f;
             }
         }
         // more requirements than vanilla // prevent collision and sound spam
@@ -1415,7 +1414,7 @@ public static class PlayerMod
         // LogAllInstructions(context);
     }
 
-    private static void IL_Player_Jump(ILContext context) // Option_BellySlide // Option_Roll_1 // Option_TubeWorm
+    private static void IL_Player_Jump(ILContext context) // Option_BellySlide // Option_Crawl // Option_Roll_1 // Option_TubeWorm
     {
         // LogAllInstructions(context);
         ILCursor cursor = new(context);
@@ -1491,6 +1490,9 @@ public static class PlayerMod
             Debug.Log("SimplifiedMoveset: IL_Player_Jump: Index " + cursor.Index); // 1843
             if (Option_Crawl)
             {
+                // compensate for the change made in UpdateBodyMode_Crawl();
+                // otherwise the Hunter cutscene fails;
+
                 cursor.Emit(OpCodes.Ldarg_0); // player
                 cursor.EmitDelegate<Action<Player>>(player =>
                 {
@@ -1499,12 +1501,9 @@ public static class PlayerMod
 
                     foreach (BodyChunk body_chunk in player.bodyChunks)
                     {
-                        // compensate for the change made in UpdateBodyMode_Crawl();
-                        // otherwise the Hunter cutscene fails;
-                        if (body_chunk.contactPoint.y == -1 && body_chunk.onSlope == 0)
-                        {
-                            body_chunk.vel.y += 1.5f;
-                        }
+                        if (body_chunk.contactPoint.y != -1) continue;
+                        if (body_chunk.onSlope != 0) continue;
+                        body_chunk.vel.y += 1.5f;
                     }
                 });
             }
