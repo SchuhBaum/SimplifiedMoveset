@@ -5,7 +5,7 @@ using static SimplifiedMoveset.MainMod;
 
 namespace SimplifiedMoveset;
 
-public static class WeaponMod
+internal static class WeaponMod
 {
     //
     // main

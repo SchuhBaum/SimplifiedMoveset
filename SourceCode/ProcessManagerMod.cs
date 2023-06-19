@@ -6,7 +6,7 @@ using static SimplifiedMoveset.MainModOptions;
 
 namespace SimplifiedMoveset;
 
-internal static class ProcessManagerMod
+public static class ProcessManagerMod
 {
     //
     // main

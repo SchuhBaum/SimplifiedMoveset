@@ -1,5 +1,5 @@
 ## SimplifiedMoveset
-###### Version: 2.3.4
+###### Version: 2.3.5
 
 This is a mod for Rain World v1.9.
 
@@ -11,7 +11,7 @@ https://www.youtube.com/watch?v=Jp6UyUgoWB0
 
 ### Installation
 0. Update Rain World to version 1.9 if needed.
-1. Download the file  `SimplifiedMoveset.zip` from [Releases](https://github.com/SchuhBaum/SimplifiedMoveset/releases/tag/v2.3.4).
+1. Download the file  `SimplifiedMoveset.zip` from [Releases](https://github.com/SchuhBaum/SimplifiedMoveset/releases/tag/v2.3.5).
 2. Extract its content in the folder `[Steam]\SteamApps\common\Rain World\RainWorld_Data\StreamingAssets\mods`.
 3. Start the game as normal. In the main menu select `Remix` and enable the mod. 
 
@@ -19,19 +19,20 @@ https://www.youtube.com/watch?v=Jp6UyUgoWB0
 See the corresponding sections on the [Steam Workshop page](https://steamcommunity.com/sharedfiles/filedetails/?id=2928752589) for the mod `SBCameraScroll`.
 
 ### Contact
-If you have feedback, you can message me on Discord `@SchuhBaum#7246` or write an email to SchuhBaum71@gmail.com.  
+If you have feedback, you can message me on Discord `@schuhbaum` or write an email to SchuhBaum71@gmail.com.  
 
 ### License  
 There are two licenses available - MIT and Unlicense. You can choose which one you want to use.
 
 ### Changelog
 #### (Rain World v1.9)
-v2.3.4:
+v2.3.5:
 - (crawl) Forgot to add an option check for the last change.
 - Changed the hook initialization logic. This should reduce the log spam from IL hooks. Instead of doing it every cycle while in-game they are initialized when starting the game or when changing the options.
 - Forgot to change some cases to reduce spam from IL hooks.
 - (beam climb) Made grabbing vertical beams less sensitive.
 - Changed mod id back to original.
+- (wall climb) Fixed a bug where the hand movement would not be executed. Added that slugcat looks up or down when wall climbing.
 
 v2.3.0:
 - (beam climb) Potentially fixed a bug where wall jumps would mess with climbing straight up beams.

@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace SimplifiedMoveset;
 
-public static class RainWorldGameMod
+internal static class RainWorldGameMod
 {
     internal static void OnEnable()
     {

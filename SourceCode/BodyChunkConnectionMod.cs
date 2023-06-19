@@ -4,7 +4,7 @@ using static SimplifiedMoveset.MainMod;
 
 namespace SimplifiedMoveset;
 
-public static class BodyChunkConnectionMod
+internal static class BodyChunkConnectionMod
 {
     //
     // main
