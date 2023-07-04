@@ -5,7 +5,9 @@ using MonoMod.Cil;
 using RWCustom;
 using UnityEngine;
 
+using static BodyChunk;
 using static Room;
+using static Room.Tile;
 using static SimplifiedMoveset.MainMod;
 
 namespace SimplifiedMoveset;
@@ -30,17 +32,23 @@ public static class BodyChunkMod
     internal static void On_Config_Changed()
     {
         IL.BodyChunk.checkAgainstSlopesVertically -= IL_BodyChunk_CheckAgainstSlopesVertically;
-        On.BodyChunk.ctor -= BodyChunk_ctor;
+        On.BodyChunk.CheckVerticalCollision -= BodyChunk_CheckVerticalCollision;
+        On.BodyChunk.ctor -= BodyChunk_Ctor;
         On.BodyChunk.Update -= BodyChunk_Update;
+
+        if (Option_BeamClimb)
+        {
+            // bonk your head less often when trying to jump off beams;
+            On.BodyChunk.CheckVerticalCollision += BodyChunk_CheckVerticalCollision;
+        }
 
         if (Option_BellySlide || Option_Crawl)
         {
             IL.BodyChunk.checkAgainstSlopesVertically += IL_BodyChunk_CheckAgainstSlopesVertically;
-            On.BodyChunk.ctor += BodyChunk_ctor;
+            On.BodyChunk.ctor += BodyChunk_Ctor;
             On.BodyChunk.Update += BodyChunk_Update;
         }
     }
-
 
     //
     // public
@@ -232,7 +240,65 @@ public static class BodyChunkMod
     //
     //
 
-    private static void BodyChunk_ctor(On.BodyChunk.orig_ctor orig, BodyChunk body_chunk, PhysicalObject owner, int index, Vector2 pos, float rad, float mass) // Option_BellySlide // Option_Crawl
+    private static void BodyChunk_CheckVerticalCollision(On.BodyChunk.orig_CheckVerticalCollision orig, BodyChunk body_chunk)
+    {
+        if (body_chunk.owner is not Player player)
+        {
+            orig(body_chunk);
+            return;
+        }
+
+        if (body_chunk != player.mainBodyChunk || body_chunk.vel.y <= 0f)
+        {
+            orig(body_chunk);
+            return;
+        }
+
+        //
+        // this is mostly vanilla copy&paste; the main difference is that you only have 
+        // x instead of a loop from x_start to x_end;
+        //
+
+        body_chunk.contactPoint.y = 0;
+        IntVector2 tile_position = player.room.GetTilePosition(body_chunk.lastPos);
+        int number_of_repeats = 0;
+
+        int y_start = player.room.GetTilePosition(new Vector2(0f, body_chunk.pos.y + body_chunk.TerrainRad + 0.01f)).y;
+        int y_end = player.room.GetTilePosition(new Vector2(0f, body_chunk.lastPos.y + body_chunk.TerrainRad)).y;
+        int x = player.room.GetTilePosition(new Vector2(body_chunk.pos.x, 0f)).x;
+
+        for (int y = y_end; y <= y_start; y++)
+        {
+            if (player.room.GetTile(x, y).Terrain == TerrainType.Solid && player.room.GetTile(x, y - 1).Terrain != TerrainType.Solid && (tile_position.y < y || player.room.GetTile(body_chunk.lastPos).Terrain == TerrainType.Solid))
+            {
+                body_chunk.pos.y = y * 20f - body_chunk.TerrainRad;
+                if (body_chunk.vel.y > player.impactTreshhold)
+                {
+                    player.TerrainImpact(body_chunk.index, new IntVector2(0, 1), Mathf.Abs(body_chunk.vel.y), body_chunk.lastContactPoint.y < 1);
+                }
+
+                body_chunk.contactPoint.y = 1;
+                body_chunk.vel.y = -Mathf.Abs(body_chunk.vel.y) * player.bounce;
+
+                if (Mathf.Abs(body_chunk.vel.y) < 1f + 9f * (1f - player.bounce))
+                {
+                    body_chunk.vel.y = 0f;
+                }
+
+                body_chunk.vel.x *= Mathf.Clamp(player.surfaceFriction * 2f, 0f, 1f);
+                break;
+            }
+
+            number_of_repeats++;
+            if (number_of_repeats > MaxRepeats)
+            {
+                Debug.Log("!!!!! " + player?.ToString() + " emergency breakout of terrain check!");
+                break;
+            }
+        }
+    }
+
+    private static void BodyChunk_Ctor(On.BodyChunk.orig_ctor orig, BodyChunk body_chunk, PhysicalObject owner, int index, Vector2 pos, float rad, float mass) // Option_BellySlide // Option_Crawl
     {
         orig(body_chunk, owner, index, pos, rad, mass);
 

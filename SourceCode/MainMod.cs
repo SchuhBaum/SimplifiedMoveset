@@ -10,7 +10,7 @@ using UnityEngine;
 
 namespace SimplifiedMoveset;
 
-[BepInPlugin("SimplifiedMoveset", "SimplifiedMoveset", "2.3.6")]
+[BepInPlugin("SimplifiedMoveset", "SimplifiedMoveset", "2.3.7")]
 public class MainMod : BaseUnityPlugin
 {
     //
@@ -19,7 +19,7 @@ public class MainMod : BaseUnityPlugin
 
     public static readonly string MOD_ID = "SimplifiedMoveset";
     public static readonly string author = "SchuhBaum";
-    public static readonly string version = "2.3.6";
+    public static readonly string version = "2.3.7";
 
     //
     // options
