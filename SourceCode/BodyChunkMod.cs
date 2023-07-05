@@ -242,13 +242,15 @@ public static class BodyChunkMod
 
     private static void BodyChunk_CheckVerticalCollision(On.BodyChunk.orig_CheckVerticalCollision orig, BodyChunk body_chunk)
     {
-        if (body_chunk.owner is not Player player)
+        if (body_chunk.owner is not Player player || body_chunk != player.mainBodyChunk)
         {
             orig(body_chunk);
             return;
         }
 
-        if (body_chunk != player.mainBodyChunk || body_chunk.vel.y <= 0f)
+        // this can interfere when shortcuts are close to the water surface; skip when
+        // the player is in water;
+        if (body_chunk.vel.y <= 0f || player.Submersion > 0f || player.room == null)
         {
             orig(body_chunk);
             return;
