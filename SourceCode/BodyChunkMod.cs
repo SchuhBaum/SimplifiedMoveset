@@ -9,6 +9,7 @@ using static BodyChunk;
 using static Room;
 using static Room.Tile;
 using static SimplifiedMoveset.MainMod;
+using static SimplifiedMoveset.PlayerMod;
 
 namespace SimplifiedMoveset;
 
@@ -70,9 +71,9 @@ public static class BodyChunkMod
         //
 
         // smooth moving down slopes
-        if (slope_direction == SlopeDirection.Broken && attached_fields.lastOnSlopeTilePos is IntVector2 lastOnSlopeTilePos && attached_fields.lastOnSlope * (body_chunk.vel.x - attached_fields.body_chunk_connection_velocity.x) > 0.0f && body_chunk.vel.y - attached_fields.body_chunk_connection_velocity.y < -player.gravity)
+        if (slope_direction == SlopeDirection.Broken && attached_fields.last_on_slope_tile_position is IntVector2 lastOnSlopeTilePos && attached_fields.last_on_slope * (body_chunk.vel.x - attached_fields.body_chunk_connection_velocity.x) > 0.0f && body_chunk.vel.y - attached_fields.body_chunk_connection_velocity.y < -player.gravity)
         {
-            tile_position.y = lastOnSlopeTilePos.y + attached_fields.lastOnSlope * (lastOnSlopeTilePos.x - tile_position.x); // project tilePosition.y down to the slope surface line // check later at this position a slope tile exists and do some other checks
+            tile_position.y = lastOnSlopeTilePos.y + attached_fields.last_on_slope * (lastOnSlopeTilePos.x - tile_position.x); // project tilePosition.y down to the slope surface line // check later at this position a slope tile exists and do some other checks
             Tile? nonAirTileBelow = RoomMod.GetNonAirTileBelow(room, tile_position);
 
             if (nonAirTileBelow == null || nonAirTileBelow.Y < tile_position.y) // enough air tiles available // can project down to the slope surface line
@@ -124,7 +125,7 @@ public static class BodyChunkMod
             }
         }
 
-        attached_fields.lastOnSlopeTilePos = null;
+        attached_fields.last_on_slope_tile_position = null;
 
         // no slope detected;
         if (slope_direction == SlopeDirection.Broken) return;
@@ -186,7 +187,7 @@ public static class BodyChunkMod
 
             body_chunk.contactPoint.y = -1;
             body_chunk.onSlope = on_slope;
-            attached_fields.lastOnSlopeTilePos = tile_position;
+            attached_fields.last_on_slope_tile_position = tile_position;
             return;
         }
 
@@ -242,15 +243,21 @@ public static class BodyChunkMod
 
     private static void BodyChunk_CheckVerticalCollision(On.BodyChunk.orig_CheckVerticalCollision orig, BodyChunk body_chunk)
     {
-        if (body_chunk.owner is not Player player || body_chunk != player.mainBodyChunk)
+        if (body_chunk.owner is not Player player || body_chunk != player.mainBodyChunk || body_chunk.vel.y <= 0f)
         {
             orig(body_chunk);
             return;
         }
 
-        // this can interfere when shortcuts are close to the water surface; skip when
-        // the player is in water;
-        if (body_chunk.vel.y <= 0f || player.Submersion > 0f || player.room == null)
+        // this can interfere when shortcuts are close to the water surface; therefore
+        // be more cautious when to change the collision check;
+        if (player.Get_Attached_Fields() is not Player_Attached_Fields attached_fields || attached_fields.time_since_climbing_on_beam > 20)
+        {
+            orig(body_chunk);
+            return;
+        }
+
+        if (player.room == null)
         {
             orig(body_chunk);
             return;
@@ -317,10 +324,9 @@ public static class BodyChunkMod
             return;
         }
 
-        attached_fields.lastOnSlope = body_chunk.onSlope;
+        attached_fields.last_on_slope = body_chunk.onSlope;
         orig(body_chunk);
     }
-
     //
     //
     //
@@ -328,8 +334,8 @@ public static class BodyChunkMod
     public sealed class BodyChunk_Attached_Fields
     {
         // variables are initialized in BodyChunk_ctor() and cleared in RainWorldGameMod
-        public int lastOnSlope = 0;
-        public IntVector2? lastOnSlopeTilePos = null;
+        public int last_on_slope = 0;
+        public IntVector2? last_on_slope_tile_position = null;
         public Vector2 body_chunk_connection_velocity = new();
     }
 }

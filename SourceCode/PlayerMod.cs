@@ -92,6 +92,11 @@ public static class PlayerMod
             On.Player.MovementUpdate += Player_MovementUpdate;
         }
 
+        if (Option_BeamClimb || Option_TubeWorm)
+        {
+            On.Player.Update += Player_Update;
+        }
+
         if (Option_BeamClimb || Option_WallJump)
         {
             // removes lifting your booty when being in a corner with your upper bodyChunk / head
@@ -125,7 +130,8 @@ public static class PlayerMod
 
         if (Option_Grab)
         {
-            On.Player.Grabability += Player_Grabability; // only grab dead large creatures when crouching
+            // only grab dead large creatures when crouching
+            On.Player.Grabability += Player_Grabability;
         }
 
         if (Option_SlideTurn)
@@ -147,9 +153,7 @@ public static class PlayerMod
         if (Option_TubeWorm)
         {
             IL.Player.TongueUpdate += IL_Player_TongueUpdate;
-
             On.Player.SaintTongueCheck += Player_SaintTongueCheck;
-            On.Player.Update += Player_Update;
             On.Player.Tongue.AutoAim += Tongue_AutoAim;
             On.Player.Tongue.Shoot += Tongue_Shoot;
         }
@@ -2415,12 +2419,24 @@ public static class PlayerMod
         player.rollCounter = rollCounter;
     }
 
-    private static void Player_Update(On.Player.orig_Update orig, Player player, bool eu) // Option_TubeWorm
+    private static void Player_Update(On.Player.orig_Update orig, Player player, bool eu) // Option_BeamClimb // Option_TubeWorm
     {
         orig(player, eu);
+        if (Option_BeamClimb && player.Get_Attached_Fields() is Player_Attached_Fields attached_fields)
+        {
+            if (player.bodyMode == BodyModeIndex.ClimbingOnBeam)
+            {
+                attached_fields.time_since_climbing_on_beam = 0;
+            }
+            else
+            {
+                ++attached_fields.time_since_climbing_on_beam;
+            }
+        }
 
         // depending on your input in x you might not get an mid-air wall jump;
         // make sure that you can use your tongue again next frame again;
+        if (!Option_TubeWorm) return;
         if (player.canJump == 0 && player.canWallJump != 0 && player.wantToJump > 0)
         {
             // reset wantToJump too in order to "consume" the jump;
@@ -2746,6 +2762,7 @@ public static class PlayerMod
         public int get_up_on_beam_direction = 0;
         public int grab_beam_counter = 0;
         public int sound_cooldown = 0;
+        public int time_since_climbing_on_beam = 0;
 
         public Vector2? grab_beam_cooldown_position = null;
     }
