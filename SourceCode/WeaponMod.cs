@@ -5,19 +5,16 @@ using static SimplifiedMoveset.MainMod;
 
 namespace SimplifiedMoveset;
 
-internal static class WeaponMod
-{
+internal static class WeaponMod {
     //
     // main
     //
 
-    internal static void On_Config_Changed()
-    {
+    internal static void On_Config_Changed() {
         On.Weapon.Shoot -= Weapon_Shoot;
         On.Weapon.Thrown -= Weapon_Thrown;
 
-        if (Option_SpearThrow)
-        {
+        if (Option_SpearThrow) {
             On.Weapon.Shoot += Weapon_Shoot;
             On.Weapon.Thrown += Weapon_Thrown;
         }

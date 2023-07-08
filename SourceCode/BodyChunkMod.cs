@@ -1,10 +1,9 @@
-using System;
-using System.Collections.Generic;
 using Mono.Cecil.Cil;
 using MonoMod.Cil;
 using RWCustom;
+using System;
+using System.Collections.Generic;
 using UnityEngine;
-
 using static BodyChunk;
 using static Room;
 using static Room.Tile;
@@ -13,15 +12,13 @@ using static SimplifiedMoveset.PlayerMod;
 
 namespace SimplifiedMoveset;
 
-public static class BodyChunkMod
-{
+public static class BodyChunkMod {
     //
     // variables
     //
 
     internal static readonly Dictionary<BodyChunk, BodyChunk_Attached_Fields> all_attached_fields = new();
-    public static BodyChunk_Attached_Fields? Get_Attached_Fields(this BodyChunk body_chunk)
-    {
+    public static BodyChunk_Attached_Fields? Get_Attached_Fields(this BodyChunk body_chunk) {
         all_attached_fields.TryGetValue(body_chunk, out BodyChunk_Attached_Fields? attached_fields);
         return attached_fields;
     }
@@ -30,21 +27,18 @@ public static class BodyChunkMod
     // main
     //
 
-    internal static void On_Config_Changed()
-    {
+    internal static void On_Config_Changed() {
         IL.BodyChunk.checkAgainstSlopesVertically -= IL_BodyChunk_CheckAgainstSlopesVertically;
         On.BodyChunk.CheckVerticalCollision -= BodyChunk_CheckVerticalCollision;
         On.BodyChunk.ctor -= BodyChunk_Ctor;
         On.BodyChunk.Update -= BodyChunk_Update;
 
-        if (Option_BeamClimb)
-        {
+        if (Option_BeamClimb) {
             // bonk your head less often when trying to jump off beams;
             On.BodyChunk.CheckVerticalCollision += BodyChunk_CheckVerticalCollision;
         }
 
-        if (Option_BellySlide || Option_Crawl)
-        {
+        if (Option_BellySlide || Option_Crawl) {
             IL.BodyChunk.checkAgainstSlopesVertically += IL_BodyChunk_CheckAgainstSlopesVertically;
             On.BodyChunk.ctor += BodyChunk_Ctor;
             On.BodyChunk.Update += BodyChunk_Update;
@@ -71,21 +65,18 @@ public static class BodyChunkMod
         //
 
         // smooth moving down slopes
-        if (slope_direction == SlopeDirection.Broken && attached_fields.last_on_slope_tile_position is IntVector2 lastOnSlopeTilePos && attached_fields.last_on_slope * (body_chunk.vel.x - attached_fields.body_chunk_connection_velocity.x) > 0.0f && body_chunk.vel.y - attached_fields.body_chunk_connection_velocity.y < -player.gravity)
-        {
+        if (slope_direction == SlopeDirection.Broken && attached_fields.last_on_slope_tile_position is IntVector2 lastOnSlopeTilePos && attached_fields.last_on_slope * (body_chunk.vel.x - attached_fields.body_chunk_connection_velocity.x) > 0.0f && body_chunk.vel.y - attached_fields.body_chunk_connection_velocity.y < -player.gravity) {
             tile_position.y = lastOnSlopeTilePos.y + attached_fields.last_on_slope * (lastOnSlopeTilePos.x - tile_position.x); // project tilePosition.y down to the slope surface line // check later at this position a slope tile exists and do some other checks
             Tile? nonAirTileBelow = RoomMod.GetNonAirTileBelow(room, tile_position);
 
             if (nonAirTileBelow == null || nonAirTileBelow.Y < tile_position.y) // enough air tiles available // can project down to the slope surface line
             {
                 tile_position = lastOnSlopeTilePos;
-            }
-            else if (nonAirTileBelow.Terrain == Tile.TerrainType.Slope) // slope // project down to this slope surface line instead // can be a differenct one and closer in distance
-            {
+            } else if (nonAirTileBelow.Terrain == Tile.TerrainType.Slope) // slope // project down to this slope surface line instead // can be a differenct one and closer in distance
+              {
                 tile_position.y = nonAirTileBelow.Y;
-            }
-            else // solid // floor // place the bodyChunk above solid or floor tiles
-            {
+            } else // solid // floor // place the bodyChunk above solid or floor tiles
+              {
                 tile_position.y = nonAirTileBelow.Y + 1; // collision checks for solids in y direction are already done // let them collide next frame
             }
 
@@ -94,11 +85,9 @@ public static class BodyChunkMod
             body_chunk.pos.y = middle_of_tile.y;
         }
 
-        if (slope_direction == SlopeDirection.Broken)
-        {
+        if (slope_direction == SlopeDirection.Broken) {
             // look horizontal first to anticipate colliding with slopes ahead
-            for (int modifierX = -1; modifierX <= 1; modifierX += 2)
-            {
+            for (int modifierX = -1; modifierX <= 1; modifierX += 2) {
                 SlopeDirection slopeDirection_ = room.IdentifySlope(tile_position.x + modifierX, tile_position.y);
                 if (slopeDirection_ != SlopeDirection.Broken && modifierX * (body_chunk.pos.x - middle_of_tile.x) >= 10.0 - body_chunk.slopeRad) // body_chunk is "peeking out" of the tile at tilePosition (right side when modifierX == 1)
                 {
@@ -110,10 +99,8 @@ public static class BodyChunkMod
             }
         }
 
-        if (slope_direction == SlopeDirection.Broken)
-        {
-            for (int modifierY = -1; modifierY <= 1; modifierY += 2)
-            {
+        if (slope_direction == SlopeDirection.Broken) {
+            for (int modifierY = -1; modifierY <= 1; modifierY += 2) {
                 SlopeDirection slope_direction_ = room.IdentifySlope(tile_position.x, tile_position.y + modifierY);
                 if (slope_direction_ != SlopeDirection.Broken && modifierY * (body_chunk.pos.y - middle_of_tile.y) > 10.0 - body_chunk.slopeRad) // > to smooth out transition from slope to solid
                 {
@@ -144,23 +131,20 @@ public static class BodyChunkMod
             position_y = middle_of_tile.y + body_chunk.pos.x - middle_of_tile.x;
             on_slope = -1;
             slope_vertical_position = -1;
-        }
-        else if (slope_direction == SlopeDirection.UpRight) // Oo
-        {
+        } else if (slope_direction == SlopeDirection.UpRight) // Oo
+          {
             // project down to the slope surface line 
             // pos.x stays constant 
             // pos.y moves down when bodyChunk.pos.x > middleOfTile.x otherwise up to slope surface
             position_y = middle_of_tile.y + middle_of_tile.x - body_chunk.pos.x;
             on_slope = 1;
             slope_vertical_position = -1;
-        }
-        else if (slope_direction == SlopeDirection.DownLeft) // �O
-        {
+        } else if (slope_direction == SlopeDirection.DownLeft) // �O
+          {
             position_y = middle_of_tile.y + middle_of_tile.x - body_chunk.pos.x;
             slope_vertical_position = 1;
-        }
-        else  // O�
-        {
+        } else  // O�
+          {
             position_y = middle_of_tile.y + body_chunk.pos.x - middle_of_tile.x;
             slope_vertical_position = 1;
         }
@@ -169,19 +153,16 @@ public static class BodyChunkMod
         // collision detection
         //
 
-        if (slope_vertical_position == -1 && body_chunk.pos.y <= position_y + body_chunk.slopeRad + body_chunk.slopeRad)
-        {
+        if (slope_vertical_position == -1 && body_chunk.pos.y <= position_y + body_chunk.slopeRad + body_chunk.slopeRad) {
             body_chunk.pos.y = position_y + body_chunk.slopeRad + body_chunk.slopeRad;
-            if (body_chunk.vel.y < -player.impactTreshhold)
-            {
+            if (body_chunk.vel.y < -player.impactTreshhold) {
                 player.TerrainImpact(body_chunk.index, new IntVector2(0, -1), -body_chunk.vel.y, body_chunk.lastContactPoint.y > -1);
             }
 
             body_chunk.vel.x *= 0.7f * Mathf.Clamp(body_chunk.owner.surfaceFriction * 2f, 0.0f, 1f); // keep distance almost identical // 0.7 approx 1/sqrt(2)
             body_chunk.vel.y = Mathf.Abs(body_chunk.vel.y) * player.bounce;
 
-            if (body_chunk.vel.y < player.gravity || body_chunk.vel.y < 1.0 + 9.0 * (1.0 - player.bounce))
-            {
+            if (body_chunk.vel.y < player.gravity || body_chunk.vel.y < 1.0 + 9.0 * (1.0 - player.bounce)) {
                 body_chunk.vel.y = 0.0f;
             }
 
@@ -195,16 +176,14 @@ public static class BodyChunkMod
         if (body_chunk.pos.y < position_y - body_chunk.slopeRad - body_chunk.slopeRad) return;
 
         body_chunk.pos.y = position_y - body_chunk.slopeRad - body_chunk.slopeRad;
-        if (body_chunk.vel.y > player.impactTreshhold)
-        {
+        if (body_chunk.vel.y > player.impactTreshhold) {
             player.TerrainImpact(body_chunk.index, new IntVector2(0, 1), body_chunk.vel.y, body_chunk.lastContactPoint.y < 1);
         }
 
         body_chunk.vel.x *= 0.7f * Mathf.Clamp(player.surfaceFriction * 2f, 0.0f, 1f);
         body_chunk.vel.y = -Mathf.Abs(body_chunk.vel.y) * player.bounce;
 
-        if (body_chunk.vel.y > -1.0 - 9.0 * (1.0 - player.bounce))
-        {
+        if (body_chunk.vel.y > -1.0 - 9.0 * (1.0 - player.bounce)) {
             body_chunk.vel.y = 0.0f;
         }
         body_chunk.contactPoint.y = 1;
@@ -214,15 +193,13 @@ public static class BodyChunkMod
     // private
     //
 
-    private static void IL_BodyChunk_CheckAgainstSlopesVertically(ILContext context)
-    {
+    private static void IL_BodyChunk_CheckAgainstSlopesVertically(ILContext context) {
         // LogAllInstructions(context);
 
         ILCursor cursor = new(context);
         cursor.Emit(OpCodes.Ldarg_0);
 
-        cursor.EmitDelegate<Func<BodyChunk, bool>>(body_chunk =>
-        {
+        cursor.EmitDelegate<Func<BodyChunk, bool>>(body_chunk => {
             // "call" orig() if returning true;
             if (body_chunk.Get_Attached_Fields() is not BodyChunk_Attached_Fields attached_fields) return true;
             CheckAgainstSlopesVertically(body_chunk, attached_fields);
@@ -241,24 +218,20 @@ public static class BodyChunkMod
     //
     //
 
-    private static void BodyChunk_CheckVerticalCollision(On.BodyChunk.orig_CheckVerticalCollision orig, BodyChunk body_chunk)
-    {
-        if (body_chunk.owner is not Player player || body_chunk != player.mainBodyChunk || body_chunk.vel.y <= 0f)
-        {
+    private static void BodyChunk_CheckVerticalCollision(On.BodyChunk.orig_CheckVerticalCollision orig, BodyChunk body_chunk) {
+        if (body_chunk.owner is not Player player || body_chunk != player.mainBodyChunk || body_chunk.vel.y <= 0f) {
             orig(body_chunk);
             return;
         }
 
         // this can interfere when shortcuts are close to the water surface; therefore
         // be more cautious when to change the collision check;
-        if (player.Get_Attached_Fields() is not Player_Attached_Fields attached_fields || attached_fields.time_since_climbing_on_beam > 20)
-        {
+        if (player.Get_Attached_Fields() is not Player_Attached_Fields attached_fields || attached_fields.time_since_climbing_on_beam > 20) {
             orig(body_chunk);
             return;
         }
 
-        if (player.room == null)
-        {
+        if (player.room == null) {
             orig(body_chunk);
             return;
         }
@@ -276,21 +249,17 @@ public static class BodyChunkMod
         int y_end = player.room.GetTilePosition(new Vector2(0f, body_chunk.lastPos.y + body_chunk.TerrainRad)).y;
         int x = player.room.GetTilePosition(new Vector2(body_chunk.pos.x, 0f)).x;
 
-        for (int y = y_end; y <= y_start; y++)
-        {
-            if (player.room.GetTile(x, y).Terrain == TerrainType.Solid && player.room.GetTile(x, y - 1).Terrain != TerrainType.Solid && (tile_position.y < y || player.room.GetTile(body_chunk.lastPos).Terrain == TerrainType.Solid))
-            {
+        for (int y = y_end; y <= y_start; y++) {
+            if (player.room.GetTile(x, y).Terrain == TerrainType.Solid && player.room.GetTile(x, y - 1).Terrain != TerrainType.Solid && (tile_position.y < y || player.room.GetTile(body_chunk.lastPos).Terrain == TerrainType.Solid)) {
                 body_chunk.pos.y = y * 20f - body_chunk.TerrainRad;
-                if (body_chunk.vel.y > player.impactTreshhold)
-                {
+                if (body_chunk.vel.y > player.impactTreshhold) {
                     player.TerrainImpact(body_chunk.index, new IntVector2(0, 1), Mathf.Abs(body_chunk.vel.y), body_chunk.lastContactPoint.y < 1);
                 }
 
                 body_chunk.contactPoint.y = 1;
                 body_chunk.vel.y = -Mathf.Abs(body_chunk.vel.y) * player.bounce;
 
-                if (Mathf.Abs(body_chunk.vel.y) < 1f + 9f * (1f - player.bounce))
-                {
+                if (Mathf.Abs(body_chunk.vel.y) < 1f + 9f * (1f - player.bounce)) {
                     body_chunk.vel.y = 0f;
                 }
 
@@ -299,8 +268,7 @@ public static class BodyChunkMod
             }
 
             number_of_repeats++;
-            if (number_of_repeats > MaxRepeats)
-            {
+            if (number_of_repeats > MaxRepeats) {
                 Debug.Log("!!!!! " + player?.ToString() + " emergency breakout of terrain check!");
                 break;
             }
@@ -318,8 +286,7 @@ public static class BodyChunkMod
 
     private static void BodyChunk_Update(On.BodyChunk.orig_Update orig, BodyChunk body_chunk) // Option_BellySlide // Option_Crawl
     {
-        if (body_chunk.Get_Attached_Fields() is not BodyChunk_Attached_Fields attached_fields)
-        {
+        if (body_chunk.Get_Attached_Fields() is not BodyChunk_Attached_Fields attached_fields) {
             orig(body_chunk);
             return;
         }
@@ -331,8 +298,7 @@ public static class BodyChunkMod
     //
     //
 
-    public sealed class BodyChunk_Attached_Fields
-    {
+    public sealed class BodyChunk_Attached_Fields {
         // variables are initialized in BodyChunk_ctor() and cleared in RainWorldGameMod
         public int last_on_slope = 0;
         public IntVector2? last_on_slope_tile_position = null;

@@ -1,9 +1,8 @@
-using System;
 using Mono.Cecil.Cil;
 using MonoMod.Cil;
 using RWCustom;
+using System;
 using UnityEngine;
-
 using static Player;
 using static Room;
 using static SimplifiedMoveset.MainMod;
@@ -11,21 +10,18 @@ using static SimplifiedMoveset.PlayerMod;
 
 namespace SimplifiedMoveset;
 
-public static class TubeWormMod
-{
+public static class TubeWormMod {
     //
     // main
     //
 
-    internal static void On_Config_Changed()
-    {
+    internal static void On_Config_Changed() {
         IL.TubeWorm.Update -= IL_TubeWorm_Update;
         On.TubeWorm.JumpButton -= TubeWorm_JumpButton;
         On.TubeWorm.Tongue.ProperAutoAim -= Tongue_ProperAutoAim;
         On.TubeWorm.Tongue.Shoot -= Tongue_Shoot;
 
-        if (Option_TubeWorm)
-        {
+        if (Option_TubeWorm) {
             IL.TubeWorm.Update += IL_TubeWorm_Update; // force retract tongue in some cases
             On.TubeWorm.JumpButton += TubeWorm_JumpButton; // prioritize jump over using tube worm
             On.TubeWorm.Tongue.ProperAutoAim += Tongue_ProperAutoAim; // auto aim and grapple beams on contact 
@@ -37,8 +33,7 @@ public static class TubeWormMod
     // public
     //
 
-    public static Vector2? Tongue_AutoAim_Beams(TubeWorm.Tongue tongue, Vector2 originalDir, bool prioritizeAngleOverDistance, int preferredHorizontalDirection)
-    {
+    public static Vector2? Tongue_AutoAim_Beams(TubeWorm.Tongue tongue, Vector2 originalDir, bool prioritizeAngleOverDistance, int preferredHorizontalDirection) {
         if (tongue.room is not Room room) return originalDir;
 
         // if you hit with maxDistance (> maxRopeLength) then the bodyChunk connection might need to overcompensate
@@ -54,10 +49,8 @@ public static class TubeWormMod
         Vector2? bestAttachPos = null;
         Vector2? bestDirection = null;
 
-        for (float degModifier = 0.0f; degModifier < 35f; degModifier += 2.5f)
-        {
-            for (float sign = -1f; sign <= 1f; sign += 2f)
-            {
+        for (float degModifier = 0.0f; degModifier < 35f; degModifier += 2.5f) {
+            for (float sign = -1f; sign <= 1f; sign += 2f) {
                 Vector2? attachPos = null;
                 Vector2 direction = Custom.DegToVec(deg + sign * degModifier);
 
@@ -70,8 +63,7 @@ public static class TubeWormMod
                     Vector2 middleOfTile = room.MiddleOfTile(intAttachPos);
                     cost = Mathf.Abs(idealDistance - Vector2.Distance(tongue.baseChunk.pos + tongue.baseChunk.vel * 3f, middleOfTile));
 
-                    if ((tile.horizontalBeam || tile.verticalBeam) && cost < localMinCost)
-                    {
+                    if ((tile.horizontalBeam || tile.verticalBeam) && cost < localMinCost) {
                         attachPos = middleOfTile;
                         localMinCost = cost;
                     }
@@ -81,17 +73,14 @@ public static class TubeWormMod
 
                 // a bit simpler than vanilla
                 cost = degModifier * 1.5f;
-                if (!prioritizeAngleOverDistance)
-                {
+                if (!prioritizeAngleOverDistance) {
                     cost += Mathf.Abs(idealDistance - Vector2.Distance(tongue.baseChunk.pos + tongue.baseChunk.vel * 3f, attachPos.Value));
-                    if (preferredHorizontalDirection != 0)
-                    {
+                    if (preferredHorizontalDirection != 0) {
                         cost += Mathf.Abs(preferredHorizontalDirection * 90f - (deg + sign * degModifier)) * 0.9f;
                     }
                 }
 
-                if (cost < minCost)
-                {
+                if (cost < minCost) {
                     bestAttachPos = attachPos;
                     bestDirection = direction;
                     minCost = cost;
@@ -99,8 +88,7 @@ public static class TubeWormMod
             }
         }
 
-        if (bestAttachPos.HasValue)
-        {
+        if (bestAttachPos.HasValue) {
             tongue.worm.playerCheatAttachPos = bestAttachPos.Value + Custom.DirVec(bestAttachPos.Value, tongue.baseChunk.pos) * 2f;
             return bestDirection;
         }
@@ -127,15 +115,13 @@ public static class TubeWormMod
 
     private static void Tongue_Shoot(On.TubeWorm.Tongue.orig_Shoot orig, TubeWorm.Tongue tongue, Vector2 direction)// Option_TubeWorm
     {
-        if (tongue.worm.grabbedBy.Count == 0 || tongue.worm.grabbedBy[0].grabber is not Player player)
-        {
+        if (tongue.worm.grabbedBy.Count == 0 || tongue.worm.grabbedBy[0].grabber is not Player player) {
             orig(tongue, direction);
             return;
         }
 
         // adept tongue direction to player inputs in some additional cases
-        if (player.input[0].x != 0)
-        {
+        if (player.input[0].x != 0) {
             // used in the case where y > 0 as well
             direction += new Vector2(player.input[0].x * 0.35f, 0.0f);
             direction.Normalize();
@@ -157,13 +143,10 @@ public static class TubeWormMod
         ILCursor cursor = new(context);
 
         cursor.Emit(OpCodes.Ldarg_0);
-        cursor.EmitDelegate<Func<TubeWorm, bool>>(tubeworm =>
-        {
+        cursor.EmitDelegate<Func<TubeWorm, bool>>(tubeworm => {
             Player? player = null;
-            foreach (Creature.Grasp? grasp in tubeworm.grabbedBy)
-            {
-                if (grasp?.grabber is Player player_)
-                {
+            foreach (Creature.Grasp? grasp in tubeworm.grabbedBy) {
+                if (grasp?.grabber is Player player_) {
                     player = player_;
                     break;
                 }
@@ -172,8 +155,7 @@ public static class TubeWormMod
             // "call" orig() when returning true;
             if (player == null || player.Get_Attached_Fields() is not Player_Attached_Fields attached_fields) return true;
 
-            if (attached_fields.tubeworm_tongue_needs_to_retract || tubeworm.tongues[0].Attached && player.IsJumpPressed() && (player.IsClimbingOnBeam() || player.CanWallJumpOrMidAirWallJump() || player.bodyMode == BodyModeIndex.CorridorClimb))
-            {
+            if (attached_fields.tubeworm_tongue_needs_to_retract || tubeworm.tongues[0].Attached && player.IsJumpPressed() && (player.IsClimbingOnBeam() || player.CanWallJumpOrMidAirWallJump() || player.bodyMode == BodyModeIndex.CorridorClimb)) {
                 tubeworm.tongues[0].Release();
                 attached_fields.tubeworm_tongue_needs_to_retract = false;
                 return false;

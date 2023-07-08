@@ -6,14 +6,12 @@ using static SimplifiedMoveset.MainModOptions;
 
 namespace SimplifiedMoveset;
 
-public static class ProcessManagerMod
-{
+public static class ProcessManagerMod {
     //
     // main
     //
 
-    internal static void OnEnable()
-    {
+    internal static void OnEnable() {
         On.ProcessManager.RequestMainProcessSwitch_ProcessID += ProcessManager_RequestMainProcessSwitch;
     }
 
@@ -21,13 +19,12 @@ public static class ProcessManagerMod
     // public
     //
 
-    public static void Initialize_Option_Specific_Hooks()
-    {
+    public static void Initialize_Option_Specific_Hooks() {
         // without can_log_il_hooks the logs are repeated
         // for every other mod adding the corresponding IL hook;
 
         main_mod_options.Log_All_Options();
-        Debug.Log("SimplifiedMoveset: Initialize option specific hooks.");
+        Debug.Log(mod_id + ": Initialize option specific hooks.");
         can_log_il_hooks = true;
 
         BodyChunkConnectionMod.On_Config_Changed();
@@ -44,8 +41,7 @@ public static class ProcessManagerMod
     // private
     //
 
-    private static void ProcessManager_RequestMainProcessSwitch(On.ProcessManager.orig_RequestMainProcessSwitch_ProcessID orig, ProcessManager process_manager, ProcessID next_process_id)
-    {
+    private static void ProcessManager_RequestMainProcessSwitch(On.ProcessManager.orig_RequestMainProcessSwitch_ProcessID orig, ProcessManager process_manager, ProcessID next_process_id) {
         // I want to use the event OnConfigChanged in MainModOptions;
         // but I had cases from other users where logging was not triggered
         // when starting the game;

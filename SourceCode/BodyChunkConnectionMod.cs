@@ -4,17 +4,14 @@ using static SimplifiedMoveset.MainMod;
 
 namespace SimplifiedMoveset;
 
-internal static class BodyChunkConnectionMod
-{
+internal static class BodyChunkConnectionMod {
     //
     // main
     //
 
-    internal static void On_Config_Changed()
-    {
+    internal static void On_Config_Changed() {
         On.PhysicalObject.BodyChunkConnection.Update -= BodyChunkConnection_Update;
-        if (Option_BellySlide || Option_Crawl)
-        {
+        if (Option_BellySlide || Option_Crawl) {
             // save body_chunk_connection_velocity;
             // used in bodyChunks to be aware of pulling and pushing effects;
             On.PhysicalObject.BodyChunkConnection.Update += BodyChunkConnection_Update;
@@ -27,8 +24,7 @@ internal static class BodyChunkConnectionMod
 
     private static void BodyChunkConnection_Update(On.PhysicalObject.BodyChunkConnection.orig_Update orig, PhysicalObject.BodyChunkConnection body_chunk_connection) // Option_BellySlide // Option_Crawl
     {
-        if (!body_chunk_connection.active || body_chunk_connection.chunk1.Get_Attached_Fields() is not BodyChunk_Attached_Fields attached_fields_1 || body_chunk_connection.chunk2.Get_Attached_Fields() is not BodyChunk_Attached_Fields attached_fields_2)
-        {
+        if (!body_chunk_connection.active || body_chunk_connection.chunk1.Get_Attached_Fields() is not BodyChunk_Attached_Fields attached_fields_1 || body_chunk_connection.chunk2.Get_Attached_Fields() is not BodyChunk_Attached_Fields attached_fields_2) {
             orig(body_chunk_connection);
             return;
         }

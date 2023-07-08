@@ -6,17 +6,14 @@ using static SimplifiedMoveset.PlayerMod;
 
 namespace SimplifiedMoveset;
 
-internal static class SlugcatHandMod
-{
+internal static class SlugcatHandMod {
     //
     // main
     //
 
-    internal static void On_Config_Changed()
-    {
+    internal static void On_Config_Changed() {
         On.SlugcatHand.EngageInMovement -= SlugcatHand_EngageInMovement;
-        if (Option_WallClimb)
-        {
+        if (Option_WallClimb) {
             On.SlugcatHand.EngageInMovement += SlugcatHand_EngageInMovement;
         }
     }
@@ -31,16 +28,13 @@ internal static class SlugcatHandMod
         if (player_graphics.owner is not Player player) return orig(slugcat_hand);
         if (player.Get_Attached_Fields() is not Player_Attached_Fields attached_fields) return orig(slugcat_hand);
 
-        if (player.bodyMode != BodyModeIndex.WallClimb || player.input[0].y == 0 || player.animation != AnimationIndex.None)
-        {
+        if (player.bodyMode != BodyModeIndex.WallClimb || player.input[0].y == 0 || player.animation != AnimationIndex.None) {
             attached_fields.initialize_hands = true;
             return orig(slugcat_hand);
         }
 
-        if (attached_fields.initialize_hands)
-        {
-            if (slugcat_hand.limbNumber == 1)
-            {
+        if (attached_fields.initialize_hands) {
+            if (slugcat_hand.limbNumber == 1) {
                 attached_fields.initialize_hands = false;
                 player.animationFrame = 0; // not pretty
             }
@@ -58,8 +52,7 @@ internal static class SlugcatHandMod
         Vector2 attached_position = slugcat_hand.connection.pos + new Vector2(player.flipDirection * 10f, 0.0f);
 
         // player.input[0].y is not zero;
-        if (player.input[0].y > 0)
-        {
+        if (player.input[0].y > 0) {
             slugcat_hand.FindGrip(player.room, attached_position, attached_position, 100f, attached_position + new Vector2(0.0f, 30f), -player.flipDirection, 2, false);
             player_graphics.LookAtPoint(slugcat_hand.absoluteHuntPos, 0f);
             player_graphics.objectLooker.timeLookingAtThis = 6;

@@ -1,6 +1,6 @@
-using System.Security.Permissions;
 using BepInEx;
 using MonoMod.Cil;
+using System.Security.Permissions;
 using UnityEngine;
 
 // allows access to private members;
@@ -11,13 +11,12 @@ using UnityEngine;
 namespace SimplifiedMoveset;
 
 [BepInPlugin("SimplifiedMoveset", "SimplifiedMoveset", "2.3.9")]
-public class MainMod : BaseUnityPlugin
-{
+public class MainMod : BaseUnityPlugin {
     //
     // meta data
     //
 
-    public static readonly string MOD_ID = "SimplifiedMoveset";
+    public static readonly string mod_id = "SimplifiedMoveset";
     public static readonly string author = "SchuhBaum";
     public static readonly string version = "2.3.9";
 
@@ -62,8 +61,7 @@ public class MainMod : BaseUnityPlugin
     // public
     //
 
-    public static void LogAllInstructions(ILContext? context, int indexStringLength = 9, int opCodeStringLength = 14)
-    {
+    public static void LogAllInstructions(ILContext? context, int indexStringLength = 9, int opCodeStringLength = 14) {
         if (context == null) return;
 
         Debug.Log("-----------------------------------------------------------------");
@@ -77,57 +75,43 @@ public class MainMod : BaseUnityPlugin
         string opCodeString;
         string operandString;
 
-        while (true)
-        {
+        while (true) {
             // this might return too early;
             // if (cursor.Next.MatchRet()) break;
 
             // should always break at some point;
             // only TryGotoNext() doesn't seem to be enough;
             // it still throws an exception;
-            try
-            {
-                if (cursor.TryGotoNext(MoveType.Before))
-                {
+            try {
+                if (cursor.TryGotoNext(MoveType.Before)) {
                     cursorIndexString = cursor.Index.ToString();
                     cursorIndexString = cursorIndexString.Length < indexStringLength ? cursorIndexString + new string(' ', indexStringLength - cursorIndexString.Length) : cursorIndexString;
                     opCodeString = cursor.Next.OpCode.ToString();
 
-                    if (cursor.Next.Operand is ILLabel label)
-                    {
+                    if (cursor.Next.Operand is ILLabel label) {
                         labelCursor.GotoLabel(label);
                         operandString = "Label >>> " + labelCursor.Index;
-                    }
-                    else
-                    {
+                    } else {
                         operandString = cursor.Next.Operand?.ToString() ?? "";
                     }
 
-                    if (operandString == "")
-                    {
+                    if (operandString == "") {
                         Debug.Log(cursorIndexString + opCodeString);
-                    }
-                    else
-                    {
+                    } else {
                         opCodeString = opCodeString.Length < opCodeStringLength ? opCodeString + new string(' ', opCodeStringLength - opCodeString.Length) : opCodeString;
                         Debug.Log(cursorIndexString + opCodeString + operandString);
                     }
-                }
-                else
-                {
+                } else {
                     break;
                 }
-            }
-            catch
-            {
+            } catch {
                 break;
             }
         }
         Debug.Log("-----------------------------------------------------------------");
     }
 
-    public static void LogPlayerInformation(Player? player)
-    {
+    public static void LogPlayerInformation(Player? player) {
         if (player == null) return;
 
         Debug.Log("player.input[0].x " + player.input[0].x);
@@ -150,16 +134,15 @@ public class MainMod : BaseUnityPlugin
     // private
     //
 
-    private void RainWorld_OnModsInit(On.RainWorld.orig_OnModsInit orig, RainWorld rainWorld)
-    {
+    private void RainWorld_OnModsInit(On.RainWorld.orig_OnModsInit orig, RainWorld rainWorld) {
         orig(rainWorld);
 
-        MachineConnector.SetRegisteredOI(MOD_ID, MainModOptions.main_mod_options);
+        MachineConnector.SetRegisteredOI(mod_id, MainModOptions.main_mod_options);
 
         if (is_initialized) return;
         is_initialized = true;
 
-        Debug.Log("SimplifiedMoveset: version " + version);
+        Debug.Log(mod_id + ": version " + version);
         ProcessManagerMod.OnEnable();
         RainWorldGameMod.OnEnable();
     }

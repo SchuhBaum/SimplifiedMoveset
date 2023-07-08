@@ -1,14 +1,12 @@
-using System.Collections.Generic;
 using Menu.Remix.MixedUI;
+using System.Collections.Generic;
 using UnityEngine;
-
 using static SimplifiedMoveset.MainMod;
 using static SimplifiedMoveset.ProcessManagerMod;
 
 namespace SimplifiedMoveset;
 
-public class MainModOptions : OptionInterface
-{
+public class MainModOptions : OptionInterface {
     public static MainModOptions main_mod_options = new();
 
     //
@@ -60,14 +58,12 @@ public class MainModOptions : OptionInterface
     // main
     //
 
-    private MainModOptions()
-    {
+    private MainModOptions() {
         On.OptionInterface._SaveConfigFile -= Save_Config_File;
         On.OptionInterface._SaveConfigFile += Save_Config_File;
     }
 
-    private void Save_Config_File(On.OptionInterface.orig__SaveConfigFile orig, OptionInterface option_interface)
-    {
+    private void Save_Config_File(On.OptionInterface.orig__SaveConfigFile orig, OptionInterface option_interface) {
         // the event OnConfigChange is triggered too often;
         // it is triggered when you click on the mod name in the
         // remix menu;
@@ -76,7 +72,7 @@ public class MainModOptions : OptionInterface
 
         orig(option_interface);
         if (option_interface != main_mod_options) return;
-        Debug.Log("SimplifiedMoveset: Save_Config_File.");
+        Debug.Log(mod_id + ": Save_Config_File.");
         Initialize_Option_Specific_Hooks();
     }
 
@@ -84,8 +80,7 @@ public class MainModOptions : OptionInterface
     // public
     //
 
-    public override void Initialize()
-    {
+    public override void Initialize() {
         base.Initialize();
 
         Tabs = new OpTab[1];
@@ -94,7 +89,7 @@ public class MainModOptions : OptionInterface
 
         // Title
         AddNewLine();
-        AddTextLabel("SimplifiedMoveset Mod", bigText: true);
+        AddTextLabel(mod_id + " Mod", bigText: true);
         DrawTextLabels(ref Tabs[0]);
 
         // Subtitle
@@ -130,53 +125,48 @@ public class MainModOptions : OptionInterface
         DrawBox(ref Tabs[0]);
     }
 
-    public void Log_All_Options()
-    {
-        Debug.Log("SimplifiedMoveset: Option_BeamClimb " + Option_BeamClimb);
-        Debug.Log("SimplifiedMoveset: Option_BellySlide " + Option_BellySlide);
-        Debug.Log("SimplifiedMoveset: Option_Crawl " + Option_Crawl);
+    public void Log_All_Options() {
+        Debug.Log(mod_id + ": Option_BeamClimb " + Option_BeamClimb);
+        Debug.Log(mod_id + ": Option_BellySlide " + Option_BellySlide);
+        Debug.Log(mod_id + ": Option_Crawl " + Option_Crawl);
 
-        Debug.Log("SimplifiedMoveset: Option_CrouchJump " + Option_CrouchJump);
-        Debug.Log("SimplifiedMoveset: Option_Grab " + Option_Grab);
-        Debug.Log("SimplifiedMoveset: Option_Roll_1 " + Option_Roll_1);
+        Debug.Log(mod_id + ": Option_CrouchJump " + Option_CrouchJump);
+        Debug.Log(mod_id + ": Option_Grab " + Option_Grab);
+        Debug.Log(mod_id + ": Option_Roll_1 " + Option_Roll_1);
 
-        Debug.Log("SimplifiedMoveset: Option_Roll_2 " + Option_Roll_2);
-        Debug.Log("SimplifiedMoveset: Option_SlideTurn " + Option_SlideTurn);
-        Debug.Log("SimplifiedMoveset: Option_SpearThrow " + Option_SpearThrow);
+        Debug.Log(mod_id + ": Option_Roll_2 " + Option_Roll_2);
+        Debug.Log(mod_id + ": Option_SlideTurn " + Option_SlideTurn);
+        Debug.Log(mod_id + ": Option_SpearThrow " + Option_SpearThrow);
 
-        Debug.Log("SimplifiedMoveset: Option_StandUp " + Option_StandUp);
-        Debug.Log("SimplifiedMoveset: Option_Swim " + Option_Swim);
-        Debug.Log("SimplifiedMoveset: Option_TubeWorm " + Option_TubeWorm);
+        Debug.Log(mod_id + ": Option_StandUp " + Option_StandUp);
+        Debug.Log(mod_id + ": Option_Swim " + Option_Swim);
+        Debug.Log(mod_id + ": Option_TubeWorm " + Option_TubeWorm);
 
-        Debug.Log("SimplifiedMoveset: Option_WallClimb " + Option_WallClimb);
-        Debug.Log("SimplifiedMoveset: Option_WallJump " + Option_WallJump);
+        Debug.Log(mod_id + ": Option_WallClimb " + Option_WallClimb);
+        Debug.Log(mod_id + ": Option_WallJump " + Option_WallJump);
     }
 
     //
     // private
     //
 
-    private void InitializeMarginAndPos()
-    {
+    private void InitializeMarginAndPos() {
         marginX = new Vector2(50f, 550f);
         pos = new Vector2(50f, 600f);
     }
 
-    private void AddNewLine(float spacingModifier = 1f)
-    {
+    private void AddNewLine(float spacingModifier = 1f) {
         pos.x = marginX.x; // left margin
         pos.y -= spacingModifier * spacing;
     }
 
-    private void AddBox()
-    {
+    private void AddBox() {
         marginX += new Vector2(spacing, -spacing);
         boxEndPositions.Add(pos.y);
         AddNewLine();
     }
 
-    private void DrawBox(ref OpTab tab)
-    {
+    private void DrawBox(ref OpTab tab) {
         marginX += new Vector2(-spacing, spacing);
         AddNewLine();
 
@@ -186,8 +176,7 @@ public class MainModOptions : OptionInterface
         boxEndPositions.RemoveAt(lastIndex);
     }
 
-    private void AddCheckBox(Configurable<bool> configurable, string text)
-    {
+    private void AddCheckBox(Configurable<bool> configurable, string text) {
         checkBoxConfigurables.Add(configurable);
         checkBoxesTextLabels.Add(new OpLabel(new Vector2(), new Vector2(), text, FLabelAlignment.Left));
     }
@@ -201,11 +190,9 @@ public class MainModOptions : OptionInterface
         pos.y -= checkBoxSize;
         float _posX = pos.x;
 
-        for (int checkBoxIndex = 0; checkBoxIndex < checkBoxConfigurables.Count; ++checkBoxIndex)
-        {
+        for (int checkBoxIndex = 0; checkBoxIndex < checkBoxConfigurables.Count; ++checkBoxIndex) {
             Configurable<bool> configurable = checkBoxConfigurables[checkBoxIndex];
-            OpCheckBox checkBox = new(configurable, new Vector2(_posX, pos.y))
-            {
+            OpCheckBox checkBox = new(configurable, new Vector2(_posX, pos.y)) {
                 description = configurable.info?.description ?? ""
             };
             tab.AddItems(checkBox);
@@ -216,16 +203,12 @@ public class MainModOptions : OptionInterface
             checkBoxLabel.size = new Vector2(elementWidth - CheckBoxWithSpacing, fontHeight);
             tab.AddItems(checkBoxLabel);
 
-            if (checkBoxIndex < checkBoxConfigurables.Count - 1)
-            {
-                if ((checkBoxIndex + 1) % numberOfCheckboxes == 0)
-                {
+            if (checkBoxIndex < checkBoxConfigurables.Count - 1) {
+                if ((checkBoxIndex + 1) % numberOfCheckboxes == 0) {
                     AddNewLine();
                     pos.y -= checkBoxSize;
                     _posX = pos.x;
-                }
-                else
-                {
+                } else {
                     _posX += elementWidth - CheckBoxWithSpacing + 0.5f * spacing;
                 }
             }
@@ -235,11 +218,9 @@ public class MainModOptions : OptionInterface
         checkBoxesTextLabels.Clear();
     }
 
-    private void AddTextLabel(string text, FLabelAlignment alignment = FLabelAlignment.Center, bool bigText = false)
-    {
+    private void AddTextLabel(string text, FLabelAlignment alignment = FLabelAlignment.Center, bool bigText = false) {
         float textHeight = (bigText ? 2f : 1f) * fontHeight;
-        if (textLabels.Count == 0)
-        {
+        if (textLabels.Count == 0) {
             pos.y -= textHeight;
         }
 
@@ -250,16 +231,13 @@ public class MainModOptions : OptionInterface
         textLabels.Add(textLabel);
     }
 
-    private void DrawTextLabels(ref OpTab tab)
-    {
-        if (textLabels.Count == 0)
-        {
+    private void DrawTextLabels(ref OpTab tab) {
+        if (textLabels.Count == 0) {
             return;
         }
 
         float width = (marginX.y - marginX.x) / textLabels.Count;
-        foreach (OpLabel textLabel in textLabels)
-        {
+        foreach (OpLabel textLabel in textLabels) {
             textLabel.pos = pos;
             textLabel.size += new Vector2(width - 20f, 0.0f);
             tab.AddItems(textLabel);
