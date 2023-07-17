@@ -1,5 +1,4 @@
 using UnityEngine;
-
 using static ProcessManager;
 using static SimplifiedMoveset.MainMod;
 using static SimplifiedMoveset.MainModOptions;

@@ -22,8 +22,7 @@ internal static class SlugcatHandMod {
     // private
     //
 
-    private static bool SlugcatHand_EngageInMovement(On.SlugcatHand.orig_EngageInMovement orig, SlugcatHand slugcat_hand) // Option_WallClimb
-    {
+    private static bool SlugcatHand_EngageInMovement(On.SlugcatHand.orig_EngageInMovement orig, SlugcatHand slugcat_hand) { // Option_WallClimb
         if (slugcat_hand.owner is not PlayerGraphics player_graphics) return orig(slugcat_hand);
         if (player_graphics.owner is not Player player) return orig(slugcat_hand);
         if (player.Get_Attached_Fields() is not Player_Attached_Fields attached_fields) return orig(slugcat_hand);

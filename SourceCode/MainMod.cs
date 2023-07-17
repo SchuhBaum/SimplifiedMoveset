@@ -2,6 +2,7 @@ using BepInEx;
 using MonoMod.Cil;
 using System.Security.Permissions;
 using UnityEngine;
+using static SimplifiedMoveset.MainModOptions;
 
 // allows access to private members;
 #pragma warning disable CS0618
@@ -24,24 +25,24 @@ public class MainMod : BaseUnityPlugin {
     // options
     //
 
-    public static bool Option_BeamClimb => MainModOptions.beamClimb.Value;
-    public static bool Option_BellySlide => MainModOptions.bellySlide.Value;
-    public static bool Option_Crawl => MainModOptions.crawl.Value;
+    public static bool Option_BeamClimb => beam_climb.Value;
+    public static bool Option_BellySlide => belly_slide.Value;
+    public static bool Option_Crawl => crawl.Value;
 
-    public static bool Option_CrouchJump => MainModOptions.crouchJump.Value;
-    public static bool Option_Grab => MainModOptions.grab.Value;
-    public static bool Option_Roll_1 => MainModOptions.roll_1.Value;
+    public static bool Option_CrouchJump => crouch_jump.Value;
+    public static bool Option_Grab => grab.Value;
+    public static bool Option_Roll_1 => roll_1.Value;
 
-    public static bool Option_Roll_2 => MainModOptions.roll_2.Value;
-    public static bool Option_SlideTurn => MainModOptions.slideTurn.Value;
-    public static bool Option_SpearThrow => MainModOptions.spearThrow.Value;
+    public static bool Option_Roll_2 => roll_2.Value;
+    public static bool Option_SlideTurn => slide_turn.Value;
+    public static bool Option_SpearThrow => spear_throw.Value;
 
-    public static bool Option_StandUp => MainModOptions.standUp.Value;
-    public static bool Option_Swim => MainModOptions.swim.Value;
-    public static bool Option_TubeWorm => MainModOptions.tubeWorm.Value;
+    public static bool Option_StandUp => stand_up.Value;
+    public static bool Option_Swim => swim.Value;
+    public static bool Option_TubeWorm => tube_worm.Value;
 
-    public static bool Option_WallClimb => MainModOptions.wallClimb.Value;
-    public static bool Option_WallJump => MainModOptions.wallJump.Value;
+    public static bool Option_WallClimb => wall_climb.Value;
+    public static bool Option_WallJump => wall_jump.Value;
 
     //
     // variables
@@ -61,19 +62,19 @@ public class MainMod : BaseUnityPlugin {
     // public
     //
 
-    public static void LogAllInstructions(ILContext? context, int indexStringLength = 9, int opCodeStringLength = 14) {
+    public static void LogAllInstructions(ILContext? context, int index_string_length = 9, int op_code_string_length = 14) {
         if (context == null) return;
 
         Debug.Log("-----------------------------------------------------------------");
         Debug.Log("Log all IL-instructions.");
-        Debug.Log("Index:" + new string(' ', indexStringLength - 6) + "OpCode:" + new string(' ', opCodeStringLength - 7) + "Operand:");
+        Debug.Log("Index:" + new string(' ', index_string_length - 6) + "OpCode:" + new string(' ', op_code_string_length - 7) + "Operand:");
 
         ILCursor cursor = new(context);
-        ILCursor labelCursor = cursor.Clone();
+        ILCursor label_cursor = cursor.Clone();
 
-        string cursorIndexString;
-        string opCodeString;
-        string operandString;
+        string cursor_index_string;
+        string op_code_string;
+        string operand_string;
 
         while (true) {
             // this might return too early;
@@ -84,22 +85,22 @@ public class MainMod : BaseUnityPlugin {
             // it still throws an exception;
             try {
                 if (cursor.TryGotoNext(MoveType.Before)) {
-                    cursorIndexString = cursor.Index.ToString();
-                    cursorIndexString = cursorIndexString.Length < indexStringLength ? cursorIndexString + new string(' ', indexStringLength - cursorIndexString.Length) : cursorIndexString;
-                    opCodeString = cursor.Next.OpCode.ToString();
+                    cursor_index_string = cursor.Index.ToString();
+                    cursor_index_string = cursor_index_string.Length < index_string_length ? cursor_index_string + new string(' ', index_string_length - cursor_index_string.Length) : cursor_index_string;
+                    op_code_string = cursor.Next.OpCode.ToString();
 
                     if (cursor.Next.Operand is ILLabel label) {
-                        labelCursor.GotoLabel(label);
-                        operandString = "Label >>> " + labelCursor.Index;
+                        label_cursor.GotoLabel(label);
+                        operand_string = "Label >>> " + label_cursor.Index;
                     } else {
-                        operandString = cursor.Next.Operand?.ToString() ?? "";
+                        operand_string = cursor.Next.Operand?.ToString() ?? "";
                     }
 
-                    if (operandString == "") {
-                        Debug.Log(cursorIndexString + opCodeString);
+                    if (operand_string == "") {
+                        Debug.Log(cursor_index_string + op_code_string);
                     } else {
-                        opCodeString = opCodeString.Length < opCodeStringLength ? opCodeString + new string(' ', opCodeStringLength - opCodeString.Length) : opCodeString;
-                        Debug.Log(cursorIndexString + opCodeString + operandString);
+                        op_code_string = op_code_string.Length < op_code_string_length ? op_code_string + new string(' ', op_code_string_length - op_code_string.Length) : op_code_string;
+                        Debug.Log(cursor_index_string + op_code_string + operand_string);
                     }
                 } else {
                     break;
@@ -134,10 +135,10 @@ public class MainMod : BaseUnityPlugin {
     // private
     //
 
-    private void RainWorld_OnModsInit(On.RainWorld.orig_OnModsInit orig, RainWorld rainWorld) {
-        orig(rainWorld);
+    private void RainWorld_OnModsInit(On.RainWorld.orig_OnModsInit orig, RainWorld rain_world) {
+        orig(rain_world);
 
-        MachineConnector.SetRegisteredOI(mod_id, MainModOptions.main_mod_options);
+        MachineConnector.SetRegisteredOI(mod_id, main_mod_options);
 
         if (is_initialized) return;
         is_initialized = true;

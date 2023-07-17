@@ -22,9 +22,18 @@ internal static class BodyChunkConnectionMod {
     // private
     //
 
-    private static void BodyChunkConnection_Update(On.PhysicalObject.BodyChunkConnection.orig_Update orig, PhysicalObject.BodyChunkConnection body_chunk_connection) // Option_BellySlide // Option_Crawl
-    {
-        if (!body_chunk_connection.active || body_chunk_connection.chunk1.Get_Attached_Fields() is not BodyChunk_Attached_Fields attached_fields_1 || body_chunk_connection.chunk2.Get_Attached_Fields() is not BodyChunk_Attached_Fields attached_fields_2) {
+    private static void BodyChunkConnection_Update(On.PhysicalObject.BodyChunkConnection.orig_Update orig, PhysicalObject.BodyChunkConnection body_chunk_connection) { // Option_BellySlide // Option_Crawl
+        if (!body_chunk_connection.active) {
+            orig(body_chunk_connection);
+            return;
+        }
+
+        if (body_chunk_connection.chunk1.Get_Attached_Fields() is not BodyChunk_Attached_Fields chunk1_attached_fields) {
+            orig(body_chunk_connection);
+            return;
+        }
+
+        if (body_chunk_connection.chunk2.Get_Attached_Fields() is not BodyChunk_Attached_Fields chunk2_attached_fields) {
             orig(body_chunk_connection);
             return;
         }
@@ -33,7 +42,9 @@ internal static class BodyChunkConnectionMod {
         Vector2 chunk_2_velocity = body_chunk_connection.chunk2.vel;
         orig(body_chunk_connection);
 
-        attached_fields_1.body_chunk_connection_velocity = body_chunk_connection.chunk1.vel - chunk_1_velocity; // this needs to be adapted if there are multiple bodyChunks connecting to one // enough for players with only one connection
-        attached_fields_2.body_chunk_connection_velocity = body_chunk_connection.chunk2.vel - chunk_2_velocity;
+        // this needs to be adapted if there are multiple body chunks connecting to one; 
+        // enough for players since they have only two body chunks with one connection;
+        chunk1_attached_fields.body_chunk_connection_velocity = body_chunk_connection.chunk1.vel - chunk_1_velocity;
+        chunk2_attached_fields.body_chunk_connection_velocity = body_chunk_connection.chunk2.vel - chunk_2_velocity;
     }
 }
