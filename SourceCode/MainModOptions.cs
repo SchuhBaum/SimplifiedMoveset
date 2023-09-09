@@ -181,8 +181,7 @@ public class MainModOptions : OptionInterface {
         _check_boxes_text_labels.Add(new OpLabel(new Vector2(), new Vector2(), text, FLabelAlignment.Left));
     }
 
-    private void DrawCheckBoxes(ref OpTab tab) // changes pos.y but not pos.x
-    {
+    private void DrawCheckBoxes(ref OpTab tab) { // changes pos.y but not pos.x
         if (_check_box_configurables.Count != _check_boxes_text_labels.Count) return;
 
         float width = _margin_x.y - _margin_x.x;

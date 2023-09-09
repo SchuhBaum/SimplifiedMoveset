@@ -57,8 +57,7 @@ public static class TubeWormMod {
                 float local_min_cost = float.MaxValue;
                 float cost;
 
-                foreach (IntVector2 int_attach_pos in SharedPhysics.RayTracedTilesArray(tongue.baseChunk.pos + direction * min_distance, tongue.baseChunk.pos + direction * max_distance)) // don't try to grapple too early, i.e. when MiddleOfTile might be already behind
-                {
+                foreach (IntVector2 int_attach_pos in SharedPhysics.RayTracedTilesArray(tongue.baseChunk.pos + direction * min_distance, tongue.baseChunk.pos + direction * max_distance)) { // don't try to grapple too early, i.e. when MiddleOfTile might be already behind
                     Tile tile = room.GetTile(int_attach_pos);
                     Vector2 middle_of_tile = room.MiddleOfTile(int_attach_pos);
                     cost = Mathf.Abs(ideal_distance - Vector2.Distance(tongue.baseChunk.pos + tongue.baseChunk.vel * 3f, middle_of_tile));

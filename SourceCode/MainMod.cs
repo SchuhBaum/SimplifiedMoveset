@@ -48,8 +48,8 @@ public class MainMod : BaseUnityPlugin {
     // variables
     //
 
-    public static bool is_initialized = false;
     public static bool can_log_il_hooks = false;
+    private static bool _is_initialized = false;
 
     //
     // main
@@ -140,8 +140,8 @@ public class MainMod : BaseUnityPlugin {
 
         MachineConnector.SetRegisteredOI(mod_id, main_mod_options);
 
-        if (is_initialized) return;
-        is_initialized = true;
+        if (_is_initialized) return;
+        _is_initialized = true;
 
         Debug.Log(mod_id + ": version " + version);
         ProcessManagerMod.OnEnable();

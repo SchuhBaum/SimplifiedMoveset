@@ -111,8 +111,7 @@ public static class BodyChunkMod {
         if (slope_direction == Broken) {
             for (int modifier_y = -1; modifier_y <= 1; modifier_y += 2) {
                 SlopeDirection slope_direction_ = room.IdentifySlope(tile_position.x, tile_position.y + modifier_y);
-                if (slope_direction_ != Broken && modifier_y * (body_chunk.pos.y - middle_of_tile.y) > 10.0 - body_chunk.slopeRad) // > to smooth out transition from slope to solid
-                {
+                if (slope_direction_ != Broken && modifier_y * (body_chunk.pos.y - middle_of_tile.y) > 10.0 - body_chunk.slopeRad) { // > to smooth out transition from slope to solid
                     tile_position.y += modifier_y;
                     middle_of_tile = room.MiddleOfTile(tile_position);
                     slope_direction = slope_direction_;
