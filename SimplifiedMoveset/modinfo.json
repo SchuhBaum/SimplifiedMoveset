@@ -1,7 +1,7 @@
 {
   "id": "SimplifiedMoveset",
   "name": "SimplifiedMoveset",
-  "version": "2.3.9",
+  "version": "2.4.0",
   "authors": "SchuhBaum",
   "description": "Various movement changes. The main idea is to remove or simplify timings, making it easier to perform advanced moves consistently.",
   "requirements": [],

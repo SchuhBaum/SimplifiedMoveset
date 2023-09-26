@@ -47,8 +47,9 @@ public static class PlayerMod {
 
         IL.Player.TerrainImpact -= IL_Player_TerrainImpact;
         IL.Player.TongueUpdate -= IL_Player_TongueUpdate;
-        IL.Player.UpdateAnimation -= IL_Player_UpdateAnimation;
+        IL.Player.Update -= IL_Player_Update;
 
+        IL.Player.UpdateAnimation -= IL_Player_UpdateAnimation;
         IL.Player.UpdateBodyMode -= IL_Player_UpdateBodyMode;
         IL.Player.WallJump -= IL_Player_WallJump;
 
@@ -84,6 +85,7 @@ public static class PlayerMod {
 
         if (Option_BeamClimb) {
             IL.Player.GrabVerticalPole += IL_Player_GrabVerticalPole;
+            IL.Player.Update += IL_Player_Update;
             On.Player.MovementUpdate += Player_MovementUpdate;
         }
 
@@ -1147,7 +1149,7 @@ public static class PlayerMod {
             cursor.Next.Operand = 2f;
         } else {
             if (can_log_il_hooks) {
-                Debug.Log(mod_id + ": IL_Player_GrabUpdate failed.");
+                Debug.Log(mod_id + ": IL_Player_GrabUpdate could not be applied.");
             }
             return;
         }
@@ -1175,7 +1177,7 @@ public static class PlayerMod {
             cursor.Emit(OpCodes.Ldc_I4_0);
         } else {
             if (can_log_il_hooks) {
-                Debug.Log(mod_id + ": IL_Player_GrabVerticalPole failed.");
+                Debug.Log(mod_id + ": IL_Player_GrabVerticalPole could not be applied.");
             }
             return;
         }
@@ -1242,7 +1244,7 @@ public static class PlayerMod {
             }
         } else {
             if (can_log_il_hooks) {
-                Debug.Log(mod_id + ": IL_Player_Jump failed.");
+                Debug.Log(mod_id + ": IL_Player_Jump could not be applied.");
             }
             return;
         }
@@ -1273,7 +1275,7 @@ public static class PlayerMod {
             }
         } else {
             if (can_log_il_hooks) {
-                Debug.Log(mod_id + ": IL_Player_Jump failed.");
+                Debug.Log(mod_id + ": IL_Player_Jump could not be applied.");
             }
             return;
         }
@@ -1310,7 +1312,7 @@ public static class PlayerMod {
             }
         } else {
             if (can_log_il_hooks) {
-                Debug.Log(mod_id + ": IL_Player_MovementUpdate failed.");
+                Debug.Log(mod_id + ": IL_Player_MovementUpdate could not be applied.");
             }
             return;
         }
@@ -1353,7 +1355,7 @@ public static class PlayerMod {
             }
         } else {
             if (can_log_il_hooks) {
-                Debug.Log(mod_id + ": IL_Player_MovementUpdate failed.");
+                Debug.Log(mod_id + ": IL_Player_MovementUpdate could not be applied.");
             }
             return;
         }
@@ -1386,7 +1388,7 @@ public static class PlayerMod {
             }
         } else {
             if (can_log_il_hooks) {
-                Debug.Log(mod_id + ": IL_Player_MovementUpdate failed.");
+                Debug.Log(mod_id + ": IL_Player_MovementUpdate could not be applied.");
             }
             return;
         }
@@ -1429,7 +1431,7 @@ public static class PlayerMod {
             cursor.Next.OpCode = OpCodes.Brfalse;
         } else {
             if (can_log_il_hooks) {
-                Debug.Log(mod_id + ": IL_Player_TerrainImpact failed.");
+                Debug.Log(mod_id + ": IL_Player_TerrainImpact could not be applied.");
             }
             return;
         }
@@ -1457,6 +1459,31 @@ public static class PlayerMod {
         cursor.Emit(OpCodes.Ret);
         cursor.MarkLabel(label);
 
+        // LogAllInstructions(context);
+    }
+
+    private static void IL_Player_Update(ILContext context) {
+        // LogAllInstructions(context);
+        ILCursor cursor = new(context);
+
+        if (cursor.TryGotoNext(instruction => instruction.MatchLdsfld<BodyModeIndex>("Default")) &&
+            cursor.TryGotoNext(instruction => instruction.MatchLdfld<Player>("poleSkipPenalty"))) {
+            //
+            // allow beam hopping even when the player is holding up => makes it no risk 
+            // and low reward instead of high risk and low reward;
+            //
+
+            Debug.Log(mod_id + ": IL_Player_Update: Index " + cursor.Index); // 1936
+            cursor.Goto(cursor.Index - 8);
+
+            // removes the player.input[0].y <= 0 check;
+            cursor.RemoveRange(7);
+        } else {
+            if (can_log_il_hooks) {
+                Debug.Log(mod_id + ": IL_Player_Update could not be applied.");
+            }
+            return;
+        }
         // LogAllInstructions(context);
     }
 
@@ -1490,7 +1517,7 @@ public static class PlayerMod {
             }
         } else {
             if (can_log_il_hooks) {
-                Debug.Log(mod_id + ": IL_Player_UpdateAnimation failed.");
+                Debug.Log(mod_id + ": IL_Player_UpdateAnimation could not be applied.");
             }
             return;
         }
@@ -1520,7 +1547,7 @@ public static class PlayerMod {
             }
         } else {
             if (can_log_il_hooks) {
-                Debug.Log(mod_id + ": IL_Player_UpdateAnimation failed.");
+                Debug.Log(mod_id + ": IL_Player_UpdateAnimation could not be applied.");
             }
             return;
         }
@@ -1551,7 +1578,7 @@ public static class PlayerMod {
             }
         } else {
             if (can_log_il_hooks) {
-                Debug.Log(mod_id + ": IL_Player_UpdateAnimation failed.");
+                Debug.Log(mod_id + ": IL_Player_UpdateAnimation could not be applied.");
             }
             return;
         }
@@ -1582,7 +1609,7 @@ public static class PlayerMod {
             }
         } else {
             if (can_log_il_hooks) {
-                Debug.Log(mod_id + ": IL_Player_UpdateAnimation failed.");
+                Debug.Log(mod_id + ": IL_Player_UpdateAnimation could not be applied.");
             }
             return;
         }
@@ -1603,7 +1630,7 @@ public static class PlayerMod {
             }
         } else {
             if (can_log_il_hooks) {
-                Debug.Log(mod_id + ": IL_Player_UpdateAnimation failed.");
+                Debug.Log(mod_id + ": IL_Player_UpdateAnimation could not be applied.");
             }
             return;
         }
@@ -1636,7 +1663,7 @@ public static class PlayerMod {
             }
         } else {
             if (can_log_il_hooks) {
-                Debug.Log(mod_id + ": IL_Player_UpdateAnimation failed.");
+                Debug.Log(mod_id + ": IL_Player_UpdateAnimation could not be applied.");
             }
             return;
         }
@@ -1667,7 +1694,7 @@ public static class PlayerMod {
             }
         } else {
             if (can_log_il_hooks) {
-                Debug.Log(mod_id + ": IL_Player_UpdateAnimation failed.");
+                Debug.Log(mod_id + ": IL_Player_UpdateAnimation could not be applied.");
             }
             return;
         }
@@ -1694,7 +1721,7 @@ public static class PlayerMod {
             }
         } else {
             if (can_log_il_hooks) {
-                Debug.Log(mod_id + ": IL_Player_UpdateAnimation failed.");
+                Debug.Log(mod_id + ": IL_Player_UpdateAnimation could not be applied.");
             }
             return;
         }
@@ -1718,7 +1745,7 @@ public static class PlayerMod {
             }
         } else {
             if (can_log_il_hooks) {
-                Debug.Log(mod_id + ": IL_Player_UpdateAnimation failed.");
+                Debug.Log(mod_id + ": IL_Player_UpdateAnimation could not be applied.");
             }
             return;
         }
@@ -1743,7 +1770,7 @@ public static class PlayerMod {
             }
         } else {
             if (can_log_il_hooks) {
-                Debug.Log(mod_id + ": IL_Player_UpdateAnimation failed.");
+                Debug.Log(mod_id + ": IL_Player_UpdateAnimation could not be applied.");
             }
             return;
         }
@@ -1778,7 +1805,7 @@ public static class PlayerMod {
             }
         } else {
             if (can_log_il_hooks) {
-                Debug.Log(mod_id + ": IL_Player_UpdateBodyMode failed.");
+                Debug.Log(mod_id + ": IL_Player_UpdateBodyMode could not be applied.");
             }
             return;
         }
@@ -1803,7 +1830,7 @@ public static class PlayerMod {
             }
         } else {
             if (can_log_il_hooks) {
-                Debug.Log(mod_id + ": IL_Player_UpdateBodyMode failed.");
+                Debug.Log(mod_id + ": IL_Player_UpdateBodyMode could not be applied.");
             }
             return;
         }
@@ -1824,7 +1851,7 @@ public static class PlayerMod {
             }
         } else {
             if (can_log_il_hooks) {
-                Debug.Log(mod_id + ": IL_Player_UpdateBodyMode failed.");
+                Debug.Log(mod_id + ": IL_Player_UpdateBodyMode could not be applied.");
             }
             return;
         }
