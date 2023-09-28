@@ -478,16 +478,19 @@ public static class PlayerMod {
         } else if (player.isSlugpup) {
             belly_slide_speed = 7f;
         }
-        body_chunk_0.vel.x += belly_slide_speed * player.rollDirection * Mathf.Sin((float)(player.rollCounter / (player.longBellySlide ? 39.0 : 19.0) * Math.PI));
+
+        // this is somewhat odd; I reduced the speed for simplicity in the normal case;
+        // but increasing the duration seems to have a far greater impact; leaving it
+        // at vanilla seems to still give the same overall distance;
+        int normal_roll_counter = 15; // vanilla: 15
+        int long_roll_counter = 39; // vanilla: 39
+        body_chunk_0.vel.x += belly_slide_speed * player.rollDirection * Mathf.Sin((float)(player.rollCounter / (double)(player.longBellySlide ? long_roll_counter : normal_roll_counter) * Math.PI));
 
         foreach (BodyChunk body_chunk in player.bodyChunks) {
             if (body_chunk.contactPoint.y == 0) {
                 body_chunk.vel.x *= player.surfaceFriction;
             }
         }
-
-        int long_roll_counter = 39;
-        int normal_roll_counter = 19; // default: 15
 
         // finish // abort when mid-air // don't cancel belly slides on slopes
         if (player.rollCounter <= (player.longBellySlide ? long_roll_counter : normal_roll_counter) && (player.canJump > 0 || player.IsTileSolidOrSlope(chunk_index: 0, 0, -1) || player.IsTileSolidOrSlope(chunk_index: 1, 0, -1))) return;
