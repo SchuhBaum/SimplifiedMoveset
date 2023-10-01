@@ -40,16 +40,20 @@ public static class PlayerMod {
         // otherwise they get called multiple times;
         // 
 
+        IL.Player.ClassMechanicsGourmand -= IL_Player_ClassMechanicsGourmand;
+        IL.Player.Collide -= IL_Player_Collide;
         IL.Player.Jump -= IL_Player_Jump;
         IL.Player.GrabUpdate -= IL_Player_GrabUpdate;
+
         IL.Player.GrabVerticalPole -= IL_Player_GrabVerticalPole;
         IL.Player.MovementUpdate -= IL_Player_MovementUpdate;
-
+        IL.Player.SlugSlamConditions -= IL_Player_SlugSlamConditions;
         IL.Player.TerrainImpact -= IL_Player_TerrainImpact;
+
         IL.Player.TongueUpdate -= IL_Player_TongueUpdate;
         IL.Player.Update -= IL_Player_Update;
-
         IL.Player.UpdateAnimation -= IL_Player_UpdateAnimation;
+
         IL.Player.UpdateBodyMode -= IL_Player_UpdateBodyMode;
         IL.Player.WallJump -= IL_Player_WallJump;
 
@@ -111,7 +115,7 @@ public static class PlayerMod {
             IL.Player.Jump += IL_Player_Jump;
         }
 
-        if (Option_BellySlide || Option_SpearThrow) {
+        if (Option_BellySlide || Option_Gourmand || Option_SpearThrow) {
             On.Player.ThrowObject += Player_ThrowObject;
         }
 
@@ -122,6 +126,13 @@ public static class PlayerMod {
         if (Option_Grab) {
             // only grab dead large creatures when crouching
             On.Player.Grabability += Player_Grabability;
+        }
+
+        if (Option_Gourmand) {
+            // only exhaust when throwing spears; allow slam using rocket jumps;
+            IL.Player.ClassMechanicsGourmand += IL_Player_ClassMechanicsGourmand;
+            IL.Player.Collide += IL_Player_Collide;
+            IL.Player.SlugSlamConditions += IL_Player_SlugSlamConditions;
         }
 
         if (Option_SlideTurn) {
@@ -470,22 +481,30 @@ public static class PlayerMod {
             body_chunk_0.vel.y -= 3f; // default: -2.3f
         }
 
+        // this is somewhat odd; I reduced the speed for simplicity in the normal case;
+        // using vanilla speed + duration gives an increased distance for some reason;
+        // and in most cases but not in all cases (Rivulet); reduced speed + vanilla
+        // duration seems to give vanilla distance in most cases;
         float belly_slide_speed = 14f;
+        int normal_duation_in_frames = 15; // vanilla: 15
+        int long_duration_in_frames = 39; // vanilla: 39
+
         if (player.isRivulet) {
             belly_slide_speed = 20f;
+            normal_duation_in_frames = 17;
         } else if (player.isGourmand) {
-            belly_slide_speed = player.gourmandExhausted ? 10f : 40f;
+            // vanilla: player.gourmandExhausted ? 10f : 40f;
+            if (player.gourmandExhausted) {
+                belly_slide_speed = 4f;
+            }
+
+            normal_duation_in_frames = 30;
+            long_duration_in_frames = 78;
         } else if (player.isSlugpup) {
             belly_slide_speed = 7f;
         }
 
-        // this is somewhat odd; I reduced the speed for simplicity in the normal case;
-        // but increasing the duration seems to have a far greater impact; leaving it
-        // at vanilla seems to still give the same overall distance;
-        int normal_roll_counter = 15; // vanilla: 15
-        int long_roll_counter = 39; // vanilla: 39
-        body_chunk_0.vel.x += belly_slide_speed * player.rollDirection * Mathf.Sin((float)(player.rollCounter / (double)(player.longBellySlide ? long_roll_counter : normal_roll_counter) * Math.PI));
-
+        body_chunk_0.vel.x += belly_slide_speed * player.rollDirection * Mathf.Sin((float)(player.rollCounter / (double)(player.longBellySlide ? long_duration_in_frames : normal_duation_in_frames) * Math.PI));
         foreach (BodyChunk body_chunk in player.bodyChunks) {
             if (body_chunk.contactPoint.y == 0) {
                 body_chunk.vel.x *= player.surfaceFriction;
@@ -493,7 +512,7 @@ public static class PlayerMod {
         }
 
         // finish // abort when mid-air // don't cancel belly slides on slopes
-        if (player.rollCounter <= (player.longBellySlide ? long_roll_counter : normal_roll_counter) && (player.canJump > 0 || player.IsTileSolidOrSlope(chunk_index: 0, 0, -1) || player.IsTileSolidOrSlope(chunk_index: 1, 0, -1))) return;
+        if (player.rollCounter <= (player.longBellySlide ? long_duration_in_frames : normal_duation_in_frames) && (player.canJump > 0 || player.IsTileSolidOrSlope(chunk_index: 0, 0, -1) || player.IsTileSolidOrSlope(chunk_index: 1, 0, -1))) return;
 
         player.rollDirection = 0;
         player.animation = AnimationIndex.None;
@@ -1136,6 +1155,132 @@ public static class PlayerMod {
     // private
     //
 
+    private static void IL_Player_ClassMechanicsGourmand(ILContext context) {
+        // LogAllInstructions(context);
+        ILCursor cursor = new(context);
+
+        if (cursor.TryGotoNext(instruction => instruction.MatchLdcI4(1)) &&
+            cursor.TryGotoNext(instruction => instruction.MatchStfld<Player>("gourmandExhausted"))) {
+            if (can_log_il_hooks) {
+                Debug.Log(mod_id + ": IL_Player_ClassMechanicsGourmand: Index " + cursor.Index);
+            }
+
+            // don't exhaust from aerobicLevel;
+            cursor.Goto(cursor.Index - 12);
+            cursor.RemoveRange(13);
+        } else {
+            if (can_log_il_hooks) {
+                Debug.Log(mod_id + ": IL_Player_ClassMechanicsGourmand could not be applied.");
+            }
+            return;
+        }
+        // LogAllInstructions(context);
+    }
+
+    private static void IL_Player_Collide(ILContext context) {
+        // LogAllInstructions(context);
+        ILCursor cursor = new(context);
+
+        if (cursor.TryGotoNext(instruction => instruction.MatchLdsfld<AnimationIndex>("Roll")) &&
+            cursor.TryGotoNext(instruction => instruction.MatchLdsfld<AnimationIndex>("None"))) {
+            if (can_log_il_hooks) {
+                Debug.Log(mod_id + ": IL_Player_Collide: Index " + cursor.Index);
+            }
+
+            // reduce damage and stun duration because rolls are easier to start with
+            // Option_Crawl; same damage and stun values as for slides and rocket jumps;
+            // maybe setting damage to zero is better since these moves are not so
+            // involved to do;
+            cursor.Goto(cursor.Index - 3);
+            cursor.Prev.Operand = 0f;
+            cursor.Next.Operand = 50f;
+
+            // interrupt Gourmand's roll attack by standing up; otherwise a crawl turn
+            // might start another roll instantly => more damage + stun than intended;
+            cursor.Goto(cursor.Index + 2);
+            cursor.Emit(OpCodes.Ldarg_0);
+            cursor.EmitDelegate<Action<Player>>(player => player.standing = true);
+        } else {
+            if (can_log_il_hooks) {
+                Debug.Log(mod_id + ": IL_Player_Collide could not be applied.");
+            }
+            return;
+        }
+
+        if (cursor.TryGotoNext(instruction => instruction.MatchLdsfld<SoundID>("Big_Needle_Worm_Impale_Terrain"))) {
+            if (can_log_il_hooks) {
+                Debug.Log(mod_id + ": IL_Player_Collide: Index " + cursor.Index);
+            }
+
+            // I find the Big_Needle_Worm_Impale_Terrain sound somewhat annoying; 
+            // replace with normal terrain impact sound;
+            cursor.RemoveRange(1);
+            cursor.Emit<SoundID>(OpCodes.Ldsfld, "Slugcat_Terrain_Impact_Medium");
+            cursor.Goto(cursor.Index + 3);
+            cursor.Next.Operand = 1f; // volume;
+        } else {
+            if (can_log_il_hooks) {
+                Debug.Log(mod_id + ": IL_Player_Collide could not be applied.");
+            }
+            return;
+        }
+
+        object? damage_variable_id = null;
+        if (cursor.TryGotoNext(instruction => instruction.MatchLdsfld<AnimationIndex>("RocketJump"))) {
+            if (can_log_il_hooks) {
+                Debug.Log(mod_id + ": IL_Player_Collide: Index " + cursor.Index);
+            }
+
+            // interrupt Gourmand's new rocket jump attack; otherwise it is spammed
+            // and can kill larger creature by stun locking;
+            cursor.Goto(cursor.Index + 3);
+            cursor.Emit(OpCodes.Ldarg_0);
+            cursor.Emit(OpCodes.Ldarg_1);
+
+            cursor.EmitDelegate<Action<Player, PhysicalObject>>((player, other_object) => {
+                if (player.animation != AnimationIndex.RocketJump) return;
+                player.animation = AnimationIndex.None;
+                if (!Option_StandUp) return;
+                player.standing = true;
+            });
+
+            // set damage to zero because these moves can be spammed;
+            cursor.Next.Operand = 0f;
+            damage_variable_id = cursor.Next.Next.Operand;
+        } else {
+            if (can_log_il_hooks) {
+                Debug.Log(mod_id + ": IL_Player_Collide could not be applied.");
+            }
+            return;
+        }
+
+        if (damage_variable_id != null && cursor.TryGotoNext(instruction => instruction.MatchLdsfld<SoundID>("Big_Needle_Worm_Impale_Terrain"))) {
+            if (can_log_il_hooks) {
+                Debug.Log(mod_id + ": IL_Player_Collide: Index " + cursor.Index);
+            }
+
+            // I find the Big_Needle_Worm_Impale_Terrain sound somewhat annoying; 
+            // replace with normal terrain impact sound;
+            cursor.RemoveRange(1);
+            cursor.Emit(OpCodes.Ldarg_0);
+            cursor.Emit(OpCodes.Ldloc, damage_variable_id);
+
+            cursor.EmitDelegate<Func<Player, float, SoundID>>((player, damage) => {
+                if (damage <= 0f) return SoundID.Slugcat_Terrain_Impact_Medium;
+                return SoundID.Big_Needle_Worm_Impale_Terrain; // vanilla case;
+            });
+
+            cursor.Goto(cursor.Index + 3);
+            cursor.Next.Operand = 1f; // volume;
+        } else {
+            if (can_log_il_hooks) {
+                Debug.Log(mod_id + ": IL_Player_Collide could not be applied.");
+            }
+            return;
+        }
+        // LogAllInstructions(context);
+    }
+
     private static void IL_Player_GrabUpdate(ILContext context) { // Option_Swim
         // LogAllInstructions(context);
         ILCursor cursor = new(context);
@@ -1392,6 +1537,29 @@ public static class PlayerMod {
         } else {
             if (can_log_il_hooks) {
                 Debug.Log(mod_id + ": IL_Player_MovementUpdate could not be applied.");
+            }
+            return;
+        }
+        // LogAllInstructions(context);
+    }
+
+    private static void IL_Player_SlugSlamConditions(ILContext context) {
+        // LogAllInstructions(context);
+        ILCursor cursor = new(context);
+
+        if (cursor.TryGotoNext(instruction => instruction.MatchLdsfld<AnimationIndex>("BellySlide")) &&
+            cursor.TryGotoNext(instruction => instruction.MatchLdsfld<AnimationIndex>("BellySlide"))) {
+            if (can_log_il_hooks) {
+                Debug.Log(mod_id + ": IL_Player_SlugSlamConditions: Index " + cursor.Index);
+            }
+
+            // allow slug slam using rocket jumps;
+            cursor.Goto(cursor.Index - 1);
+            cursor.RemoveRange(3);
+            cursor.EmitDelegate<Func<Player, bool>>(player => player.animation != AnimationIndex.BellySlide && player.animation != AnimationIndex.RocketJump);
+        } else {
+            if (can_log_il_hooks) {
+                Debug.Log(mod_id + ": IL_Player_SlugSlamConditions could not be applied.");
             }
             return;
         }
@@ -2043,9 +2211,11 @@ public static class PlayerMod {
         }
     }
 
-    private static void Player_ThrowObject(On.Player.orig_ThrowObject orig, Player player, int grasp, bool eu) { // Option_BellySlide || Option_SpearThrow
+    private static void Player_ThrowObject(On.Player.orig_ThrowObject orig, Player player, int grasp_index, bool eu) { // Option_BellySlide // Option_Gourmand // Option_SpearThrow
+        bool is_gourmand_exhausted = ModManager.MSC && player.isGourmand && player.grasps[grasp_index]?.grabbed is Spear;
+
         // throw weapon // don't get forward momentum on ground or poles
-        if (Option_SpearThrow && player.grasps[grasp]?.grabbed is Weapon && player.animation != AnimationIndex.BellySlide && (player.animation != AnimationIndex.Flip || player.input[0].y >= 0 || player.input[0].x != 0)) {
+        if (Option_SpearThrow && player.grasps[grasp_index]?.grabbed is Weapon && player.animation != AnimationIndex.BellySlide && (player.animation != AnimationIndex.Flip || player.input[0].y >= 0 || player.input[0].x != 0)) {
             if (player.bodyMode == BodyModeIndex.ClimbingOnBeam || player.bodyChunks[1].onSlope != 0) {
                 player.bodyChunks[0].vel.x -= player.ThrowDirection * 4f; // total: 4f
             } else if (player.IsTileSolid(bChunk: 1, 0, -1)) {
@@ -2053,16 +2223,19 @@ public static class PlayerMod {
             }
         }
 
-        if (!Option_BellySlide) {
-            orig(player, grasp, eu);
-            return;
+        if (Option_BellySlide) {
+            // remove timing for belly slide throw;
+            int roll_counter = player.rollCounter;
+            player.rollCounter = 10;
+            orig(player, grasp_index, eu);
+            player.rollCounter = roll_counter;
+        } else {
+            orig(player, grasp_index, eu);
         }
 
-        // belly slide throw // removed timing
-        int roll_counter = player.rollCounter;
-        player.rollCounter = 10;
-        orig(player, grasp, eu);
-        player.rollCounter = roll_counter;
+        if (Option_Gourmand && is_gourmand_exhausted) {
+            player.gourmandExhausted = true;
+        }
     }
 
     private static void Player_Update(On.Player.orig_Update orig, Player player, bool eu) { // Option_BeamClimb // Option_TubeWorm

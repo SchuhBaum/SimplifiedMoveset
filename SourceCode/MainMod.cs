@@ -11,7 +11,7 @@ using static SimplifiedMoveset.MainModOptions;
 
 namespace SimplifiedMoveset;
 
-[BepInPlugin("SimplifiedMoveset", "SimplifiedMoveset", "2.4.1")]
+[BepInPlugin("SimplifiedMoveset", "SimplifiedMoveset", "2.4.2")]
 public class MainMod : BaseUnityPlugin {
     //
     // meta data
@@ -19,7 +19,7 @@ public class MainMod : BaseUnityPlugin {
 
     public static readonly string mod_id = "SimplifiedMoveset";
     public static readonly string author = "SchuhBaum";
-    public static readonly string version = "2.4.1";
+    public static readonly string version = "2.4.2";
 
     //
     // options
@@ -31,16 +31,17 @@ public class MainMod : BaseUnityPlugin {
 
     public static bool Option_CrouchJump => crouch_jump.Value;
     public static bool Option_Grab => grab.Value;
-    public static bool Option_Roll_1 => roll_1.Value;
+    public static bool Option_Gourmand => gourmand.Value;
 
+    public static bool Option_Roll_1 => roll_1.Value;
     public static bool Option_Roll_2 => roll_2.Value;
     public static bool Option_SlideTurn => slide_turn.Value;
-    public static bool Option_SpearThrow => spear_throw.Value;
 
+    public static bool Option_SpearThrow => spear_throw.Value;
     public static bool Option_StandUp => stand_up.Value;
     public static bool Option_Swim => swim.Value;
-    public static bool Option_TubeWorm => tube_worm.Value;
 
+    public static bool Option_TubeWorm => tube_worm.Value;
     public static bool Option_WallClimb => wall_climb.Value;
     public static bool Option_WallJump => wall_jump.Value;
 

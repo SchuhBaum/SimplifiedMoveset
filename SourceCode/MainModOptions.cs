@@ -19,16 +19,17 @@ public class MainModOptions : OptionInterface {
 
     public static Configurable<bool> crouch_jump = main_mod_options.config.Bind("crouchJump", defaultValue: true, new ConfigurableInfo("Decreases charge time for super launch jumps.", null, "", "Crouch Jump"));
     public static Configurable<bool> grab = main_mod_options.config.Bind("grab", defaultValue: false, new ConfigurableInfo("Grab dead large creatures only when crouching.", null, "", "Grab"));
-    public static Configurable<bool> roll_1 = main_mod_options.config.Bind("roll_1", defaultValue: true, new ConfigurableInfo("Rocket jumps from rolls have consistent height.", null, "", "Roll 1"));
+    public static Configurable<bool> gourmand = main_mod_options.config.Bind("gourmand", defaultValue: true, new ConfigurableInfo("Exhaust only when throwing spears. Stun creatures with rocket jumps. Slides, rocket jumps and rolls only stun and deal no damage.", null, "", "Gourmand"));
 
+    public static Configurable<bool> roll_1 = main_mod_options.config.Bind("roll_1", defaultValue: true, new ConfigurableInfo("Rocket jumps from rolls have consistent height.", null, "", "Roll 1"));
     public static Configurable<bool> roll_2 = main_mod_options.config.Bind("roll_2_", defaultValue: false, new ConfigurableInfo("When enabled, removes the ability to chain rolls from rocket jumps.", null, "", "Roll 2"));
     public static Configurable<bool> slide_turn = main_mod_options.config.Bind("slideTurn", defaultValue: false, new ConfigurableInfo("Reduces the requirements for slide turns. Backflips are possible earlier.", null, "", "Slide Turn"));
-    public static Configurable<bool> spear_throw = main_mod_options.config.Bind("spearThrow", defaultValue: true, new ConfigurableInfo("The throw momentum does not affect slugcats on the ground. The momentum while climbing beams is reduced. Throw boosting in the air is still possible. Weapons cannot change direction after being thrown.", null, "", "Spear Throw"));
 
+    public static Configurable<bool> spear_throw = main_mod_options.config.Bind("spearThrow", defaultValue: true, new ConfigurableInfo("The throw momentum does not affect slugcats on the ground. The momentum while climbing beams is reduced. Throw boosting in the air is still possible. Weapons cannot change direction after being thrown.", null, "", "Spear Throw"));
     public static Configurable<bool> stand_up = main_mod_options.config.Bind("standUp", defaultValue: true, new ConfigurableInfo("Stand up after various animations.", null, "", "Stand Up"));
     public static Configurable<bool> swim = main_mod_options.config.Bind("swim", defaultValue: false, new ConfigurableInfo("Removes breath limit underwater. You can eat underwater. Increases swim speed. Adjusts buoyancy.", null, "", "Swim"));
-    public static Configurable<bool> tube_worm = main_mod_options.config.Bind("tubeWorm", defaultValue: true, new ConfigurableInfo("Adds auto - aim grappling to beams. Changes affect Saint.", null, "", "Tube Worm"));
 
+    public static Configurable<bool> tube_worm = main_mod_options.config.Bind("tubeWorm", defaultValue: true, new ConfigurableInfo("Adds auto - aim grappling to beams. Changes affect Saint.", null, "", "Tube Worm"));
     public static Configurable<bool> wall_climb = main_mod_options.config.Bind("wallClimb", defaultValue: false, new ConfigurableInfo("Adds crawling on walls. Removes wall sliding. Normal jumps are prioritized for small obstacles instead of wall climbing / jumping.", null, "", "Wall Climb"));
     public static Configurable<bool> wall_jump = main_mod_options.config.Bind("wallJump", defaultValue: true, new ConfigurableInfo("Only wall jump when facing away from the wall. Wall jumps are prioritized over using tube worms. Removes wall sliding when not holding down. Normal jumps are prioritized for small obstacles instead of wall climbing / jumping.", null, "", "Wall Jump"));
 
@@ -108,16 +109,17 @@ public class MainModOptions : OptionInterface {
 
         AddCheckBox(crouch_jump, (string)crouch_jump.info.Tags[0]);
         AddCheckBox(grab, (string)grab.info.Tags[0]);
-        AddCheckBox(roll_1, (string)roll_1.info.Tags[0]);
+        AddCheckBox(gourmand, (string)gourmand.info.Tags[0]);
 
+        AddCheckBox(roll_1, (string)roll_1.info.Tags[0]);
         AddCheckBox(roll_2, (string)roll_2.info.Tags[0]);
         AddCheckBox(slide_turn, (string)slide_turn.info.Tags[0]);
-        AddCheckBox(spear_throw, (string)spear_throw.info.Tags[0]);
 
+        AddCheckBox(spear_throw, (string)spear_throw.info.Tags[0]);
         AddCheckBox(stand_up, (string)stand_up.info.Tags[0]);
         AddCheckBox(swim, (string)swim.info.Tags[0]);
-        AddCheckBox(tube_worm, (string)tube_worm.info.Tags[0]);
 
+        AddCheckBox(tube_worm, (string)tube_worm.info.Tags[0]);
         AddCheckBox(wall_climb, (string)wall_climb.info.Tags[0]);
         AddCheckBox(wall_jump, (string)wall_jump.info.Tags[0]);
 
@@ -132,16 +134,17 @@ public class MainModOptions : OptionInterface {
 
         Debug.Log(mod_id + ": Option_CrouchJump " + Option_CrouchJump);
         Debug.Log(mod_id + ": Option_Grab " + Option_Grab);
-        Debug.Log(mod_id + ": Option_Roll_1 " + Option_Roll_1);
+        Debug.Log(mod_id + ": Option_Gourmand " + Option_Gourmand);
 
+        Debug.Log(mod_id + ": Option_Roll_1 " + Option_Roll_1);
         Debug.Log(mod_id + ": Option_Roll_2 " + Option_Roll_2);
         Debug.Log(mod_id + ": Option_SlideTurn " + Option_SlideTurn);
-        Debug.Log(mod_id + ": Option_SpearThrow " + Option_SpearThrow);
 
+        Debug.Log(mod_id + ": Option_SpearThrow " + Option_SpearThrow);
         Debug.Log(mod_id + ": Option_StandUp " + Option_StandUp);
         Debug.Log(mod_id + ": Option_Swim " + Option_Swim);
-        Debug.Log(mod_id + ": Option_TubeWorm " + Option_TubeWorm);
 
+        Debug.Log(mod_id + ": Option_TubeWorm " + Option_TubeWorm);
         Debug.Log(mod_id + ": Option_WallClimb " + Option_WallClimb);
         Debug.Log(mod_id + ": Option_WallJump " + Option_WallJump);
     }
