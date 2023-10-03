@@ -1231,14 +1231,25 @@ public static class PlayerMod {
                 Debug.Log(mod_id + ": IL_Player_Collide: Index " + cursor.Index);
             }
 
-            // interrupt Gourmand's new rocket jump attack; otherwise it is spammed
-            // and can kill larger creature by stun locking;
             cursor.Goto(cursor.Index + 3);
+            object label = cursor.Prev.Operand;
+
+            // rocket jumps can deal damage but only when you are fast enough; use the same speed
+            // check as with initiating rolls (Option_Roll_2);
+            cursor.Emit(OpCodes.Ldarg_0);
+            cursor.EmitDelegate<Func<Player, bool>>(player => -Mathf.Min(player.bodyChunks[0].vel.y, player.bodyChunks[1].vel.y) <= 16f);
+            cursor.Emit(OpCodes.Brfalse, label);
+
+            // interrupt Gourmand's new rocket jump attack; otherwise it is spammed
+            // and can stunlock creatures;
             cursor.Emit(OpCodes.Ldarg_0);
             cursor.Emit(OpCodes.Ldarg_1);
 
             cursor.EmitDelegate<Action<Player, PhysicalObject>>((player, other_object) => {
+                // currently the animation check is not needed since the first case (belly slide) 
+                // jumps directly to setting the damage value which is after this;
                 if (player.animation != AnimationIndex.RocketJump) return;
+
                 player.animation = AnimationIndex.None;
                 if (!Option_StandUp) return;
                 player.standing = true;
@@ -1254,7 +1265,8 @@ public static class PlayerMod {
             return;
         }
 
-        if (damage_variable_id != null && cursor.TryGotoNext(instruction => instruction.MatchLdsfld<SoundID>("Big_Needle_Worm_Impale_Terrain"))) {
+        if (damage_variable_id != null && damage_variable_id.ToString().Contains("V_") &&
+            cursor.TryGotoNext(instruction => instruction.MatchLdsfld<SoundID>("Big_Needle_Worm_Impale_Terrain"))) {
             if (can_log_il_hooks) {
                 Debug.Log(mod_id + ": IL_Player_Collide: Index " + cursor.Index);
             }
