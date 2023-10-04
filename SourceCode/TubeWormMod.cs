@@ -167,15 +167,24 @@ public static class TubeWormMod {
         // LogAllInstructions(context);
     }
 
-    private static bool TubeWorm_JumpButton(On.TubeWorm.orig_JumpButton orig, TubeWorm tubeworm, Player player) { // Option_TubeWorm
-        bool vanilla_result = orig(tubeworm, player);
+    private static bool TubeWorm_JumpButton(On.TubeWorm.orig_JumpButton orig, TubeWorm tube_worm, Player player) { // Option_TubeWorm
+        bool vanilla_result = orig(tube_worm, player);
+        if (player.IsClimbingOnBeam() || player.CanWallJumpOrMidAirWallJump() || player.bodyMode == BodyModeIndex.CorridorClimb) {
+            tube_worm.useBool = false;
+            return player.IsJumpPressed();
+        }
 
-        if (player.IsClimbingOnBeam() || player.CanWallJumpOrMidAirWallJump() || player.bodyMode == BodyModeIndex.CorridorClimb) return player.IsJumpPressed();
-        if (player.shortcutDelay > 10) return player.IsJumpPressed();
+        if (player.shortcutDelay > 10) {
+            tube_worm.useBool = false;
+            return player.IsJumpPressed();
+        }
         if (player.Get_Attached_Fields() is not Player_Attached_Fields attached_fields) return vanilla_result;
 
         // prevents falling off beams and using tongue at the same time
-        if (attached_fields.dont_use_tubeworm_counter > 0) return player.IsJumpPressed();
+        if (attached_fields.dont_use_tubeworm_counter > 0) {
+            tube_worm.useBool = false;
+            return player.IsJumpPressed();
+        }
         return vanilla_result;
     }
 }

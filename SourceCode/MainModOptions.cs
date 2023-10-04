@@ -19,7 +19,7 @@ public class MainModOptions : OptionInterface {
 
     public static Configurable<bool> crouch_jump = main_mod_options.config.Bind("crouchJump", defaultValue: true, new ConfigurableInfo("Decreases charge time for super launch jumps.", null, "", "Crouch Jump"));
     public static Configurable<bool> grab = main_mod_options.config.Bind("grab", defaultValue: false, new ConfigurableInfo("Grab dead large creatures only when crouching.", null, "", "Grab"));
-    public static Configurable<bool> gourmand = main_mod_options.config.Bind("gourmand", defaultValue: true, new ConfigurableInfo("Exhaust only when throwing spears. Stun creatures with rocket jumps. Slides, rocket jumps and rolls only stun and deal no damage.", null, "", "Gourmand"));
+    public static Configurable<bool> gourmand = main_mod_options.config.Bind("gourmand", defaultValue: true, new ConfigurableInfo("Exhaust only when throwing spears. Stun creatures with rocket jumps. Slides, slow rocket jumps and rolls only stun and deal no damage.", null, "", "Gourmand"));
 
     public static Configurable<bool> roll_1 = main_mod_options.config.Bind("roll_1", defaultValue: true, new ConfigurableInfo("Rocket jumps from rolls have consistent height.", null, "", "Roll 1"));
     public static Configurable<bool> roll_2 = main_mod_options.config.Bind("roll_2_", defaultValue: false, new ConfigurableInfo("When enabled, removes the ability to chain rolls from rocket jumps.", null, "", "Roll 2"));

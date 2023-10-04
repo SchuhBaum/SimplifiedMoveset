@@ -73,7 +73,6 @@ public static class PlayerMod {
         On.Player.UpdateBodyMode -= Player_UpdateBodyMode;
 
         On.Player.UpdateMSC -= Player_UpdateMSC;
-        On.Player.WallJump -= Player_WallJump;
         On.Player.Tongue.AutoAim -= Tongue_AutoAim;
         On.Player.Tongue.Shoot -= Tongue_Shoot;
 
@@ -164,7 +163,6 @@ public static class PlayerMod {
 
         if (Option_WallJump) {
             On.Player.checkInput += Player_CheckInput; // input "buffer" for wall jumping
-            On.Player.WallJump += Player_WallJump;
         }
     }
 
@@ -1146,9 +1144,14 @@ public static class PlayerMod {
             return false;
         }
 
+        if (player.input[0].x == 0 || direction > 0 == player.input[0].x > 0) {
+            player.simulateHoldJumpButton = 0;
+            return true;
+        }
+
         // don't jump off the wall while climbing;
         // x input direction == wall jump direction;
-        return player.input[0].x == 0 || direction > 0 == player.input[0].x > 0;
+        return false;
     }
 
     //
@@ -2043,11 +2046,10 @@ public static class PlayerMod {
 
     private static void IL_Player_WallJump(ILContext context) {
         // LogAllInstructions(context);
-
         ILCursor cursor = new(context);
-
         cursor.Emit(OpCodes.Ldarg_0);
         cursor.Emit(OpCodes.Ldarg_1);
+
         cursor.EmitDelegate<Func<Player, int, bool>>((player, direction) => {
             if (player.Get_Attached_Fields() is not Player_Attached_Fields attached_fields) return true;
             return WallJump(player, attached_fields, direction);
@@ -2068,9 +2070,11 @@ public static class PlayerMod {
     private static void Player_CheckInput(On.Player.orig_checkInput orig, Player player) { // Option_WallJump
         orig(player);
 
-        // does not conflict with vanilla code // simulateHoldJumpButton is used for crouch super jumps
-        //  only used once: (this.input[0].jmp || this.simulateHoldJumpButton > 0) = true anyways
-        // simulateHoldJumpButton = 0 afterwards // set in WallJump()
+        // does not conflict with vanilla code; simulateHoldJumpButton is used for crouch
+        // super jumps and is only used once like this:
+        //      (this.input[0].jmp || this.simulateHoldJumpButton > 0)
+        // this would be true anyways when spamming jump; reset simulateHoldJumpButton 
+        // afterwards in WallJump();
 
         if (player.bodyMode != BodyModeIndex.WallClimb) return;
         if (player.simulateHoldJumpButton > 0) {
@@ -2085,6 +2089,8 @@ public static class PlayerMod {
         }
 
         if (player.IsJumpPressed()) {
+            // 15 frames is the amount as you get for mid-air wall jumps; too many frames
+            // makes this somewhat awkward in some situations; 6 seems better;
             player.simulateHoldJumpButton = 6;
         }
     }
@@ -2476,13 +2482,6 @@ public static class PlayerMod {
 
         if (!ModManager.MSC) return;
         player.buoyancy = player.gravity;
-    }
-
-    private static void Player_WallJump(On.Player.orig_WallJump orig, Player player, int direction) {
-        orig(player, direction);
-
-        // not sure if this was required;
-        player.simulateHoldJumpButton = 0;
     }
 
     //
