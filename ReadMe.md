@@ -34,7 +34,7 @@ v2.4.5:
 - (gourmand) Allow rocket jumps to deal damage if you have enough speed (similar to Option_Roll_2).
 - (tube worm) Restored that wall jumps are priotized over using tube worms.
 - (wall jump) Restored that inputs are buffered for 6 frames when pressing jump early.
-- (beam climb) Added some cases where you can drop down (by holding/pressing down and/or pressing jump). Prevent beam hopping when holding down. Otherwise it might trigger it accidentally.
+- (beam climb) Added some cases where you can drop down (by holding/pressing down and/or pressing jump). Prevent beam hopping when holding down. Otherwise you might trigger it accidentally.
 
 v2.4.0:
 - (crawl) Forgot to add an option check for the last change.
