@@ -92,6 +92,10 @@ public static class PlayerMod {
             On.Player.MovementUpdate += Player_MovementUpdate;
         }
 
+        if (Option_BeamClimb || Option_BellySlide || Option_Crawl || Option_Roll_1 || Option_TubeWorm) {
+            IL.Player.Jump += IL_Player_Jump;
+        }
+
         if (Option_BeamClimb || Option_TubeWorm) {
             On.Player.Update += Player_Update;
         }
@@ -108,10 +112,6 @@ public static class PlayerMod {
 
         if (Option_BellySlide || Option_Crawl || Option_Roll_1 || Option_Roll_2) {
             IL.Player.TerrainImpact += IL_Player_TerrainImpact;
-        }
-
-        if (Option_BellySlide || Option_Crawl || Option_Roll_1 || Option_TubeWorm) {
-            IL.Player.Jump += IL_Player_Jump;
         }
 
         if (Option_BellySlide || Option_Gourmand || Option_SpearThrow) {
@@ -667,6 +667,20 @@ public static class PlayerMod {
         // exits //
         // ----- //
 
+        if (player.IsJumpPressed() && player.input[0].y < 1) {
+            //
+            // same behavior as in UpdateAnimation_HangFromBeam(); copy&paste;
+            //
+
+            if (IsTongueRetracting(player)) return;
+            attached_fields.dont_use_tubeworm_counter = 2;
+            attached_fields.grab_beam_cooldown_position = body_chunk_0.pos;
+
+            player.animation = AnimationIndex.None;
+            player.animationFrame = 0;
+            return;
+        }
+
         if (room.GetTile(player.bodyChunks[body_chunk_index].pos).horizontalBeam && Math.Abs(player.bodyChunks[body_chunk_index].pos.y - player.upOnHorizontalBeamPos.y) < 25.0) {
             // this might be helpful when horizontal beams are stacked vertically;
             // however, this can lead to a bug where you are not able to grab beams after jumping off;
@@ -681,10 +695,13 @@ public static class PlayerMod {
 
         // revert when bumping into something or pressing the opposite direction
         if (player.input[0].y == -direction) {
-            player.upOnHorizontalBeamPos -= direction * new Vector2(0.0f, 20f);
+            // multiply by 2f since you switch the body chunk as well;
+            player.upOnHorizontalBeamPos -= 2f * direction * new Vector2(0.0f, 20f);
             attached_fields.get_up_on_beam_direction = -direction;
             return;
-        } else if (body_chunk_0.contactPoint.y == direction || body_chunk_1.contactPoint.y == direction) {
+        }
+
+        if (body_chunk_0.contactPoint.y == direction || body_chunk_1.contactPoint.y == direction) {
             if (attached_fields.get_up_on_beam_abort_counter > 0) { // revert to the original position should always work // abort if stuck in a loop just in case
                 attached_fields.grab_beam_counter = 15;
                 player.animation = AnimationIndex.None;
@@ -693,7 +710,8 @@ public static class PlayerMod {
                 attached_fields.get_up_on_beam_abort_counter = 2;
             }
 
-            player.upOnHorizontalBeamPos -= direction * new Vector2(0.0f, 20f);
+            // multiply by 2f since you switch the body chunk as well;
+            player.upOnHorizontalBeamPos -= 2f * direction * new Vector2(0.0f, 20f);
             attached_fields.get_up_on_beam_direction = -direction;
             return;
         }
@@ -757,20 +775,31 @@ public static class PlayerMod {
             return;
         }
 
+        // grab vertical beam if possible;
         if (SwitchHorizontalToVerticalBeam(player, attached_fields)) {
             player.animationFrame = 0;
-            return;// grab vertical beam if possible
+            return;
+        }
+
+        if (player.input[0].y == 1 && player.input[1].y == 0) {
+            PrepareGetUpOnBeamAnimation(player, 1, attached_fields);
+            player.animationFrame = 0;
+            return;
         }
 
         if (player.IsJumpPressed()) {
             // retract tubeworm first // consistent behavior with when standing on beam and pressing jump
             if (IsTongueRetracting(player)) return;
 
-            if (player.input[0].y == 1) { // only drop when pressing jump without holding up
+            if (player.input[0].y == 1) {
+                // only drop when pressing jump without holding up; this helps when you transition 
+                // directly to this animation from jumping for example;
                 PrepareGetUpOnBeamAnimation(player, 1, attached_fields);
                 player.animationFrame = 0;
                 return;
-            } else if (player.input[0].y == -1 && player.IsTileSolid(1, 0, -1)) {
+            }
+
+            if (player.input[0].y == -1 && player.IsTileSolid(1, 0, -1)) {
                 // this case would lead to jumping + regrabbing beam otherwise
                 // not clean..
                 player.input[1].jmp = true;
@@ -780,10 +809,6 @@ public static class PlayerMod {
             attached_fields.dont_use_tubeworm_counter = 2; // don't drop and shoot tubeworm at the same time
             attached_fields.grab_beam_cooldown_position = body_chunk_0.pos;
             player.animation = AnimationIndex.None;
-            player.animationFrame = 0;
-            return;
-        } else if (player.input[0].y == 1 && player.input[1].y == 0) {
-            PrepareGetUpOnBeamAnimation(player, 1, attached_fields);
             player.animationFrame = 0;
             return;
         }
@@ -915,8 +940,24 @@ public static class PlayerMod {
             body_chunk_1.vel.x -= player.input[0].x * vel_x_gain;
         }
 
-        // move down to HangFromBeam
-        if (player.input[0].y == -1 && (player.input[1].y == 0 || player.IsJumpPressed())) {
+        if (player.input[0].y == -1) {
+            player.canJump = 0;
+            if (player.IsJumpPressed()) {
+                //
+                // same behavior as in UpdateAnimation_HangFromBeam(); copy&paste;
+                //
+
+                if (IsTongueRetracting(player)) return;
+                attached_fields.dont_use_tubeworm_counter = 2;
+                attached_fields.grab_beam_cooldown_position = body_chunk_0.pos;
+
+                player.animation = AnimationIndex.None;
+                player.animationFrame = 0;
+                return;
+            }
+
+            // move down even when just holding down without pressing it; makes sense since
+            // you can't transition to this animation without beam climbing;
             PrepareGetUpOnBeamAnimation(player, -1, attached_fields);
             player.animationFrame = 0;
             return;
@@ -1347,7 +1388,7 @@ public static class PlayerMod {
         // LogAllInstructions(context);
     }
 
-    private static void IL_Player_Jump(ILContext context) { // Option_BellySlide // Option_Crawl // Option_Roll_1 // Option_TubeWorm
+    private static void IL_Player_Jump(ILContext context) { // Option_BeamClimb // Option_BellySlide // Option_Crawl // Option_Roll_1 // Option_TubeWorm
         // LogAllInstructions(context);
         ILCursor cursor = new(context);
 
@@ -1373,6 +1414,31 @@ public static class PlayerMod {
             cursor.Emit(OpCodes.Brfalse, label);
             cursor = cursor.Emit(OpCodes.Ret);
             cursor.MarkLabel(label);
+        }
+
+        if (cursor.TryGotoNext(instruction => instruction.MatchLdsfld<AnimationIndex>("ClimbOnBeam")) &&
+            cursor.TryGotoNext(instruction => instruction.MatchCall<Player>("get_input"))) {
+            if (can_log_il_hooks) {
+                Debug.Log(mod_id + ": IL_Player_Jump: Index " + cursor.Index);
+            }
+
+            if (Option_BeamClimb) {
+                //
+                // always fall down when holding down while climbing on vertical beams => ignore
+                // x-input;
+                //
+
+                cursor.RemoveRange(4);
+                cursor.EmitDelegate<Func<Player, bool>>(player => {
+                    if (player.input[0].y == -1) return false;
+                    return player.input[0].x != 0; // vanilla case;
+                });
+            }
+        } else {
+            if (can_log_il_hooks) {
+                Debug.Log(mod_id + ": IL_Player_Jump could not be applied.");
+            }
+            return;
         }
 
         if (cursor.TryGotoNext(instruction => instruction.MatchLdsfld<AnimationIndex>("Roll"))) {
@@ -1648,22 +1714,30 @@ public static class PlayerMod {
         // LogAllInstructions(context);
     }
 
-    private static void IL_Player_Update(ILContext context) {
+    private static void IL_Player_Update(ILContext context) { // Option_BeamClimb
         // LogAllInstructions(context);
         ILCursor cursor = new(context);
 
         if (cursor.TryGotoNext(instruction => instruction.MatchLdsfld<BodyModeIndex>("Default")) &&
             cursor.TryGotoNext(instruction => instruction.MatchLdfld<Player>("poleSkipPenalty"))) {
+            cursor.Goto(cursor.Index - 2);
+            if (cursor.Next.OpCode != OpCodes.Bgt) {
+                if (can_log_il_hooks) {
+                    Debug.Log(mod_id + ": IL_Player_Update could not be applied.");
+                }
+                return;
+            }
+
+            if (can_log_il_hooks) {
+                Debug.Log(mod_id + ": IL_Player_Update: Index " + cursor.Index); // 1936
+            }
+
             //
             // allow beam hopping even when the player is holding up => makes it no risk 
             // and low reward instead of high risk and low reward;
             //
 
-            Debug.Log(mod_id + ": IL_Player_Update: Index " + cursor.Index); // 1936
-            cursor.Goto(cursor.Index - 8);
-
-            // removes the player.input[0].y <= 0 check;
-            cursor.RemoveRange(7);
+            cursor.Next.OpCode = OpCodes.Blt;
         } else {
             if (can_log_il_hooks) {
                 Debug.Log(mod_id + ": IL_Player_Update could not be applied.");
@@ -2257,7 +2331,9 @@ public static class PlayerMod {
     }
 
     private static void Player_Update(On.Player.orig_Update orig, Player player, bool eu) { // Option_BeamClimb // Option_TubeWorm
+        // LogPlayerInformation(player);
         orig(player, eu);
+
         if (Option_BeamClimb && player.Get_Attached_Fields() is Player_Attached_Fields attached_fields) {
             if (player.bodyMode == BodyModeIndex.ClimbingOnBeam) {
                 attached_fields.time_since_climbing_on_beam = 0;
