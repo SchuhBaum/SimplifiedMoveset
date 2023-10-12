@@ -943,6 +943,14 @@ public static class PlayerMod {
         if (player.input[0].y == -1) {
             player.canJump = 0;
             if (player.IsJumpPressed()) {
+                if (player.input[1].y == -1) {
+                    // useful after switching beams; consistent with how hanging from beam works when
+                    // holding up and pressing jump;
+                    PrepareGetUpOnBeamAnimation(player, -1, attached_fields);
+                    player.animationFrame = 0;
+                    return;
+                }
+
                 //
                 // same behavior as in UpdateAnimation_HangFromBeam(); copy&paste;
                 //
@@ -957,10 +965,13 @@ public static class PlayerMod {
             }
 
             // move down even when just holding down without pressing it; makes sense since
-            // you can't transition to this animation without beam climbing;
-            PrepareGetUpOnBeamAnimation(player, -1, attached_fields);
-            player.animationFrame = 0;
-            return;
+            // you can't transition to this animation without beam climbing; nevermind this
+            // does not work too well when switching beams => revert;
+            if (player.input[1].y == 0) {
+                PrepareGetUpOnBeamAnimation(player, -1, attached_fields);
+                player.animationFrame = 0;
+                return;
+            }
         }
 
         // grab nearby horizontal beams
