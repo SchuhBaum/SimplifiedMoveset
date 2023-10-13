@@ -67,11 +67,12 @@ public static class PlayerMod {
         On.Player.SaintTongueCheck -= Player_SaintTongueCheck;
         On.Player.TerrainImpact -= Player_TerrainImpact;
 
+        On.Player.ThrownSpear -= Player_ThrownSpear;
         On.Player.ThrowObject -= Player_ThrowObject;
         On.Player.Update -= Player_Update;
         On.Player.UpdateAnimation -= Player_UpdateAnimation;
-        On.Player.UpdateBodyMode -= Player_UpdateBodyMode;
 
+        On.Player.UpdateBodyMode -= Player_UpdateBodyMode;
         On.Player.UpdateMSC -= Player_UpdateMSC;
         On.Player.Tongue.AutoAim -= Tongue_AutoAim;
         On.Player.Tongue.Shoot -= Tongue_Shoot;
@@ -114,7 +115,7 @@ public static class PlayerMod {
             IL.Player.TerrainImpact += IL_Player_TerrainImpact;
         }
 
-        if (Option_BellySlide || Option_Gourmand || Option_SpearThrow) {
+        if (Option_BellySlide || Option_SpearThrow) {
             On.Player.ThrowObject += Player_ThrowObject;
         }
 
@@ -132,6 +133,7 @@ public static class PlayerMod {
             IL.Player.ClassMechanicsGourmand += IL_Player_ClassMechanicsGourmand;
             IL.Player.Collide += IL_Player_Collide;
             IL.Player.SlugSlamConditions += IL_Player_SlugSlamConditions;
+            On.Player.ThrownSpear += Player_ThrownSpear;
         }
 
         if (Option_SlideTurn) {
@@ -2316,9 +2318,14 @@ public static class PlayerMod {
         }
     }
 
-    private static void Player_ThrowObject(On.Player.orig_ThrowObject orig, Player player, int grasp_index, bool eu) { // Option_BellySlide // Option_Gourmand // Option_SpearThrow
-        bool is_gourmand_exhausted = ModManager.MSC && player.isGourmand && player.grasps[grasp_index]?.grabbed is Spear;
+    private static void Player_ThrownSpear(On.Player.orig_ThrownSpear orig, Player player, Spear spear) { // Option_Gourmand
+        orig(player, spear);
+        if (!ModManager.MSC) return;
+        if (!player.isGourmand) return;
+        player.gourmandExhausted = true;
+    }
 
+    private static void Player_ThrowObject(On.Player.orig_ThrowObject orig, Player player, int grasp_index, bool eu) { // Option_BellySlide // Option_SpearThrow
         // throw weapon // don't get forward momentum on ground or poles
         if (Option_SpearThrow && player.grasps[grasp_index]?.grabbed is Weapon && player.animation != AnimationIndex.BellySlide && (player.animation != AnimationIndex.Flip || player.input[0].y >= 0 || player.input[0].x != 0)) {
             if (player.bodyMode == BodyModeIndex.ClimbingOnBeam || player.bodyChunks[1].onSlope != 0) {
@@ -2328,19 +2335,16 @@ public static class PlayerMod {
             }
         }
 
-        if (Option_BellySlide) {
-            // remove timing for belly slide throw;
-            int roll_counter = player.rollCounter;
-            player.rollCounter = 10;
+        if (!Option_BellySlide) {
             orig(player, grasp_index, eu);
-            player.rollCounter = roll_counter;
-        } else {
-            orig(player, grasp_index, eu);
+            return;
         }
 
-        if (Option_Gourmand && is_gourmand_exhausted) {
-            player.gourmandExhausted = true;
-        }
+        // remove timing for belly slide throw;
+        int roll_counter = player.rollCounter;
+        player.rollCounter = 10;
+        orig(player, grasp_index, eu);
+        player.rollCounter = roll_counter;
     }
 
     private static void Player_Update(On.Player.orig_Update orig, Player player, bool eu) { // Option_BeamClimb // Option_TubeWorm
@@ -2424,19 +2428,25 @@ public static class PlayerMod {
             // don't update twice;
             // UpdateAnimationCounter(player);
 
-            if (player.slugcatStats.lungsFac != 0.0f) {
-                player.slugcatStats.lungsFac = 0.0f;
-            }
-
             // only lose airInLungs when grabbed by leeches or rain timer is up
             if (player.abstractCreature.world?.rainCycle.TimeUntilRain <= 0) {
                 player.slugcatStats.lungsFac = 1f;
             } else {
-                foreach (Creature.Grasp creature in player.grabbedBy) {
-                    if (creature.grabber is Leech) {
-                        player.slugcatStats.lungsFac = 1f;
+                bool is_grabbed_by_leeches = false;
+                foreach (Creature.Grasp grasp in player.grabbedBy) {
+                    if (grasp.grabber is Leech) {
+                        is_grabbed_by_leeches = true;
                         break;
                     }
+                }
+
+                if (is_grabbed_by_leeches) {
+                    player.slugcatStats.lungsFac = 1f;
+                } else {
+                    // this is noticeable when playing Gourmand and diving after throwing a spear;
+                    // you won't recover from exhaustion unless this is false or you surface swim;
+                    player.lungsExhausted = false;
+                    player.slugcatStats.lungsFac = 0f;
                 }
             }
         }
