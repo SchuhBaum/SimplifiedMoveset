@@ -695,7 +695,10 @@ public static class PlayerMod {
 
         // revert when bumping into something or pressing the opposite direction
         if (player.input[0].y == -direction) {
-            // multiply by 2f since you switch the body chunk as well;
+            // multiply by 2f since you switch the body chunk as well; there is a bug when 
+            // you move down and immediately switch the direction to up then you can get
+            // stuck at the lowest position and just vibrate in place; this might be solved
+            // by multiplying as well;
             player.upOnHorizontalBeamPos -= 2f * direction * new Vector2(0.0f, 20f);
             attached_fields.get_up_on_beam_direction = -direction;
             return;
@@ -710,7 +713,6 @@ public static class PlayerMod {
                 attached_fields.get_up_on_beam_abort_counter = 2;
             }
 
-            // multiply by 2f since you switch the body chunk as well;
             player.upOnHorizontalBeamPos -= 2f * direction * new Vector2(0.0f, 20f);
             attached_fields.get_up_on_beam_direction = -direction;
             return;
