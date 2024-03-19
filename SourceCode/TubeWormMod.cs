@@ -2,6 +2,7 @@ using Mono.Cecil.Cil;
 using MonoMod.Cil;
 using RWCustom;
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 using static Player;
 using static Room;
@@ -46,49 +47,52 @@ public static class TubeWormMod {
         float deg = Custom.VecToDeg(original_dir);
         float min_cost = float.MaxValue;
 
-        Vector2? best_attach_pos = null;
+        Vector2? best_attach_position = null;
         Vector2? best_direction = null;
 
         for (float deg_modifier = 0.0f; deg_modifier < 35f; deg_modifier += 2.5f) {
             for (float sign = -1f; sign <= 1f; sign += 2f) {
-                Vector2? attach_pos = null;
+                Vector2? attach_position = null;
                 Vector2 direction = Custom.DegToVec(deg + sign * deg_modifier);
 
                 float local_min_cost = float.MaxValue;
                 float cost;
 
-                foreach (IntVector2 int_attach_pos in SharedPhysics.RayTracedTilesArray(tongue.baseChunk.pos + direction * min_distance, tongue.baseChunk.pos + direction * max_distance)) { // don't try to grapple too early, i.e. when MiddleOfTile might be already behind
-                    Tile tile = room.GetTile(int_attach_pos);
-                    Vector2 middle_of_tile = room.MiddleOfTile(int_attach_pos);
+                List<IntVector2> tiles_position_list = new();
+                SharedPhysics.RayTracedTilesArray(tongue.baseChunk.pos + direction * min_distance, tongue.baseChunk.pos + direction * max_distance, tiles_position_list);
+
+                foreach (IntVector2 tile_position in tiles_position_list) { // don't try to grapple too early, i.e. when MiddleOfTile might be already behind
+                    Tile tile = room.GetTile(tile_position);
+                    Vector2 middle_of_tile = room.MiddleOfTile(tile_position);
                     cost = Mathf.Abs(ideal_distance - Vector2.Distance(tongue.baseChunk.pos + tongue.baseChunk.vel * 3f, middle_of_tile));
 
                     if ((tile.horizontalBeam || tile.verticalBeam) && cost < local_min_cost) {
-                        attach_pos = middle_of_tile;
+                        attach_position = middle_of_tile;
                         local_min_cost = cost;
                     }
                 }
 
-                if (!attach_pos.HasValue) continue;
+                if (!attach_position.HasValue) continue;
 
                 // a bit simpler than vanilla
                 cost = deg_modifier * 1.5f;
                 if (!prioritize_angle_over_distance) {
-                    cost += Mathf.Abs(ideal_distance - Vector2.Distance(tongue.baseChunk.pos + tongue.baseChunk.vel * 3f, attach_pos.Value));
+                    cost += Mathf.Abs(ideal_distance - Vector2.Distance(tongue.baseChunk.pos + tongue.baseChunk.vel * 3f, attach_position.Value));
                     if (preferred_horizontal_direction != 0) {
                         cost += Mathf.Abs(preferred_horizontal_direction * 90f - (deg + sign * deg_modifier)) * 0.9f;
                     }
                 }
 
                 if (cost < min_cost) {
-                    best_attach_pos = attach_pos;
+                    best_attach_position = attach_position;
                     best_direction = direction;
                     min_cost = cost;
                 }
             }
         }
 
-        if (best_attach_pos.HasValue) {
-            tongue.worm.playerCheatAttachPos = best_attach_pos.Value + Custom.DirVec(best_attach_pos.Value, tongue.baseChunk.pos) * 2f;
+        if (best_attach_position.HasValue) {
+            tongue.worm.playerCheatAttachPos = best_attach_position.Value + Custom.DirVec(best_attach_position.Value, tongue.baseChunk.pos) * 2f;
             return best_direction;
         }
         return null;
