@@ -89,7 +89,6 @@ public static class PlayerMod {
 
         if (Option_BeamClimb) {
             IL.Player.GrabVerticalPole += IL_Player_GrabVerticalPole;
-            IL.Player.Update += IL_Player_Update;
             On.Player.MovementUpdate += Player_MovementUpdate;
         }
 
@@ -109,6 +108,10 @@ public static class PlayerMod {
             //
             // grabbing beams by holding down is now implemented here instead of UpdateAnimation()
             IL.Player.MovementUpdate += IL_Player_MovementUpdate;
+        }
+
+        if (Option_BeamClimb || Option_WallClimb || Option_WallJump) {
+            IL.Player.Update += IL_Player_Update;
         }
 
         if (Option_BellySlide || Option_Crawl || Option_Roll_1 || Option_Roll_2) {
@@ -1101,8 +1104,10 @@ public static class PlayerMod {
                     vel_x_gain *= 0.4f + 0.6f * Mathf.InverseLerp(10f, 0.0f, player.slowMovementStun);
                 }
 
-                if (Option_WallClimb && player.input[0].y != 0) {
-                    if (player.input[0].y == 1 && !player.IsTileSolid(bChunk: 1, player.input[0].x, 0) && (body_chunk_1.pos.x < body_chunk_0.pos.x) == (player.input[0].x < 0)) { // climb up even when lower body part is hanging in the air
+                // same condition for body_chunk_0.vel.y as in the function IL_Player_Update();
+                if (Option_WallClimb && player.input[0].y != 0 && Math.Abs(body_chunk_0.vel.y) < 3f) {
+                    // climb up even when lower body part is hanging in the air;
+                    if (player.input[0].y == 1 && !player.IsTileSolid(bChunk: 1, player.input[0].x, 0) && (body_chunk_1.pos.x < body_chunk_0.pos.x) == (player.input[0].x < 0)) {
                         body_chunk_0.pos.y += Mathf.Abs(body_chunk_0.pos.x - body_chunk_1.pos.x);
                         body_chunk_1.pos.x = body_chunk_0.pos.x;
                         body_chunk_1.vel.x = -player.input[0].x * vel_x_gain;
@@ -1115,13 +1120,17 @@ public static class PlayerMod {
                     body_chunk_0.vel.y = Mathf.Lerp(body_chunk_0.vel.y, player.input[0].y * 2.5f, 0.3f);
                     body_chunk_1.vel.y = Mathf.Lerp(body_chunk_1.vel.y, player.input[0].y * 2.5f, 0.3f);
                     ++player.animationFrame;
-                } else if (player.lowerBodyFramesOffGround > 8 && player.input[0].y != -1) { // stay in place // don't slide down // when only Option_WallClimb is enabled then this happens even when holding up // don't slide/climb when doing a normal jump off the ground
+                } else if (player.lowerBodyFramesOffGround > 8 && player.input[0].y != -1) {
+                    // stay in place; don't slide down; when only Option_WallClimb is enabled then 
+                    // this happens even when holding up; don't slide/climb when doing a normal jump
+                    // off the ground
+
                     if (player.grasps[0]?.grabbed is Cicada cicada) {
-                        body_chunk_0.vel.y = Custom.LerpAndTick(body_chunk_0.vel.y, player.gravity - cicada.LiftPlayerPower * 0.5f, 0.3f, 1f);
+                        body_chunk_0.vel.y = Custom.LerpAndTick(body_chunk_0.vel.y, player.gravity - cicada.LiftPlayerPower * 0.5f, 0.025f, 1f);
                     } else {
-                        body_chunk_0.vel.y = Custom.LerpAndTick(body_chunk_0.vel.y, player.gravity, 0.3f, 1f);
+                        body_chunk_0.vel.y = Custom.LerpAndTick(body_chunk_0.vel.y, player.gravity, 0.025f, 1f);
                     }
-                    body_chunk_1.vel.y = Custom.LerpAndTick(body_chunk_1.vel.y, player.gravity, 0.3f, 1f);
+                    body_chunk_1.vel.y = Custom.LerpAndTick(body_chunk_1.vel.y, player.gravity, 0.025f, 1f);
 
                     if (!player.IsTileSolid(bChunk: 1, player.input[0].x, 0) && player.input[0].x > 0 == body_chunk_1.pos.x > body_chunk_0.pos.x) {
                         body_chunk_1.vel.x = -player.input[0].x * vel_x_gain;
@@ -1733,30 +1742,87 @@ public static class PlayerMod {
         // LogAllInstructions(context);
     }
 
-    private static void IL_Player_Update(ILContext context) { // Option_BeamClimb
+    private static void IL_Player_Update(ILContext context) { // Option_BeamClimb // Option_WallClimb // Option_WallJump
         // LogAllInstructions(context);
         ILCursor cursor = new(context);
 
         if (cursor.TryGotoNext(instruction => instruction.MatchLdsfld<BodyModeIndex>("Default")) &&
             cursor.TryGotoNext(instruction => instruction.MatchLdfld<Player>("poleSkipPenalty"))) {
             cursor.Goto(cursor.Index - 2);
-            if (cursor.Next.OpCode != OpCodes.Bgt) {
-                if (can_log_il_hooks) {
-                    Debug.Log(mod_id + ": IL_Player_Update could not be applied.");
-                }
-                return;
-            }
-
             if (can_log_il_hooks) {
-                Debug.Log(mod_id + ": IL_Player_Update: Index " + cursor.Index); // 1936
+                Debug.Log(mod_id + ": IL_Player_Update: Index " + cursor.Index); // 2929
             }
 
-            //
-            // allow beam hopping even when the player is holding up => makes it no risk 
-            // and low reward instead of high risk and low reward;
-            //
+            if (Option_BeamClimb) {
+                if (cursor.Next.OpCode != OpCodes.Bgt) {
+                    if (can_log_il_hooks) {
+                        Debug.Log(mod_id + ": IL_Player_Update could not be applied.");
+                    }
+                    return;
+                }
 
-            cursor.Next.OpCode = OpCodes.Blt;
+                //
+                // allow beam hopping even when the player is holding up => makes it no risk 
+                // and low reward instead of high risk and low reward;
+                //
+
+                cursor.Next.OpCode = OpCodes.Blt;
+            }
+        } else {
+            if (can_log_il_hooks) {
+                Debug.Log(mod_id + ": IL_Player_Update could not be applied.");
+            }
+            return;
+        }
+
+        if (cursor.TryGotoNext(
+            instruction => instruction.MatchLdfld("Player", "bodyMode"),
+            instruction => instruction.MatchLdsfld("Player/BodyModeIndex", "Swimming"),
+            instruction => instruction.MatchCall("ExtEnum`1<Player/BodyModeIndex>", "op_Inequality")
+        ) && cursor.TryGotoNext(MoveType.After,
+            instruction => instruction.MatchLdflda("BodyChunk", "pos"),
+            instruction => instruction.MatchLdfld("UnityEngine.Vector2", "y"),
+            instruction => instruction.MatchBgt(out ILLabel _)
+        )) {
+            if (can_log_il_hooks) {
+                Debug.Log(mod_id + ": IL_Player_Update: Index " + cursor.Index); // 3386
+            }
+
+            if (Option_WallClimb || Option_WallJump) {
+                //
+                // change how the friction is applied when touching the wall while having higher
+                // velocity in y; this way you slide down a bit before you stop; there are two
+                // locations where this change needs to be applied;
+                //
+
+                cursor.Prev.OpCode = OpCodes.Brtrue;
+                cursor.Goto(cursor.Index - 12);
+                cursor.RemoveRange(11);
+                cursor.EmitDelegate<Func<Player, bool>>(player => player.bodyChunks[0].pos.y > player.bodyChunks[1].pos.y && Math.Abs(player.bodyChunks[0].vel.y) < 3f);
+            }
+        } else {
+            if (can_log_il_hooks) {
+                Debug.Log(mod_id + ": IL_Player_Update could not be applied.");
+            }
+            return;
+        }
+
+        if (cursor.TryGotoNext(MoveType.After,
+            instruction => instruction.MatchLdflda("BodyChunk", "pos"),
+            instruction => instruction.MatchLdfld("UnityEngine.Vector2", "y"),
+            instruction => instruction.MatchBgt(out ILLabel _)
+        )) {
+            if (can_log_il_hooks) {
+                Debug.Log(mod_id + ": IL_Player_Update: Index " + cursor.Index); // 3444
+            }
+
+            if (Option_WallClimb || Option_WallJump) {
+                // same as before;
+                cursor.Prev.OpCode = OpCodes.Brtrue;
+                cursor.Goto(cursor.Index - 12);
+                cursor.RemoveRange(11);
+                cursor.EmitDelegate<Func<Player, bool>>(player => player.bodyChunks[0].pos.y > player.bodyChunks[1].pos.y && Math.Abs(player.bodyChunks[0].vel.y) < 3f);
+            }
         } else {
             if (can_log_il_hooks) {
                 Debug.Log(mod_id + ": IL_Player_Update could not be applied.");
