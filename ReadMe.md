@@ -1,5 +1,5 @@
 ## SimplifiedMoveset
-###### Version: 2.5.0
+###### Version: 2.5.1
 
 This is a mod for Rain World v1.9.
 
@@ -11,7 +11,7 @@ https://www.youtube.com/watch?v=Jp6UyUgoWB0
 
 ### Installation
 0. Update Rain World to version 1.9 if needed.
-1. Download the file `SimplifiedMoveset.zip` from [Releases](https://github.com/SchuhBaum/SimplifiedMoveset/releases/tag/v2.5.0).
+1. Download the file `SimplifiedMoveset.zip` from [Releases](https://github.com/SchuhBaum/SimplifiedMoveset/releases/tag/v2.5.1).
 2. Extract its content in the folder `[Steam]\SteamApps\common\Rain World\RainWorld_Data\StreamingAssets\mods`.
 3. Start the game as normal. In the main menu select `Remix` and enable the mod. 
 
@@ -26,8 +26,9 @@ There are two licenses available - MIT and Unlicense. You can choose which one y
 
 ### Changelog
 #### (Rain World v1.9)
-v2.5.0:
+v2.5.1:
 - (player blacklist) Added the option to disabled movement changes for specific players.
+- Forgot to build after cleaning up excess debug logging. Whoops! Done in v2.5.1.
 
 v2.4.9:
 - (belly slide) Reduced the duration of the normal belly slide back to vanilla. The overall distance is unintentionally increased otherwise (like +20%). Not sure why since the speed is decreased and the same as the long belly slide. From what I tested the distance is as in vanilla now. I might need to double check later since this seems somewhat odd.
