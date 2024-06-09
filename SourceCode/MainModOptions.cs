@@ -1,4 +1,4 @@
-using Menu.Remix.MixedUI;
+﻿using Menu.Remix.MixedUI;
 using System.Collections.Generic;
 using UnityEngine;
 using static SimplifiedMoveset.MainMod;
@@ -32,6 +32,12 @@ public class MainModOptions : OptionInterface {
     public static Configurable<bool> tube_worm = main_mod_options.config.Bind("tubeWorm", defaultValue: true, new ConfigurableInfo("Adds auto - aim grappling to beams. Changes affect Saint.", null, "", "Tube Worm"));
     public static Configurable<bool> wall_climb = main_mod_options.config.Bind("wallClimb", defaultValue: false, new ConfigurableInfo("Adds crawling on walls. Removes wall sliding. Normal jumps are prioritized for small obstacles instead of wall climbing / jumping.", null, "", "Wall Climb"));
     public static Configurable<bool> wall_jump = main_mod_options.config.Bind("wallJump", defaultValue: true, new ConfigurableInfo("Only wall jump when facing away from the wall. Wall jumps are prioritized over using tube worms. Removes wall sliding when not holding down. Normal jumps are prioritized for small obstacles instead of wall climbing / jumping.", null, "", "Wall Jump"));
+
+
+    public static Configurable<bool> player0_blacklisted = main_mod_options.config.Bind("player0_blacklisted", defaultValue: false, new ConfigurableInfo("When true, all movement changes are ignored for Player 1.", null, "", "Player 1"));
+    public static Configurable<bool> player1_blacklisted = main_mod_options.config.Bind("player1_blacklisted", defaultValue: false, new ConfigurableInfo("When true, all movement changes are ignored for Player 2.", null, "", "Player 2"));
+    public static Configurable<bool> player2_blacklisted = main_mod_options.config.Bind("player2_blacklisted", defaultValue: false, new ConfigurableInfo("When true, all movement changes are ignored for Player 3.", null, "", "Player 3"));
+    public static Configurable<bool> player3_blacklisted = main_mod_options.config.Bind("player3_blacklisted", defaultValue: false, new ConfigurableInfo("When true, all movement changes are ignored for Player 4.", null, "", "Player 4"));
 
     //
     // parameters
@@ -124,6 +130,22 @@ public class MainModOptions : OptionInterface {
         AddCheckBox(wall_jump, (string)wall_jump.info.Tags[0]);
 
         DrawCheckBoxes(ref Tabs[0]);
+
+
+        AddNewLine();
+        AddNewLine();
+
+        AddTextLabel("Player Blacklist:", FLabelAlignment.Left);
+        DrawTextLabels(ref Tabs[0]);
+
+        AddNewLine();
+
+        AddCheckBox(player0_blacklisted, (string)player0_blacklisted.info.Tags[0]);
+        AddCheckBox(player1_blacklisted, (string)player1_blacklisted.info.Tags[0]);
+        AddCheckBox(player2_blacklisted, (string)player2_blacklisted.info.Tags[0]);
+        AddCheckBox(player3_blacklisted, (string)player3_blacklisted.info.Tags[0]);
+        DrawCheckBoxes(ref Tabs[0]);
+
         DrawBox(ref Tabs[0]);
     }
 
@@ -147,6 +169,15 @@ public class MainModOptions : OptionInterface {
         Debug.Log(mod_id + ": Option_TubeWorm " + Option_TubeWorm);
         Debug.Log(mod_id + ": Option_WallClimb " + Option_WallClimb);
         Debug.Log(mod_id + ": Option_WallJump " + Option_WallJump);
+
+        List<int> player_list = new();
+        if (player0_blacklisted.Value) player_list.Add(0);
+        if (player1_blacklisted.Value) player_list.Add(1);
+        if (player2_blacklisted.Value) player_list.Add(2);
+        if (player3_blacklisted.Value) player_list.Add(3);
+        PlayerMod.player_blacklist = player_list.ToArray();
+
+        Debug.Log(mod_id + ": player_blacklist " + PlayerMod.player_blacklist);
     }
 
     //

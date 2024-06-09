@@ -1,4 +1,4 @@
-using Mono.Cecil.Cil;
+﻿using Mono.Cecil.Cil;
 using MonoMod.Cil;
 using RWCustom;
 using System;
@@ -105,6 +105,7 @@ public static class TubeWormMod {
     private static Vector2 Tongue_ProperAutoAim(On.TubeWorm.Tongue.orig_ProperAutoAim orig, TubeWorm.Tongue tongue, Vector2 direction) { // Option_TubeWorm
         if (tongue.worm.grabbedBy.Count == 0) return orig(tongue, direction);
         if (tongue.worm.grabbedBy[0].grabber is not Player player) return orig(tongue, direction);
+        if (player.Is_Blacklisted()) return orig(tongue, direction);
 
         Vector2 output = orig(tongue, direction); // updates playerCheatAttachPos
         if (tongue.worm.playerCheatAttachPos.HasValue) return output;
@@ -117,6 +118,11 @@ public static class TubeWormMod {
 
     private static void Tongue_Shoot(On.TubeWorm.Tongue.orig_Shoot orig, TubeWorm.Tongue tongue, Vector2 direction) { // Option_TubeWorm
         if (tongue.worm.grabbedBy.Count == 0 || tongue.worm.grabbedBy[0].grabber is not Player player) {
+            orig(tongue, direction);
+            return;
+        }
+
+        if (player.Is_Blacklisted()) {
             orig(tongue, direction);
             return;
         }
@@ -153,7 +159,9 @@ public static class TubeWormMod {
             }
 
             // "call" orig() when returning true;
-            if (player == null || player.Get_Attached_Fields() is not Player_Attached_Fields attached_fields) return true;
+            if (player == null) return true;
+            if (player.Is_Blacklisted()) return true;
+            if (player.Get_Attached_Fields() is not Player_Attached_Fields attached_fields) return true;
 
             if (attached_fields.tubeworm_tongue_needs_to_retract || tubeworm.tongues[0].Attached && player.IsJumpPressed() && (player.IsClimbingOnBeam() || player.CanWallJumpOrMidAirWallJump() || player.bodyMode == BodyModeIndex.CorridorClimb)) {
                 tubeworm.tongues[0].Release();
@@ -173,6 +181,8 @@ public static class TubeWormMod {
 
     private static bool TubeWorm_JumpButton(On.TubeWorm.orig_JumpButton orig, TubeWorm tube_worm, Player player) { // Option_TubeWorm
         bool vanilla_result = orig(tube_worm, player);
+        if (player.Is_Blacklisted()) return vanilla_result;
+
         if (player.IsClimbingOnBeam() || player.CanWallJumpOrMidAirWallJump() || player.bodyMode == BodyModeIndex.CorridorClimb) {
             tube_worm.useBool = false;
             return player.IsJumpPressed();

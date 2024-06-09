@@ -1,4 +1,4 @@
-using Mono.Cecil.Cil;
+﻿using Mono.Cecil.Cil;
 using MonoMod.Cil;
 using MoreSlugcats;
 using RWCustom;
@@ -17,6 +17,9 @@ public static class PlayerMod {
     //
 
     public static readonly float lean_factor = 1f;
+
+    public static int[] player_blacklist = {};
+    public static bool Is_Blacklisted(this Player player) => player.Get_Attached_Fields() == null;
 
     //
     // variables
@@ -1237,9 +1240,19 @@ public static class PlayerMod {
                 Debug.Log(mod_id + ": IL_Player_ClassMechanicsGourmand: Index " + cursor.Index);
             }
 
+
             // don't exhaust from aerobicLevel;
-            cursor.Goto(cursor.Index - 12);
-            cursor.RemoveRange(13);
+            cursor.Goto(cursor.Index - 11);
+            cursor.RemoveRange(12);
+
+            cursor.EmitDelegate<Action<Player>>(player => {
+                if (!player.Is_Blacklisted()) return;
+
+                // vanilla code:
+                if (player.SlugCatClass == MoreSlugcatsEnums.SlugcatStatsName.Gourmand && (double)player.aerobicLevel >= 0.95) {
+                    player.gourmandExhausted = true;
+                }
+            });
         } else {
             if (can_log_il_hooks) {
                 Debug.Log(mod_id + ": IL_Player_ClassMechanicsGourmand could not be applied.");
@@ -1263,15 +1276,31 @@ public static class PlayerMod {
             // Option_Crawl; same damage and stun values as for slides and rocket jumps;
             // maybe setting damage to zero is better since these moves are not so
             // involved to do;
-            cursor.Goto(cursor.Index - 3);
-            cursor.Prev.Operand = 0f;
-            cursor.Next.Operand = 50f;
+            cursor.Goto(cursor.Index - 4);
+            cursor.RemoveRange(2);
+
+            cursor.Emit(OpCodes.Ldarg_0);
+            cursor.EmitDelegate<Func<Player, float>>(player => {
+                // Sets the damage.
+                if (player.Is_Blacklisted()) return 1f; // vanilla case
+                return 0f;
+            });
+
+            cursor.Emit(OpCodes.Ldarg_0);
+            cursor.EmitDelegate<Func<Player, float>>(player => {
+                // Sets the stun duration.
+                if (player.Is_Blacklisted()) return 120f; // vanilla case
+                return 50f;
+            });
 
             // interrupt Gourmand's roll attack by standing up; otherwise a crawl turn
             // might start another roll instantly => more damage + stun than intended;
             cursor.Goto(cursor.Index + 2);
             cursor.Emit(OpCodes.Ldarg_0);
-            cursor.EmitDelegate<Action<Player>>(player => player.standing = true);
+            cursor.EmitDelegate<Action<Player>>(player => {
+                if (player.Is_Blacklisted()) return;
+                player.standing = true;
+            });
         } else {
             if (can_log_il_hooks) {
                 Debug.Log(mod_id + ": IL_Player_Collide could not be applied.");
@@ -1309,7 +1338,11 @@ public static class PlayerMod {
             // rocket jumps can deal damage but only when you are fast enough; use the same speed
             // check as with initiating rolls (Option_Roll_2);
             cursor.Emit(OpCodes.Ldarg_0);
-            cursor.EmitDelegate<Func<Player, bool>>(player => -Mathf.Min(player.bodyChunks[0].vel.y, player.bodyChunks[1].vel.y) <= 16f);
+            cursor.EmitDelegate<Func<Player, bool>>(player => {
+                // call orig();
+                if (player.Is_Blacklisted()) return true;
+                return -Mathf.Min(player.bodyChunks[0].vel.y, player.bodyChunks[1].vel.y) <= 16f;
+            });
             cursor.Emit(OpCodes.Brfalse, label);
 
             // interrupt Gourmand's new rocket jump attack; otherwise it is spammed
@@ -1318,6 +1351,8 @@ public static class PlayerMod {
             cursor.Emit(OpCodes.Ldarg_1);
 
             cursor.EmitDelegate<Action<Player, PhysicalObject>>((player, other_object) => {
+                if (player.Is_Blacklisted()) return; // vanilla case
+
                 // currently the animation check is not needed since the first case (belly slide) 
                 // jumps directly to setting the damage value which is after this;
                 if (player.animation != AnimationIndex.RocketJump) return;
@@ -1327,9 +1362,24 @@ public static class PlayerMod {
                 player.standing = true;
             });
 
-            // set damage to zero because these moves can be spammed;
-            cursor.Next.Operand = 0f;
-            damage_variable_id = cursor.Next.Next.Operand;
+            // For some reason the index does not increase by the first GotoNext().
+            // Maybe because there is a label pointing here and the marker takes
+            // space too??
+            // Debug.Log("-- index " + cursor.Index); // 386
+            cursor.GotoNext();
+            // Debug.Log("-- index " + cursor.Index); // 386
+            cursor.GotoNext();
+            // Debug.Log("-- index " + cursor.Index); // 387
+
+            cursor.Emit(OpCodes.Pop);
+            cursor.Emit(OpCodes.Ldarg_0);
+
+            cursor.EmitDelegate<Func<Player, float>>(player => {
+                if (player.Is_Blacklisted()) return 0.25f; // vanilla case
+                return 0f; // set damage to zero because these moves can be spammed;
+            });
+            
+            damage_variable_id = cursor.Next.Operand;
         } else {
             if (can_log_il_hooks) {
                 Debug.Log(mod_id + ": IL_Player_Collide could not be applied.");
@@ -1377,8 +1427,13 @@ public static class PlayerMod {
                 Debug.Log(mod_id + ": IL_Player_GrabUpdate: Index " + cursor.Index);
             }
 
-            cursor.Next.OpCode = OpCodes.Ldc_R4;
-            cursor.Next.Operand = 2f;
+            cursor.RemoveRange(1);
+            cursor.Emit(OpCodes.Ldarg_0);
+
+            cursor.EmitDelegate<Func<Player, float>>(player => {
+                if (player.Is_Blacklisted()) return 0.5f; // vanilla case
+                return 2f;
+            });
         } else {
             if (can_log_il_hooks) {
                 Debug.Log(mod_id + ": IL_Player_GrabUpdate could not be applied.");
@@ -1424,7 +1479,11 @@ public static class PlayerMod {
             // don't do a rocket jump out of shortcuts;
 
             cursor.Emit(OpCodes.Ldarg_0);
-            cursor.EmitDelegate<Func<Player, bool>>(player => player.shortcutDelay > 14 && player.animation == AnimationIndex.BellySlide);
+            cursor.EmitDelegate<Func<Player, bool>>(player => {
+                // call orig();
+                if (player.Is_Blacklisted()) return false;
+                return player.shortcutDelay > 14 && player.animation == AnimationIndex.BellySlide;
+            });
 
             ILLabel label = cursor.DefineLabel();
             cursor.Emit(OpCodes.Brfalse, label);
@@ -1436,7 +1495,11 @@ public static class PlayerMod {
             // prioritize retracting over jumping off beams;
 
             cursor.Emit(OpCodes.Ldarg_0);
-            cursor.EmitDelegate<Func<Player, bool>>(player => (player.IsClimbingOnBeam() || player.bodyMode == BodyModeIndex.CorridorClimb) && player.IsTongueRetracting());
+            cursor.EmitDelegate<Func<Player, bool>>(player => {
+                // call orig();
+                if(player.Is_Blacklisted()) return false;
+                return (player.IsClimbingOnBeam() || player.bodyMode == BodyModeIndex.CorridorClimb) && player.IsTongueRetracting();
+            });
 
             ILLabel label = cursor.DefineLabel();
             cursor.Emit(OpCodes.Brfalse, label);
@@ -1458,6 +1521,7 @@ public static class PlayerMod {
 
                 cursor.RemoveRange(4);
                 cursor.EmitDelegate<Func<Player, bool>>(player => {
+                    if (player.Is_Blacklisted()) return player.input[0].x != 0; // vanilla case;
                     if (player.input[0].y == -1) return false;
                     return player.input[0].x != 0; // vanilla case;
                 });
@@ -1487,16 +1551,24 @@ public static class PlayerMod {
                 cursor.Goto(cursor.Index + 4);
                 cursor.Emit(OpCodes.Ldloc_0); // adrenaline_modifier
 
-                cursor.EmitDelegate<Action<Player, float>>((player, adrenaline_modifier) => {
+                cursor.EmitDelegate<Func<Player, float, bool>>((player, adrenaline_modifier) => {
+                    // call orig();
+                    if (player.Is_Blacklisted()) return true;
+
                     // should not be needed anymore
                     // the roll initiation logic has been modded
                     player.rocketJumpFromBellySlide = true;
 
                     RocketJump(player, adrenaline_modifier);
                     player.rollDirection = 0;
+                    return false;
                 });
 
+                ILLabel label = cursor.DefineLabel();
+                cursor.Emit(OpCodes.Brtrue, label);
                 cursor.Emit(OpCodes.Ret);
+                cursor.MarkLabel(label);
+
                 cursor.Emit(OpCodes.Ldarg_0); // player
             }
         } else {
@@ -1520,6 +1592,7 @@ public static class PlayerMod {
 
                 cursor.Emit(OpCodes.Ldarg_0); // player
                 cursor.EmitDelegate<Action<Player>>(player => {
+                    if (player.Is_Blacklisted()) return;
                     if (player.bodyMode != BodyModeIndex.Crawl) return;
                     if (player.standing) return;
 
@@ -1566,6 +1639,19 @@ public static class PlayerMod {
                 cursor.GotoNext();
                 cursor.GotoNext();
                 cursor.Emit(OpCodes.Ldarg_0); // 601
+
+
+                // Actually, this is more like a bug fix. Don't check if player
+                // is blacklisted. The version below should work but don't use it.
+                // Use the original version instead.
+                // cursor.Goto(cursor.Index + 2); // 606
+                // object label = cursor.Next.Operand;
+                // cursor.Goto(cursor.Index - 5); // 601
+
+                // cursor.EmitDelegate<Func<Player, bool>>(player => player.Is_Blacklisted());
+                // cursor.Emit(OpCodes.Brfalse, label);
+                // cursor.GotoNext();
+                // cursor.Emit(OpCodes.Ldarg_0);
             }
         } else {
             if (can_log_il_hooks) {
@@ -1596,6 +1682,11 @@ public static class PlayerMod {
                 cursor = cursor.RemoveRange(14);
 
                 cursor.EmitDelegate<Func<Player, bool>>(player => {
+                    // call orig();
+                    if (player.Is_Blacklisted()) {
+                        return player.input[0].y > 0 && (!ModManager.MSC || !player.monkAscension) && !(player.Submersion > 0.9f); // vanilla case
+                    }
+
                     if (player.timeSinceInCorridorMode is > 0 and < 20) {
                         player.timeSinceInCorridorMode = 20;
                     }
@@ -1629,13 +1720,25 @@ public static class PlayerMod {
             if (Option_WallJump) {
                 cursor.Goto(cursor.Index + 7);
                 cursor.RemoveRange(8); // 3326-3333
-                cursor.Next.OpCode = OpCodes.Brfalse;
-                cursor.EmitDelegate<Func<Player, bool>>(player => player.canWallJump != 0);
 
+                cursor.EmitDelegate<Func<Player, bool>>(player => {
+                    if (player.Is_Blacklisted()) return player.input[0].x != -Math.Sign(player.canWallJump); // vanilla case
+
+                    // at this point canWallJump is already checked and != 0;
+                    // return player.canWallJump != 0;
+                    return true;
+                });
+
+                cursor.Next.OpCode = OpCodes.Brfalse;
                 cursor.Goto(cursor.Index + 2);
                 cursor.RemoveRange(4); // 3336-3339
 
                 cursor.EmitDelegate<Action<Player>>(player => {
+                    if (player.Is_Blacklisted()) {
+                        player.WallJump(Math.Sign(player.canWallJump)); // vanilla case
+                        return;
+                    }
+
                     if (player.input[0].x == 0) {
                         player.WallJump(Math.Sign(player.canWallJump));
                         return;
@@ -1665,7 +1768,10 @@ public static class PlayerMod {
             // allow slug slam using rocket jumps;
             cursor.Goto(cursor.Index - 1);
             cursor.RemoveRange(3);
-            cursor.EmitDelegate<Func<Player, bool>>(player => player.animation != AnimationIndex.BellySlide && player.animation != AnimationIndex.RocketJump);
+            cursor.EmitDelegate<Func<Player, bool>>(player => {
+                if (player.Is_Blacklisted()) return player.animation != AnimationIndex.BellySlide; // vanilla case
+                return player.animation != AnimationIndex.BellySlide && player.animation != AnimationIndex.RocketJump;
+            });
         } else {
             if (can_log_il_hooks) {
                 Debug.Log(mod_id + ": IL_Player_SlugSlamConditions could not be applied.");
@@ -1690,6 +1796,10 @@ public static class PlayerMod {
             cursor.Emit(OpCodes.Ldarg_3);
 
             cursor.EmitDelegate<Func<Player, IntVector2, float, bool>>((player, direction, speed) => {
+                if (player.Is_Blacklisted()) {
+                    return player.input[0].downDiagonal != 0 && player.animation != AnimationIndex.Roll && (speed > 12f || player.animation == AnimationIndex.Flip || (player.animation == AnimationIndex.RocketJump && player.rocketJumpFromBellySlide)) && direction.y < 0 && player.allowRoll > 0 && player.consistentDownDiagonal > ((speed <= 24f) ? 6 : 1); // vanilla case
+                }
+
                 if (player.animation == AnimationIndex.RocketJump) {
                     if (Option_Roll_2) {
                         return speed > 16f && player.input[0].downDiagonal != 0 && direction.y < 0 && player.animation != AnimationIndex.Roll && player.allowRoll > 0 && player.consistentDownDiagonal > ((speed <= 24f) ? 6 : 1);
@@ -1724,6 +1834,8 @@ public static class PlayerMod {
 
         cursor.Emit(OpCodes.Ldarg_0);
         cursor.EmitDelegate<Func<Player, bool>>(player => {
+            // call orig();
+            if (player.Is_Blacklisted()) return true;
             if (player.tongue == null || player.room == null) return true;
 
             // prioritize climbing and wall jumps;
@@ -1766,7 +1878,13 @@ public static class PlayerMod {
                 // and low reward instead of high risk and low reward;
                 //
 
-                cursor.Next.OpCode = OpCodes.Blt;
+                cursor.Next.OpCode = OpCodes.Brtrue;
+                cursor.Goto(cursor.Index - 5);
+                cursor.RemoveRange(5);
+                cursor.EmitDelegate<Func<Player, bool>>(player => {
+                    if (player.Is_Blacklisted()) return player.input[0].y > 0; // vanilla case
+                    return player.input[0].y < 0;
+                });
             }
         } else {
             if (can_log_il_hooks) {
@@ -1798,7 +1916,12 @@ public static class PlayerMod {
                 cursor.Prev.OpCode = OpCodes.Brtrue;
                 cursor.Goto(cursor.Index - 12);
                 cursor.RemoveRange(11);
-                cursor.EmitDelegate<Func<Player, bool>>(player => player.bodyChunks[0].pos.y > player.bodyChunks[1].pos.y && Math.Abs(player.bodyChunks[0].vel.y) < 3f);
+                cursor.EmitDelegate<Func<Player, bool>>(player => {
+                    if (player.Is_Blacklisted()) {
+                        return player.bodyChunks[0].pos.y > player.bodyChunks[1].pos.y; // vanilla case
+                    }
+                    return player.bodyChunks[0].pos.y > player.bodyChunks[1].pos.y && Math.Abs(player.bodyChunks[0].vel.y) < 3f;
+                });
             }
         } else {
             if (can_log_il_hooks) {
@@ -1821,7 +1944,12 @@ public static class PlayerMod {
                 cursor.Prev.OpCode = OpCodes.Brtrue;
                 cursor.Goto(cursor.Index - 12);
                 cursor.RemoveRange(11);
-                cursor.EmitDelegate<Func<Player, bool>>(player => player.bodyChunks[0].pos.y > player.bodyChunks[1].pos.y && Math.Abs(player.bodyChunks[0].vel.y) < 3f);
+                cursor.EmitDelegate<Func<Player, bool>>(player => {
+                    if (player.Is_Blacklisted()) {
+                        return player.bodyChunks[0].pos.y > player.bodyChunks[1].pos.y; // vanilla case
+                    }
+                    return player.bodyChunks[0].pos.y > player.bodyChunks[1].pos.y && Math.Abs(player.bodyChunks[0].vel.y) < 3f;
+                });
             }
         } else {
             if (can_log_il_hooks) {
@@ -1837,9 +1965,9 @@ public static class PlayerMod {
         ILCursor cursor = new(context);
 
         if (cursor.TryGotoNext(
-                    instruction => instruction.MatchLdsfld<AnimationIndex>("HangFromBeam"),
-                    instruction => instruction.MatchCall("ExtEnum`1<Player/AnimationIndex>", "op_Equality")
-                    )) {
+            instruction => instruction.MatchLdsfld<AnimationIndex>("HangFromBeam"),
+            instruction => instruction.MatchCall("ExtEnum`1<Player/AnimationIndex>", "op_Equality")
+        )) {
             if (can_log_il_hooks) {
                 Debug.Log(mod_id + ": IL_Player_UpdateAnimation: Index " + cursor.Index); // 636
             }
@@ -1848,6 +1976,7 @@ public static class PlayerMod {
                 cursor.Goto(cursor.Index + 4);
                 cursor.EmitDelegate<Func<Player, bool>>(player => {
                     // "call" orig();
+                    if (player.Is_Blacklisted()) return true;
                     if (player.Get_Attached_Fields() is not Player_Attached_Fields attached_fields) return true;
                     UpdateAnimation_HangFromBeam(player, attached_fields);
                     return false;
@@ -1878,6 +2007,7 @@ public static class PlayerMod {
             if (Option_BeamClimb) {
                 cursor.Goto(cursor.Index + 4);
                 cursor.EmitDelegate<Func<Player, bool>>(player => {
+                    if (player.Is_Blacklisted()) return true;
                     if (player.Get_Attached_Fields() is not Player_Attached_Fields attached_fields) return true;
                     UpdateAnimation_GetUpOnBeam(player, attached_fields);
                     return false;
@@ -1909,6 +2039,7 @@ public static class PlayerMod {
                 cursor.Goto(cursor.Index + 4);
                 cursor.EmitDelegate<Func<Player, bool>>(player => {
                     // "call" orig();
+                    if (player.Is_Blacklisted()) return true;
                     if (player.Get_Attached_Fields() is not Player_Attached_Fields attached_fields) return true;
                     UpdateAnimation_StandOnBeam(player, attached_fields);
                     return false;
@@ -1940,6 +2071,7 @@ public static class PlayerMod {
                 cursor.Goto(cursor.Index + 4);
                 cursor.EmitDelegate<Func<Player, bool>>(player => {
                     // "call" orig();
+                    if (player.Is_Blacklisted()) return true;
                     if (player.Get_Attached_Fields() is not Player_Attached_Fields attached_fields) return true;
                     UpdateAnimation_ClimbOnBeam(player, attached_fields);
                     return false;
@@ -1994,6 +2126,7 @@ public static class PlayerMod {
                 cursor.Goto(cursor.Index + 4);
                 cursor.EmitDelegate<Func<Player, bool>>(player => {
                     // "call" orig();
+                    if (player.Is_Blacklisted()) return true;
                     if (player.Get_Attached_Fields() is not Player_Attached_Fields attached_fields) return true;
                     UpdateAnimation_BeamTip(player, attached_fields);
                     return false;
@@ -2025,6 +2158,7 @@ public static class PlayerMod {
                 cursor.Goto(cursor.Index + 4);
                 cursor.EmitDelegate<Func<Player, bool>>(player => {
                     // "call" orig();
+                    if (player.Is_Blacklisted()) return true;
                     if (player.Get_Attached_Fields() is not Player_Attached_Fields attached_fields) return true;
                     UpdateAnimation_HangUnderVerticalBeam(player, attached_fields);
                     return false;
@@ -2061,7 +2195,15 @@ public static class PlayerMod {
                 object label = cursor.Next.Operand;
                 cursor.GotoNext();
                 cursor.GotoNext();
-                cursor.EmitDelegate(() => ModManager.MMF && MMF.cfgFreeSwimBoosts.Value);
+                cursor.Emit(OpCodes.Ldarg_0);
+
+                // I think we are in the if part. When true we skip it.
+                // Like: if (vanilla) { if (modded) {...} } else {...}
+                cursor.EmitDelegate<Func<Player, bool>>(player => {
+                    // call orig();
+                    if (player.Is_Blacklisted()) return true;
+                    return ModManager.MMF && MMF.cfgFreeSwimBoosts.Value;
+                });
                 cursor.Emit(OpCodes.Brfalse, label);
             }
         } else {
@@ -2085,8 +2227,11 @@ public static class PlayerMod {
                 // always stand up when roll has finished
                 // prevent chain rolling on slopes
 
-                cursor.Prev.Previous.OpCode = OpCodes.Pop;
-                cursor.Prev.OpCode = OpCodes.Ldc_I4_1; // player.standing = 1;
+                cursor.Emit(OpCodes.Ldarg_0);
+                cursor.EmitDelegate<Func<int, Player, int>>((is_standing, player) => {
+                    if (player.Is_Blacklisted()) return is_standing;
+                    return 1;
+                });
             }
         } else {
             if (can_log_il_hooks) {
@@ -2109,8 +2254,17 @@ public static class PlayerMod {
                 // do a longer version by default
 
                 cursor.Goto(cursor.Index + 4);
-                cursor.EmitDelegate<Action<Player>>(player => UpdateAnimation_BellySlide(player));
-                cursor.Emit(OpCodes.Ret);
+                cursor.EmitDelegate<Func<Player, bool>>(player => {
+                    if (player.Is_Blacklisted()) return true;
+                    UpdateAnimation_BellySlide(player);
+                    return false;
+                });
+
+                ILLabel label = cursor.DefineLabel();
+                cursor.Emit(OpCodes.Brtrue, label);
+                cursor = cursor.Emit(OpCodes.Ret);
+                cursor.MarkLabel(label);
+
                 cursor.Emit(OpCodes.Ldarg_0); // player
             }
         } else {
@@ -2139,10 +2293,18 @@ public static class PlayerMod {
                 // otherwise orig() never returns;
 
                 cursor.Goto(cursor.Index + 4);
-                cursor.EmitDelegate<Action<Player>>(player => UpdateBodyMode_Crawl(player));
+                cursor.EmitDelegate<Func<Player, bool>>(player => {
+                    // "call" orig();
+                    if (player.Is_Blacklisted()) return true;
+                    UpdateBodyMode_Crawl(player);
+                    return false;
+                });
 
-                // skip vanilla code;
-                cursor.Emit(OpCodes.Ret);
+                // skip vanilla code if returns false;
+                ILLabel label = cursor.DefineLabel();
+                cursor.Emit(OpCodes.Brtrue, label);
+                cursor = cursor.Emit(OpCodes.Ret);
+                cursor.MarkLabel(label);
 
                 // player was used in the function call;
                 // restore vanilla code;
@@ -2162,7 +2324,11 @@ public static class PlayerMod {
 
             if (Option_TubeWorm) {
                 cursor.Goto(cursor.Index + 4);
-                cursor.EmitDelegate<Func<Player, bool>>(player => player.IsJumpPressed() && player.IsTongueRetracting());
+                cursor.EmitDelegate<Func<Player, bool>>(player => {
+                    // call orig();
+                    if (player.Is_Blacklisted()) return false;
+                    return player.IsJumpPressed() && player.IsTongueRetracting();
+                });
 
                 ILLabel label = cursor.DefineLabel();
                 cursor.Emit(OpCodes.Brfalse, label);
@@ -2171,6 +2337,8 @@ public static class PlayerMod {
                 // otherwise MarkLabel() will always label the position after all Emit() calls;
                 cursor = cursor.Emit(OpCodes.Ret);
                 cursor.MarkLabel(label);
+
+                // orig(player);
                 cursor.Emit(OpCodes.Ldarg_0); // player
             }
         } else {
@@ -2190,8 +2358,18 @@ public static class PlayerMod {
                 // crawl upwards when holding up;
 
                 cursor.Goto(cursor.Index + 4);
-                cursor.EmitDelegate<Action<Player>>(player => UpdateBodyMode_WallClimb(player));
-                cursor.Emit(OpCodes.Ret);
+                cursor.EmitDelegate<Func<Player, bool>>(player => {
+                    // call orig();
+                    if (player.Is_Blacklisted()) return true;
+                    UpdateBodyMode_WallClimb(player);
+                    return false;
+                });
+
+                ILLabel label = cursor.DefineLabel();
+                cursor.Emit(OpCodes.Brtrue, label);
+                cursor = cursor.Emit(OpCodes.Ret);
+                cursor.MarkLabel(label);
+
                 cursor.Emit(OpCodes.Ldarg_0); // player
             }
         } else {
@@ -2210,6 +2388,8 @@ public static class PlayerMod {
         cursor.Emit(OpCodes.Ldarg_1);
 
         cursor.EmitDelegate<Func<Player, int, bool>>((player, direction) => {
+            // call orig();
+            if (player.Is_Blacklisted()) return true;
             if (player.Get_Attached_Fields() is not Player_Attached_Fields attached_fields) return true;
             return WallJump(player, attached_fields, direction);
         });
@@ -2227,6 +2407,11 @@ public static class PlayerMod {
     //
 
     private static void Player_CheckInput(On.Player.orig_checkInput orig, Player player) { // Option_WallJump
+        if (player.Is_Blacklisted()) {
+            orig(player);
+            return;
+        }
+
         orig(player);
 
         // does not conflict with vanilla code; simulateHoldJumpButton is used for crouch
@@ -2257,6 +2442,7 @@ public static class PlayerMod {
     private static void Player_Ctor(On.Player.orig_ctor orig, Player player, AbstractCreature abstract_creature, World world) {
         orig(player, abstract_creature, world);
 
+        if (Array.Exists(player_blacklist, player_number => player_number == player.playerState.playerNumber)) return;
         if (_all_attached_fields.ContainsKey(player)) return;
         _all_attached_fields.Add(player, new Player_Attached_Fields());
 
@@ -2275,6 +2461,10 @@ public static class PlayerMod {
     }
 
     private static ObjectGrabability Player_Grabability(On.Player.orig_Grabability orig, Player player, PhysicalObject physical_object) { // Option_Grab
+        if (player.Is_Blacklisted()) {
+            return orig(player, physical_object);
+        }
+
         // ignore the change when you are already grabbing it;
         // otherwise this can conflict with JollyCoopFixesAndStuff's SlugcatCollision option;
         // this option also excludes collision from carried but not dragged creatures;
@@ -2295,6 +2485,11 @@ public static class PlayerMod {
     }
 
     private static void Player_GraphicsModuleUpdated(On.Player.orig_GraphicsModuleUpdated orig, Player player, bool actually_viewed, bool eu) { // Option_WallClimb // Option_WallJump 
+        if (player.Is_Blacklisted()) {
+            orig(player, actually_viewed, eu);
+            return;
+        }
+
         // prevent cicadas from slowly lifing player while wall climbing
         if (player.bodyMode == BodyModeIndex.WallClimb) {
             foreach (Creature.Grasp grasp in player.grasps) {
@@ -2313,6 +2508,11 @@ public static class PlayerMod {
     }
 
     private static void Player_Jump(On.Player.orig_Jump orig, Player player) {
+        if (player.Is_Blacklisted()) {
+            orig(player);
+            return;
+        }
+
         if (player.Get_Attached_Fields() is not Player_Attached_Fields attached_fields) {
             orig(player);
             return;
@@ -2358,6 +2558,11 @@ public static class PlayerMod {
     }
 
     private static void Player_MovementUpdate(On.Player.orig_MovementUpdate orig, Player player, bool eu) { // Option_BeamClimb
+        if (player.Is_Blacklisted()) {
+            orig(player, eu);
+            return;
+        }
+
         // otherwise you can get stuck in climbing on beam and letting go;
         if (player.corridorDrop && player.animation != AnimationIndex.None) {
             player.corridorDrop = false;
@@ -2366,6 +2571,10 @@ public static class PlayerMod {
     }
 
     private static bool Player_SaintTongueCheck(On.Player.orig_SaintTongueCheck orig, Player player) { // Option_TubeWorm
+        if (player.Is_Blacklisted()) {
+            return orig(player);
+        }
+
         // it might be better to always call orig() for compatibility;
         bool vanilla_result = orig(player);
 
@@ -2377,6 +2586,11 @@ public static class PlayerMod {
     }
 
     private static void Player_TerrainImpact(On.Player.orig_TerrainImpact orig, Player player, int chunk, IntVector2 direction, float speed, bool first_contact) { // Option_StandUp
+        if (player.Is_Blacklisted()) {
+            orig(player, chunk, direction, speed, first_contact);
+            return;
+        }
+
         orig(player, chunk, direction, speed, first_contact);
 
         if (!first_contact) return;
@@ -2389,6 +2603,11 @@ public static class PlayerMod {
     }
 
     private static void Player_ThrownSpear(On.Player.orig_ThrownSpear orig, Player player, Spear spear) { // Option_Gourmand
+        if (player.Is_Blacklisted()) {
+            orig(player, spear);
+            return;
+        }
+
         orig(player, spear);
         if (!ModManager.MSC) return;
         if (!player.isGourmand) return;
@@ -2396,6 +2615,11 @@ public static class PlayerMod {
     }
 
     private static void Player_ThrowObject(On.Player.orig_ThrowObject orig, Player player, int grasp_index, bool eu) { // Option_BellySlide // Option_SpearThrow
+        if (player.Is_Blacklisted()) {
+            orig(player, grasp_index, eu);
+            return;
+        }
+
         // throw weapon // don't get forward momentum on ground or poles
         if (Option_SpearThrow && player.grasps[grasp_index]?.grabbed is Weapon && player.animation != AnimationIndex.BellySlide && (player.animation != AnimationIndex.Flip || player.input[0].y >= 0 || player.input[0].x != 0)) {
             if (player.bodyMode == BodyModeIndex.ClimbingOnBeam || player.bodyChunks[1].onSlope != 0) {
@@ -2418,6 +2642,11 @@ public static class PlayerMod {
     }
 
     private static void Player_Update(On.Player.orig_Update orig, Player player, bool eu) { // Option_BeamClimb // Option_TubeWorm
+        if (player.Is_Blacklisted()) {
+            orig(player, eu);
+            return;
+        }
+
         // LogPlayerInformation(player);
         orig(player, eu);
 
@@ -2450,6 +2679,11 @@ public static class PlayerMod {
     }
 
     private static void Player_UpdateAnimation(On.Player.orig_UpdateAnimation orig, Player player) {
+        if (player.Is_Blacklisted()) {
+            orig(player);
+            return;
+        }
+
         if (player.room is not Room room || player.Get_Attached_Fields() is not Player_Attached_Fields attached_fields) {
             orig(player);
             return;
@@ -2637,6 +2871,11 @@ public static class PlayerMod {
     }
 
     private static void Player_UpdateBodyMode(On.Player.orig_UpdateBodyMode orig, Player player) { // Option_SlideTurn
+        if (player.Is_Blacklisted()) {
+            orig(player);
+            return;
+        }
+
         orig(player);
 
         // backflip
@@ -2647,6 +2886,11 @@ public static class PlayerMod {
     }
 
     private static void Player_UpdateMSC(On.Player.orig_UpdateMSC orig, Player player) { // Option_Swim
+        if (player.Is_Blacklisted()) {
+            orig(player);
+            return;
+        }
+
         orig(player);
 
         if (!ModManager.MSC) return;
@@ -2661,6 +2905,7 @@ public static class PlayerMod {
         // here originalDir = newDir since direction is adjusted in Tongue_Shoot();
         // newDir needs to be used in TubeWormMod;
         if (tongue.player is not Player player) return orig(tongue, direction);
+        if (player.Is_Blacklisted()) return orig(tongue, direction);
         if (player.room == null) return orig(tongue, direction);
 
         // vanilla with new direction
@@ -2675,6 +2920,16 @@ public static class PlayerMod {
     }
 
     private static void Tongue_Shoot(On.Player.Tongue.orig_Shoot orig, Tongue tongue, Vector2 direction) { // Option_TubeWorm
+        if (tongue.player is not Player player) {
+            orig(tongue, direction);
+            return;
+        }
+
+        if (player.Is_Blacklisted()) {
+            orig(tongue, direction);
+            return;
+        }
+
         // adept tongue direction to player inputs in some additional cases
         if (tongue.player.input[0].x != 0) {
             // used in the case where y > 0 as well

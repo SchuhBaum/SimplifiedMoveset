@@ -1,4 +1,4 @@
-using Mono.Cecil.Cil;
+﻿using Mono.Cecil.Cil;
 using MonoMod.Cil;
 using RWCustom;
 using System;
@@ -15,6 +15,12 @@ using static SimplifiedMoveset.RoomMod;
 namespace SimplifiedMoveset;
 
 public static class BodyChunkMod {
+    //
+    // parameters
+    //
+
+    public static bool Is_Player_Blacklisted(this BodyChunk body_chunk) => body_chunk.Get_Attached_Fields() == null;
+
     //
     // variables
     //
@@ -204,7 +210,8 @@ public static class BodyChunkMod {
         cursor.Emit(OpCodes.Ldarg_0);
 
         cursor.EmitDelegate<Func<BodyChunk, bool>>(body_chunk => {
-            // "call" orig() if returning true;
+            // call orig();
+            if (body_chunk.Is_Player_Blacklisted()) return true;
             if (body_chunk.Get_Attached_Fields() is not BodyChunk_Attached_Fields attached_fields) return true;
             CheckAgainstSlopesVertically(body_chunk, attached_fields);
             return false;
@@ -224,6 +231,11 @@ public static class BodyChunkMod {
 
     private static void BodyChunk_CheckVerticalCollision(On.BodyChunk.orig_CheckVerticalCollision orig, BodyChunk body_chunk) {
         if (body_chunk.owner is not Player player || body_chunk != player.mainBodyChunk || body_chunk.vel.y <= 0f) {
+            orig(body_chunk);
+            return;
+        }
+
+        if (body_chunk.Is_Player_Blacklisted()) {
             orig(body_chunk);
             return;
         }
@@ -281,12 +293,18 @@ public static class BodyChunkMod {
 
     private static void BodyChunk_Ctor(On.BodyChunk.orig_ctor orig, BodyChunk body_chunk, PhysicalObject owner, int index, Vector2 pos, float rad, float mass) { // Option_BellySlide // Option_Crawl
         orig(body_chunk, owner, index, pos, rad, mass);
-        if (owner is not Player) return;
+        if (owner is not Player player) return;
+        if (player.Is_Blacklisted()) return;
         if (_all_attached_fields.ContainsKey(body_chunk)) return;
         _all_attached_fields.Add(body_chunk, new BodyChunk_Attached_Fields());
     }
 
     private static void BodyChunk_Update(On.BodyChunk.orig_Update orig, BodyChunk body_chunk) { // Option_BellySlide // Option_Crawl
+        if (body_chunk.Is_Player_Blacklisted()) {
+            orig(body_chunk);
+            return;
+        }
+
         if (body_chunk.Get_Attached_Fields() is not BodyChunk_Attached_Fields attached_fields) {
             orig(body_chunk);
             return;

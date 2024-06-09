@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using static SimplifiedMoveset.BodyChunkMod;
 using static SimplifiedMoveset.MainMod;
 
@@ -23,6 +23,11 @@ internal static class BodyChunkConnectionMod {
     //
 
     private static void BodyChunkConnection_Update(On.PhysicalObject.BodyChunkConnection.orig_Update orig, PhysicalObject.BodyChunkConnection body_chunk_connection) { // Option_BellySlide // Option_Crawl
+        if (body_chunk_connection.chunk1.Is_Player_Blacklisted()) {
+            orig(body_chunk_connection);
+            return;
+        }
+
         if (!body_chunk_connection.active) {
             orig(body_chunk_connection);
             return;
