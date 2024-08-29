@@ -1859,7 +1859,67 @@ public static class PlayerMod {
         ILCursor cursor = new(context);
 
         if (cursor.TryGotoNext(instruction => instruction.MatchLdsfld<BodyModeIndex>("Default")) &&
-            cursor.TryGotoNext(instruction => instruction.MatchLdfld<Player>("poleSkipPenalty"))) {
+            cursor.TryGotoNext(instruction => instruction.MatchLdfld<Player>("poleSkipPenalty"))
+        ) {
+            // TODO:
+            // The problem is the timing. Rivulet is more lenient. You can hop
+            // on beams with one empty tile in between. This looks weird. It
+            // makes more sense to accept jump inputs for more than one frame.
+
+            // ILCursor cursor_temp = new(cursor);
+
+            // if (cursor_temp.TryGotoPrev(instr => instr.MatchLdcR4(7.5f)) &&
+            //     cursor_temp.TryGotoNext(MoveType.After, instr => instr.MatchLdcI4(0))) {
+            //     cursor_temp.Emit(OpCodes.Pop);
+            //     cursor_temp.Emit(OpCodes.Ldarg_0);
+
+            //     cursor_temp.EmitDelegate<Func<Player,bool>>(player => {
+            //             // return player.input[0].x != 0 && (player.room.GetTile(player.bodyChunks[1].pos).horizontalBeam || player.room.GetTile(player.bodyChunks[1].lastPos).horizontalBeam);
+            //             Room.Tile tile = player.room.GetTile(player.bodyChunks[1].pos);
+            //             // if (tile.horizontalBeam) return player.input[0].x != 0;
+            //             if (tile.horizontalBeam) return true;
+
+            //             // Chunk 0 is bad. The player grabs the beam in that case.
+            //             tile = player.room.GetTile(player.bodyChunks[0].pos); 
+            //             // if (tile.horizontalBeam) return player.input[0].x != 0;
+            //             if (tile.horizontalBeam) return true;
+
+            //             tile = player.room.GetTile(player.bodyChunks[1].lastPos); 
+            //             // if (tile.horizontalBeam) return player.input[0].x != 0;
+            //             if (tile.horizontalBeam) return true;
+            //             tile = player.room.GetTile(player.bodyChunks[0].lastPos); 
+            //             // if (tile.horizontalBeam) return player.input[0].x != 0;
+            //             if (tile.horizontalBeam) return true;
+
+            //             // if (tile.horizontalBeam) {
+            //             //     return player.input[0].x != 0 && Mathf.Abs(player.room.MiddleOfTile(tile.X, tile.Y).y - player.bodyChunks[1].pos.y+10f) < 20f;
+            //             // }
+            //             return false;
+            //             // return player.input[0].x != 0 && (player.room.GetTile(player.bodyChunks[1].pos).horizontalBeam || player.room.GetTile(player.bodyChunks[1].lastPos).horizontalBeam);
+            //     });
+            // }
+
+            // if (cursor_temp.TryGotoPrev(instr => instr.MatchLdcR4(7.5f))) {
+            //     // This part compares the height of the middle of the body chunk
+            //     // tile and the chunk itself. Anything larger than 10f should
+            //     // result in true.
+            //     // Rivulet gets its own checks later. They are more lenient. In
+            //     // contrast to Rivulet, the chunk tile is the beam tile. We want
+            //     // to know how far the chunk height is exactly from the beam height.
+            //     // In Rivulet's case, the beam tile can be below. There, the check
+            //     // does nothing and is always true.
+            //     cursor_temp.Next.Operand = 15f;
+            // }
+
+            // if (cursor_temp.TryGotoPrev(
+            //     instr => instr.MatchLdarg(0),
+            //     instr => instr.MatchCall<Player>("get_isRivulet")
+            // )) {
+            //     // Everyone can beam hop like Rivulet. You can hop even when you
+            //     // are one tile above. Maybe that is a bit much.
+            //     cursor_temp.RemoveRange(3);
+            // }
+
             cursor.Goto(cursor.Index - 2);
             if (can_log_il_hooks) {
                 Debug.Log(mod_id + ": IL_Player_Update: Index " + cursor.Index); // 2929
@@ -2442,6 +2502,7 @@ public static class PlayerMod {
     private static void Player_Ctor(On.Player.orig_ctor orig, Player player, AbstractCreature abstract_creature, World world) {
         orig(player, abstract_creature, world);
 
+        if (player.isNPC) return;
         if (Array.Exists(player_blacklist, player_number => player_number == player.playerState.playerNumber)) return;
         if (_all_attached_fields.ContainsKey(player)) return;
         _all_attached_fields.Add(player, new Player_Attached_Fields());

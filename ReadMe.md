@@ -1,5 +1,5 @@
 ## SimplifiedMoveset
-###### Version: 2.5.1
+###### Version: 2.5.2
 
 This is a mod for Rain World v1.9.
 
@@ -11,7 +11,7 @@ https://www.youtube.com/watch?v=Jp6UyUgoWB0
 
 ### Installation
 0. Update Rain World to version 1.9 if needed.
-1. Download the file `SimplifiedMoveset.zip` from [Releases](https://github.com/SchuhBaum/SimplifiedMoveset/releases/tag/v2.5.1).
+1. Download the file `SimplifiedMoveset.zip` from [Releases](https://github.com/SchuhBaum/SimplifiedMoveset/releases/tag/v2.5.2).
 2. Extract its content in the folder `[Steam]\SteamApps\common\Rain World\RainWorld_Data\StreamingAssets\mods`.
 3. Start the game as normal. In the main menu select `Remix` and enable the mod. 
 
@@ -22,10 +22,13 @@ See the corresponding sections on the [Steam Workshop page](https://steamcommuni
 If you have feedback, you can message me on Discord `@schuhbaum` or write an email to SchuhBaum71@gmail.com.  
 
 ### License  
-There are two licenses available - MIT and Unlicense. You can choose which one you want to use.
+See the file LICENSE-MIT.
 
 ### Changelog
 #### (Rain World v1.9)
+v2.5.2:
+- Blacklisted slugcat npcs. Otherwise, hunter slugpups might not grab and eat dead creatures.
+
 v2.5.1:
 - (player blacklist) Added the option to disabled movement changes for specific players.
 - Forgot to build after cleaning up excess debug logging. Whoops! Done in v2.5.1.
