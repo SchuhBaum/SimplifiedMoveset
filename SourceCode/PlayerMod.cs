@@ -1859,85 +1859,37 @@ public static class PlayerMod {
         ILCursor cursor = new(context);
 
         if (cursor.TryGotoNext(instruction => instruction.MatchLdsfld<BodyModeIndex>("Default")) &&
-            cursor.TryGotoNext(instruction => instruction.MatchLdfld<Player>("poleSkipPenalty")))
+            cursor.TryGotoNext(instruction => instruction.MatchCall<Player>("get_isRivulet")) && 
+            cursor.TryGotoNext(instruction => instruction.MatchLdarg(0),
+                               instruction => instruction.MatchCall<Player>("get_isRivulet")))
         {
-            if (Option_BeamClimb) {
-                // The problem is the timing. Rivulet is more lenient. You can hop
-                // on beams with one empty tile in between. This looks weird. It
-                // makes more sense to accept jump inputs for more than one frame.
-                // But that has its problems too. Do the Rivulet hop for now.
-
-                ILCursor cursor_temp = new(cursor);
-
-                // if (cursor_temp.TryGotoPrev(instr => instr.MatchLdfld<Player.InputPackage>("jmp"))) {
-                //     // The problem is that the timing affects other things. Recovering
-                //     // from jumping up vertical beams for example. You recover and instantly
-                //     // jump up again.
-                //     cursor_temp.Goto(cursor_temp.Index + 3);
-                //     cursor_temp.Emit(OpCodes.Ldarg_0);
-                //     cursor_temp.EmitDelegate<Func<bool,Player,bool>>((pressed_jump,player) => {
-                //             if (pressed_jump) return true;
-                //             for (int index = 1; index <= 5; ++index) {
-                //                 if (player.input[index].jmp && !player.input[index+1].jmp) return true;
-                //             }
-                //             return false;
-                //     });
-                // }
-
-                // if (cursor_temp.TryGotoPrev(instr => instr.MatchLdcR4(7.5f)) &&
-                //     cursor_temp.TryGotoNext(MoveType.After, instr => instr.MatchLdcI4(0))) {
-                //     cursor_temp.Emit(OpCodes.Pop);
-                //     cursor_temp.Emit(OpCodes.Ldarg_0);
-
-                //     cursor_temp.EmitDelegate<Func<Player,bool>>(player => {
-                //             // return player.input[0].x != 0 && (player.room.GetTile(player.bodyChunks[1].pos).horizontalBeam || player.room.GetTile(player.bodyChunks[1].lastPos).horizontalBeam);
-                //             Room.Tile tile = player.room.GetTile(player.bodyChunks[1].pos);
-                //             // if (tile.horizontalBeam) return player.input[0].x != 0;
-                //             if (tile.horizontalBeam) return true;
-
-                //             // Chunk 0 is bad. The player grabs the beam in that case.
-                //             tile = player.room.GetTile(player.bodyChunks[0].pos); 
-                //             // if (tile.horizontalBeam) return player.input[0].x != 0;
-                //             if (tile.horizontalBeam) return true;
-
-                //             tile = player.room.GetTile(player.bodyChunks[1].lastPos); 
-                //             // if (tile.horizontalBeam) return player.input[0].x != 0;
-                //             if (tile.horizontalBeam) return true;
-                //             tile = player.room.GetTile(player.bodyChunks[0].lastPos); 
-                //             // if (tile.horizontalBeam) return player.input[0].x != 0;
-                //             if (tile.horizontalBeam) return true;
-
-                //             // if (tile.horizontalBeam) {
-                //             //     return player.input[0].x != 0 && Mathf.Abs(player.room.MiddleOfTile(tile.X, tile.Y).y - player.bodyChunks[1].pos.y+10f) < 20f;
-                //             // }
-                //             return false;
-                //             // return player.input[0].x != 0 && (player.room.GetTile(player.bodyChunks[1].pos).horizontalBeam || player.room.GetTile(player.bodyChunks[1].lastPos).horizontalBeam);
-                //     });
-                // }
-
-                // if (cursor_temp.TryGotoPrev(instr => instr.MatchLdcR4(7.5f))) {
-                //     // This part compares the height of the middle of the body chunk
-                //     // tile and the chunk itself. Anything larger than 10f should
-                //     // result in true.
-                //     // Rivulet gets its own checks later. They are more lenient. In
-                //     // contrast to Rivulet, the chunk tile is the beam tile. We want
-                //     // to know how far the chunk height is exactly from the beam height.
-                //     // In Rivulet's case, the beam tile can be below. There, the check
-                //     // does nothing and is always true.
-                //     cursor_temp.Next.Operand = 15f;
-                // }
-
-                if (cursor_temp.TryGotoPrev(
-                            instr => instr.MatchLdarg(0),
-                            instr => instr.MatchCall<Player>("get_isRivulet")
-                            )) {
-                    // Everyone can beam hop like Rivulet. You can hop even when you
-                    // are one tile above. Maybe that is a bit much. But this is the
-                    // simplest solution.
-                    cursor_temp.RemoveRange(3);
-                }
+            if (can_log_il_hooks) {
+                Debug.Log(mod_id + ": IL_Player_Update: Index " + cursor.Index);
             }
 
+            if (Option_BeamClimb) {
+                //
+                // The problem is the timing. Rivulet is more lenient. But not 
+                // by changing the timing. Instead, you can hop on beams with one
+                // empty tile in between. This looks weird.
+                //
+                // I tried accepting jump inputs for more than one frame. But
+                // this affects other things. Recovering from jumping up vertical
+                // beams for example. You recover and instantly jump up again.
+                //
+                // Do the Rivulet hop for now. Everyone can beam hop like Rivulet.
+                //
+
+                cursor.RemoveRange(3);
+            }
+        } else {
+            if (can_log_il_hooks) {
+                Debug.Log(mod_id + ": IL_Player_Update could not be applied.");
+            }
+            return;
+        }
+
+        if (cursor.TryGotoNext(instruction => instruction.MatchLdfld<Player>("poleSkipPenalty"))) {
             cursor.Goto(cursor.Index - 2);
             if (can_log_il_hooks) {
                 Debug.Log(mod_id + ": IL_Player_Update: Index " + cursor.Index); // 2929
