@@ -19,7 +19,10 @@ public static class BodyChunkMod {
     // parameters
     //
 
-    public static bool Is_Player_Blacklisted(this BodyChunk body_chunk) => body_chunk.Get_Attached_Fields() == null;
+    public static bool Is_Player_Blacklisted(this BodyChunk body_chunk) {
+        if (body_chunk.owner is not Player player) return false;
+        return player.Is_Blacklisted();
+    }
 
     //
     // variables
@@ -63,8 +66,8 @@ public static class BodyChunkMod {
         // only Player get BodyChunk_Attached_Fields in ctor;
         PhysicalObject player = body_chunk.owner;
 
-        IntVector2 tile_position = room.GetTilePosition(body_chunk.pos);
-        Vector2 middle_of_tile = room.MiddleOfTile(tile_position);
+        IntVector2 tile_position       = room.GetTilePosition(body_chunk.pos);
+        Vector2 middle_of_tile         = room.MiddleOfTile(tile_position);
         SlopeDirection slope_direction = room.IdentifySlope(tile_position);
 
         //
@@ -151,10 +154,10 @@ public static class BodyChunkMod {
             position_y = middle_of_tile.y + middle_of_tile.x - body_chunk.pos.x;
             on_slope = 1;
             slope_vertical_position = -1;
-        } else if (slope_direction == DownLeft) { // �O
+        } else if (slope_direction == DownLeft) { // °O
             position_y = middle_of_tile.y + middle_of_tile.x - body_chunk.pos.x;
             slope_vertical_position = 1;
-        } else { // O�
+        } else { // O°
             position_y = middle_of_tile.y + body_chunk.pos.x - middle_of_tile.x;
             slope_vertical_position = 1;
         }
@@ -179,24 +182,21 @@ public static class BodyChunkMod {
             body_chunk.contactPoint.y = -1;
             body_chunk.onSlope = on_slope;
             attached_fields.last_on_slope_tile_position = tile_position;
-            return;
+
+        } else if (slope_vertical_position == 1 && body_chunk.pos.y >= position_y - body_chunk.slopeRad - body_chunk.slopeRad) {
+            body_chunk.pos.y = position_y - body_chunk.slopeRad - body_chunk.slopeRad;
+            if (body_chunk.vel.y > player.impactTreshhold) {
+                player.TerrainImpact(body_chunk.index, new IntVector2(0, 1), body_chunk.vel.y, body_chunk.lastContactPoint.y < 1);
+            }
+
+            body_chunk.vel.x *= 0.7f * Mathf.Clamp(player.surfaceFriction * 2f, 0.0f, 1f);
+            body_chunk.vel.y = -Mathf.Abs(body_chunk.vel.y) * player.bounce;
+
+            if (body_chunk.vel.y > -1.0 - 9.0 * (1.0 - player.bounce)) {
+                body_chunk.vel.y = 0.0f;
+            }
+            body_chunk.contactPoint.y = 1;
         }
-
-        if (slope_vertical_position != 1) return;
-        if (body_chunk.pos.y < position_y - body_chunk.slopeRad - body_chunk.slopeRad) return;
-
-        body_chunk.pos.y = position_y - body_chunk.slopeRad - body_chunk.slopeRad;
-        if (body_chunk.vel.y > player.impactTreshhold) {
-            player.TerrainImpact(body_chunk.index, new IntVector2(0, 1), body_chunk.vel.y, body_chunk.lastContactPoint.y < 1);
-        }
-
-        body_chunk.vel.x *= 0.7f * Mathf.Clamp(player.surfaceFriction * 2f, 0.0f, 1f);
-        body_chunk.vel.y = -Mathf.Abs(body_chunk.vel.y) * player.bounce;
-
-        if (body_chunk.vel.y > -1.0 - 9.0 * (1.0 - player.bounce)) {
-            body_chunk.vel.y = 0.0f;
-        }
-        body_chunk.contactPoint.y = 1;
     }
 
     //
@@ -207,8 +207,12 @@ public static class BodyChunkMod {
         // LogAllInstructions(context);
 
         ILCursor cursor = new(context);
-        cursor.Emit(OpCodes.Ldarg_0);
 
+        if (can_log_il_hooks) {
+            Debug.Log(mod_id + ": IL_BodyChunk_CheckAgainstSlopesVertically: Index " + cursor.Index);
+        }
+
+        cursor.Emit(OpCodes.Ldarg_0);
         cursor.EmitDelegate<Func<BodyChunk, bool>>(body_chunk => {
             // call orig();
             if (body_chunk.Is_Player_Blacklisted()) return true;
@@ -293,8 +297,12 @@ public static class BodyChunkMod {
 
     private static void BodyChunk_Ctor(On.BodyChunk.orig_ctor orig, BodyChunk body_chunk, PhysicalObject owner, int index, Vector2 pos, float rad, float mass) { // Option_BellySlide // Option_Crawl
         orig(body_chunk, owner, index, pos, rad, mass);
+
         if (owner is not Player player) return;
-        if (player.Is_Blacklisted()) return;
+
+        // The attached fields for the player are initialized later. We cannot
+        // check yet if the player is blacklisted.
+
         if (_all_attached_fields.ContainsKey(body_chunk)) return;
         _all_attached_fields.Add(body_chunk, new BodyChunk_Attached_Fields());
     }
