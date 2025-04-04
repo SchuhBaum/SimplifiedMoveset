@@ -1,7 +1,7 @@
 ## SimplifiedMoveset
-###### Version: 2.5.4
+###### Version: 2.5.5
 
-This is a mod for Rain World v1.9.
+This is a mod for Rain World v1.10.
 
 ### Description
 Various movement changes. The main idea is to remove or simplify timings, making it easier to perform advanced moves consistently. In addition, includes the ability to breath underwater and crawl on walls (disabled by default).  
@@ -10,8 +10,8 @@ Here is a youtube video showing Rain World v1.5 + some of the changes in action:
 https://www.youtube.com/watch?v=Jp6UyUgoWB0
 
 ### Installation
-0. Update Rain World to version 1.9 if needed.
-1. Download the file `SimplifiedMoveset.zip` from [Releases](https://github.com/SchuhBaum/SimplifiedMoveset/releases/tag/v2.5.4).
+0. Update Rain World to version 1.10 if needed.
+1. Download the file `SimplifiedMoveset.zip` from [Releases](https://github.com/SchuhBaum/SimplifiedMoveset/releases/tag/v2.5.5).
 2. Extract its content in the folder `[Steam]\SteamApps\common\Rain World\RainWorld_Data\StreamingAssets\mods`.
 3. Start the game as normal. In the main menu select `Remix` and enable the mod. 
 
@@ -25,6 +25,10 @@ If you have feedback, you can message me on Discord `@schuhbaum` or write an ema
 See the file LICENSE-MIT.
 
 ### Changelog
+#### (Rain World v1.10)
+v2.5.5:
+- Updated the meta data for Rain World v1.10.
+
 #### (Rain World v1.9)
 v2.5.4:
 - (belly slide / crawl) Restored that you can slide down slopes.

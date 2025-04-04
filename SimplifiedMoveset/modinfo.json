@@ -1,12 +1,12 @@
 {
   "id": "SimplifiedMoveset",
   "name": "SimplifiedMoveset",
-  "version": "2.5.4",
+  "version": "2.5.5",
   "authors": "SchuhBaum",
   "description": "Various movement changes. The main idea is to remove or simplify timings, making it easier to perform advanced moves consistently.",
   "requirements": [],
   "requirements_names": [],
-  "target_game_version": "v1.9.15",
+  "target_game_version": "v1.10.1",
   "tags": [
     "Accessibility",
     "Game Mechanics"
