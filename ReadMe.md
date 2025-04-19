@@ -1,5 +1,5 @@
 ## SimplifiedMoveset
-###### Version: 2.5.5
+###### Version: 2.5.6
 
 This is a mod for Rain World v1.10.
 
@@ -11,7 +11,7 @@ https://www.youtube.com/watch?v=Jp6UyUgoWB0
 
 ### Installation
 0. Update Rain World to version 1.10 if needed.
-1. Download the file `SimplifiedMoveset.zip` from [Releases](https://github.com/SchuhBaum/SimplifiedMoveset/releases/tag/v2.5.5).
+1. Download the file `SimplifiedMoveset.zip` from [Releases](https://github.com/SchuhBaum/SimplifiedMoveset/releases/tag/v2.5.6).
 2. Extract its content in the folder `[Steam]\SteamApps\common\Rain World\RainWorld_Data\StreamingAssets\mods`.
 3. Start the game as normal. In the main menu select `Remix` and enable the mod. 
 
@@ -26,6 +26,9 @@ See the file LICENSE-MIT.
 
 ### Changelog
 #### (Rain World v1.10)
+v2.5.6:
+- Changed the requirement to v1.10 instead of v1.10.1.
+
 v2.5.5:
 - Updated the meta data for Rain World v1.10.
 
