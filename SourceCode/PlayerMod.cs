@@ -526,7 +526,7 @@ public static class PlayerMod {
 
         player.rollDirection = 0;
         player.animation = AnimationIndex.None;
-        player.standing = true;
+        player.standing = Option_StandUp ? true : player.input[0].y == 1 && !player.IsTileSolid(0, 0, 1);
         player.longBellySlide = false;
     }
 
@@ -2124,7 +2124,7 @@ public static class PlayerMod {
         cursor.TryGotoNext(
             instruction => instruction.MatchLdsfld<AnimationIndex>("GetUpToBeamTip"),
             instruction => instruction.MatchCall("ExtEnum`1<Player/AnimationIndex>", "op_Equality")
-            );
+        );
         if (cursor.TryGotoNext(instruction => instruction.MatchStfld<Player>("canJump"))) {
             if (can_log_il_hooks) {
                 Debug.Log(mod_id + ": IL_Player_UpdateAnimation: Index " + cursor.Index); // 2484
