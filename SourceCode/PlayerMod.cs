@@ -574,6 +574,9 @@ public static class PlayerMod {
             body_chunk_0.vel.y -= 2.2f * (0.2f + 0.8f * player.EffectiveRoomGravity);
         }
 
+        if (player.flipDirection != player.lastFlipDirection)
+            player.slideUpPole = 0;
+
         if (player.slideUpPole > 0) {
             player.slideUpPole--;
             if (player.slideUpPole > 8) {
