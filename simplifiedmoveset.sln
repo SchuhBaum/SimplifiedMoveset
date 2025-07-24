@@ -1,0 +1,24 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.2.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SimplifiedMoveset", "SourceCode\SimplifiedMoveset.csproj", "{97ED5114-6AFC-5C56-E693-7E57E408F247}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{97ED5114-6AFC-5C56-E693-7E57E408F247}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{97ED5114-6AFC-5C56-E693-7E57E408F247}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{97ED5114-6AFC-5C56-E693-7E57E408F247}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{97ED5114-6AFC-5C56-E693-7E57E408F247}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {456BC96D-3445-43E5-92D8-FCC41A3425AD}
+	EndGlobalSection
+EndGlobal

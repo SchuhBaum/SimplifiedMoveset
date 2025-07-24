@@ -43,7 +43,8 @@ public static class PlayerMod {
         // otherwise they get called multiple times;
         // 
 
-        IL.Player.ClassMechanicsGourmand -= IL_Player_ClassMechanicsGourmand;
+        On.Player.ClassMechanicsGourmand -= Player_ClassMechanicsGourmand;
+
         IL.Player.Collide -= IL_Player_Collide;
         IL.Player.Jump -= IL_Player_Jump;
         IL.Player.GrabUpdate -= IL_Player_GrabUpdate;
@@ -134,11 +135,12 @@ public static class PlayerMod {
             On.Player.Grabability += Player_Grabability;
         }
 
+        // only exhaust when throwing spears; allow slam using rocket jumps;
         if (Option_Gourmand) {
-            // only exhaust when throwing spears; allow slam using rocket jumps;
-            IL.Player.ClassMechanicsGourmand += IL_Player_ClassMechanicsGourmand;
             IL.Player.Collide += IL_Player_Collide;
             IL.Player.SlugSlamConditions += IL_Player_SlugSlamConditions;
+
+            On.Player.ClassMechanicsGourmand += Player_ClassMechanicsGourmand;
             On.Player.ThrownSpear += Player_ThrownSpear;
         }
 
@@ -387,6 +389,24 @@ public static class PlayerMod {
     //
     //
     //
+
+    public static float PlayerMod_GetUpdatedDamage(Player player)
+    {
+        if (player.Is_Blacklisted()) return 1f; // vanilla case
+        return 0f;
+    }
+
+    public static float PlayerMod_GetUpdatedStunDuration(Player player)
+    {
+        if (player.Is_Blacklisted()) return 120f; // vanilla case
+        return 50f;
+    }
+
+    public static void PlayerMod_UpdateStanding(Player player)
+    {
+        if (player.Is_Blacklisted()) return;
+        player.standing = true;
+    }
 
     public static void UpdateAnimation_BeamTip(Player player, Player_Attached_Fields attached_fields) {
         if (player.room is not Room room) return;
@@ -1233,77 +1253,39 @@ public static class PlayerMod {
     // private
     //
 
-    private static void IL_Player_ClassMechanicsGourmand(ILContext context) {
-        // LogAllInstructions(context);
-        ILCursor cursor = new(context);
-
-        if (cursor.TryGotoNext(instruction => instruction.MatchLdcI4(1)) &&
-            cursor.TryGotoNext(instruction => instruction.MatchStfld<Player>("gourmandExhausted"))) {
-            if (can_log_il_hooks) {
-                Debug.Log(mod_id + ": IL_Player_ClassMechanicsGourmand: Index " + cursor.Index);
-            }
-
-
-            // don't exhaust from aerobicLevel;
-            cursor.Goto(cursor.Index - 11);
-            cursor.RemoveRange(12);
-
-            cursor.EmitDelegate<Action<Player>>(player => {
-                if (!player.Is_Blacklisted()) return;
-
-                // vanilla code:
-                if (player.SlugCatClass == MoreSlugcatsEnums.SlugcatStatsName.Gourmand && (double)player.aerobicLevel >= 0.95) {
-                    player.gourmandExhausted = true;
-                }
-            });
-        } else {
-            if (can_log_il_hooks) {
-                Debug.Log(mod_id + ": IL_Player_ClassMechanicsGourmand could not be applied.");
-            }
-            return;
-        }
-        // LogAllInstructions(context);
-    }
-
     private static void IL_Player_Collide(ILContext context) {
         // LogAllInstructions(context);
         ILCursor cursor = new(context);
 
-        if (cursor.TryGotoNext(instruction => instruction.MatchLdsfld<AnimationIndex>("Roll")) &&
-            cursor.TryGotoNext(instruction => instruction.MatchLdsfld<AnimationIndex>("None"))) {
+        if (cursor.TryGotoNext(MoveType.After,
+            instruction => instruction.MatchLdsfld<AnimationIndex>("None"),
+            instruction => instruction.MatchStfld<Player>("animation")))
+        {
             if (can_log_il_hooks) {
                 Debug.Log(mod_id + ": IL_Player_Collide: Index " + cursor.Index);
             }
 
-            // reduce damage and stun duration because rolls are easier to start with
-            // Option_Crawl; same damage and stun values as for slides and rocket jumps;
-            // maybe setting damage to zero is better since these moves are not so
-            // involved to do;
-            cursor.Goto(cursor.Index - 4);
+            // reduce damage and stun duration because rolls are easier to start
+            // with Option_Crawl; same damage and stun values as for slides and
+            // rocket jumps; maybe setting damage to zero is better since these
+            // moves are not so involved to do;
+            cursor.GotoPrev(instruction => instruction.MatchLdcR4(1f));
             cursor.RemoveRange(2);
 
             cursor.Emit(OpCodes.Ldarg_0);
-            cursor.EmitDelegate<Func<Player, float>>(player => {
-                // Sets the damage.
-                if (player.Is_Blacklisted()) return 1f; // vanilla case
-                return 0f;
-            });
+            cursor.EmitDelegate(PlayerMod_GetUpdatedDamage);
 
             cursor.Emit(OpCodes.Ldarg_0);
-            cursor.EmitDelegate<Func<Player, float>>(player => {
-                // Sets the stun duration.
-                if (player.Is_Blacklisted()) return 120f; // vanilla case
-                return 50f;
-            });
+            cursor.EmitDelegate(PlayerMod_GetUpdatedStunDuration);
 
-            // interrupt Gourmand's roll attack by standing up; otherwise a crawl turn
-            // might start another roll instantly => more damage + stun than intended;
-            cursor.Goto(cursor.Index + 2);
+            // interrupt Gourmand's roll attack by standing up; otherwise a
+            // crawl turn might start another roll instantly => more damage +
+            // stun than intended;
+            cursor.GotoNext(MoveType.After,
+                instruction => instruction.MatchLdsfld<AnimationIndex>("None"),
+                instruction => instruction.MatchStfld<Player>("animation"));
             cursor.Emit(OpCodes.Ldarg_0);
-            cursor.EmitDelegate<Action<Player>>(player => {
-                if (player.Is_Blacklisted()) return;
-                player.standing = true;
-            });
+            cursor.EmitDelegate(PlayerMod_UpdateStanding);
         } else {
             if (can_log_il_hooks) {
                 Debug.Log(mod_id + ": IL_Player_Collide could not be applied.");
@@ -2469,6 +2451,20 @@ public static class PlayerMod {
             // 15 frames is the amount as you get for mid-air wall jumps; too many frames
             // makes this somewhat awkward in some situations; 6 seems better;
             player.simulateHoldJumpButton = 6;
+        }
+    }
+
+    private static void Player_ClassMechanicsGourmand(On.Player.orig_ClassMechanicsGourmand orig, Player player) {
+        var oldSlowMovementStun = player.slowMovementStun;
+        var oldLungsExhausted = player.lungsExhausted;
+        orig(player);
+
+        // don't exhaust from aerobicLevel;
+        if (!player.Is_Blacklisted() && player.SlugCatClass == MoreSlugcatsEnums.SlugcatStatsName.Gourmand && (double)player.aerobicLevel >= 0.95)
+        {
+            player.gourmandExhausted = false;
+            player.slowMovementStun = oldSlowMovementStun;
+            player.lungsExhausted = oldLungsExhausted;
         }
     }
 

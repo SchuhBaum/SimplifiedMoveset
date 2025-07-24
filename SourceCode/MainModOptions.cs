@@ -177,7 +177,12 @@ public class MainModOptions : OptionInterface {
         if (player3_blacklisted.Value) player_list.Add(3);
         PlayerMod.player_blacklist = player_list.ToArray();
 
-        Debug.Log(mod_id + ": player_blacklist " + PlayerMod.player_blacklist);
+        var sb = new StringBuilder($"{mod_id}: player_blacklist [ ");
+        foreach (var val in player_list) {
+            sb.Append($"{val} ");
+        }
+        sb.Append("]");
+        Debug.Log(sb.ToString());
     }
 
     //
