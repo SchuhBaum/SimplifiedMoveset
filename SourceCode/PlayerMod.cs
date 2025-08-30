@@ -1258,8 +1258,8 @@ public static class PlayerMod {
         ILCursor cursor = new(context);
 
         if (cursor.TryGotoNext(MoveType.After,
-            instruction => instruction.MatchLdsfld<AnimationIndex>("None"),
-            instruction => instruction.MatchStfld<Player>("animation")))
+                instruction => instruction.MatchLdsfld<AnimationIndex>("None"),
+                instruction => instruction.MatchStfld<Player>("animation")))
         {
             if (can_log_il_hooks) {
                 Debug.Log(mod_id + ": IL_Player_Collide: Index " + cursor.Index);
@@ -1293,7 +1293,9 @@ public static class PlayerMod {
             return;
         }
 
-        if (cursor.TryGotoNext(instruction => instruction.MatchLdsfld<SoundID>("Big_Needle_Worm_Impale_Terrain"))) {
+        if (cursor.TryGotoNext(
+                instruction => instruction.MatchLdsfld<SoundID>("Big_Needle_Worm_Impale_Terrain")))
+        {
             if (can_log_il_hooks) {
                 Debug.Log(mod_id + ": IL_Player_Collide: Index " + cursor.Index);
             }
@@ -1312,7 +1314,9 @@ public static class PlayerMod {
         }
 
         object? damage_variable_id = null;
-        if (cursor.TryGotoNext(instruction => instruction.MatchLdsfld<AnimationIndex>("RocketJump"))) {
+        if (cursor.TryGotoNext(
+                instruction => instruction.MatchLdsfld<AnimationIndex>("RocketJump")))
+        {
             if (can_log_il_hooks) {
                 Debug.Log(mod_id + ": IL_Player_Collide: Index " + cursor.Index);
             }
@@ -1372,8 +1376,11 @@ public static class PlayerMod {
             return;
         }
 
-        if (damage_variable_id != null && damage_variable_id.ToString().Contains("V_") &&
-            cursor.TryGotoNext(instruction => instruction.MatchLdsfld<SoundID>("Big_Needle_Worm_Impale_Terrain"))) {
+        if (damage_variable_id != null &&
+            damage_variable_id.ToString().Contains("V_") &&
+            cursor.TryGotoNext(
+                instruction => instruction.MatchLdsfld<SoundID>("Big_Needle_Worm_Impale_Terrain")))
+        {
             if (can_log_il_hooks) {
                 Debug.Log(mod_id + ": IL_Player_Collide: Index " + cursor.Index);
             }
@@ -1492,8 +1499,11 @@ public static class PlayerMod {
             cursor.MarkLabel(label);
         }
 
-        if (cursor.TryGotoNext(instruction => instruction.MatchLdsfld<AnimationIndex>("ClimbOnBeam")) &&
-            cursor.TryGotoNext(instruction => instruction.MatchCall<Player>("get_input"))) {
+        if (cursor.TryGotoNext(
+                instruction => instruction.MatchLdsfld<AnimationIndex>("ClimbOnBeam")) &&
+            cursor.TryGotoNext(
+                instruction => instruction.MatchCall<Player>("get_input")))
+        {
             if (can_log_il_hooks) {
                 Debug.Log(mod_id + ": IL_Player_Jump: Index " + cursor.Index);
             }
@@ -1744,8 +1754,11 @@ public static class PlayerMod {
         // LogAllInstructions(context);
         ILCursor cursor = new(context);
 
-        if (cursor.TryGotoNext(instruction => instruction.MatchLdsfld<AnimationIndex>("BellySlide")) &&
-            cursor.TryGotoNext(instruction => instruction.MatchLdsfld<AnimationIndex>("BellySlide"))) {
+        if (cursor.TryGotoNext(
+                instruction => instruction.MatchLdsfld<AnimationIndex>("BellySlide")) &&
+            cursor.TryGotoNext(
+                instruction => instruction.MatchLdsfld<AnimationIndex>("BellySlide")))
+        {
             if (can_log_il_hooks) {
                 Debug.Log(mod_id + ": IL_Player_SlugSlamConditions: Index " + cursor.Index);
             }
@@ -1843,10 +1856,13 @@ public static class PlayerMod {
         // LogAllInstructions(context);
         ILCursor cursor = new(context);
 
-        if (cursor.TryGotoNext(instruction => instruction.MatchLdsfld<BodyModeIndex>("Default")) &&
-            cursor.TryGotoNext(instruction => instruction.MatchCall<Player>("get_isRivulet")) && 
-            cursor.TryGotoNext(instruction => instruction.MatchLdarg(0),
-                               instruction => instruction.MatchCall<Player>("get_isRivulet")))
+        if (cursor.TryGotoNext(
+                instruction => instruction.MatchLdsfld<BodyModeIndex>("Default")) &&
+            cursor.TryGotoNext(
+                instruction => instruction.MatchCall<Player>("get_isRivulet")) && 
+            cursor.TryGotoNext(
+                instruction => instruction.MatchLdarg(0),
+                instruction => instruction.MatchCall<Player>("get_isRivulet")))
         {
             if (can_log_il_hooks) {
                 Debug.Log(mod_id + ": IL_Player_Update: Index " + cursor.Index);
@@ -1874,7 +1890,9 @@ public static class PlayerMod {
             return;
         }
 
-        if (cursor.TryGotoNext(instruction => instruction.MatchLdfld<Player>("poleSkipPenalty"))) {
+        if (cursor.TryGotoNext(
+                instruction => instruction.MatchLdfld<Player>("poleSkipPenalty")))
+        {
             cursor.Goto(cursor.Index - 2);
             if (can_log_il_hooks) {
                 Debug.Log(mod_id + ": IL_Player_Update: Index " + cursor.Index); // 2929
@@ -1909,14 +1927,14 @@ public static class PlayerMod {
         }
 
         if (cursor.TryGotoNext(
-            instruction => instruction.MatchLdfld("Player", "bodyMode"),
-            instruction => instruction.MatchLdsfld("Player/BodyModeIndex", "Swimming"),
-            instruction => instruction.MatchCall("ExtEnum`1<Player/BodyModeIndex>", "op_Inequality")
-        ) && cursor.TryGotoNext(MoveType.After,
-            instruction => instruction.MatchLdflda("BodyChunk", "pos"),
-            instruction => instruction.MatchLdfld("UnityEngine.Vector2", "y"),
-            instruction => instruction.MatchBgt(out ILLabel _)
-        )) {
+                instruction => instruction.MatchLdfld("Player", "bodyMode"),
+                instruction => instruction.MatchLdsfld("Player/BodyModeIndex", "Swimming"),
+                instruction => instruction.MatchCall("ExtEnum`1<Player/BodyModeIndex>", "op_Inequality")) &&
+            cursor.TryGotoNext(MoveType.After,
+                instruction => instruction.MatchLdflda("BodyChunk", "pos"),
+                instruction => instruction.MatchLdfld("UnityEngine.Vector2", "y"),
+                instruction => instruction.MatchBgt(out ILLabel _)))
+        {
             if (can_log_il_hooks) {
                 Debug.Log(mod_id + ": IL_Player_Update: Index " + cursor.Index); // 3386
             }
@@ -1946,10 +1964,10 @@ public static class PlayerMod {
         }
 
         if (cursor.TryGotoNext(MoveType.After,
-            instruction => instruction.MatchLdflda("BodyChunk", "pos"),
-            instruction => instruction.MatchLdfld("UnityEngine.Vector2", "y"),
-            instruction => instruction.MatchBgt(out ILLabel _)
-        )) {
+                instruction => instruction.MatchLdflda("BodyChunk", "pos"),
+                instruction => instruction.MatchLdfld("UnityEngine.Vector2", "y"),
+                instruction => instruction.MatchBgt(out ILLabel _)))
+        {
             if (can_log_il_hooks) {
                 Debug.Log(mod_id + ": IL_Player_Update: Index " + cursor.Index); // 3444
             }
@@ -1972,6 +1990,24 @@ public static class PlayerMod {
             }
             return;
         }
+
+        if (cursor.TryGotoNext(
+                instruction => instruction.MatchLdcR4(0.95f),
+                instruction => instruction.MatchCall<PhysicalObject>("set_buoyancy")))
+        {
+            if (Option_Swim) {
+                if (can_log_il_hooks) {
+                    Debug.Log(mod_id + ": IL_Player_Update: Index " + cursor.Index);
+                }
+
+                cursor.Next.Operand = 0.9f;                 // same as base gravity;
+            }
+        } else {
+            if (can_log_il_hooks) {
+                Debug.Log(mod_id + ": IL_Player_Update could not be applied.");
+            }
+            return;
+        }
         // LogAllInstructions(context);
     }
 
@@ -1980,14 +2016,14 @@ public static class PlayerMod {
         ILCursor cursor = new(context);
 
         if (cursor.TryGotoNext(
-            instruction => instruction.MatchLdsfld<AnimationIndex>("HangFromBeam"),
-            instruction => instruction.MatchCall("ExtEnum`1<Player/AnimationIndex>", "op_Equality")
-        )) {
-            if (can_log_il_hooks) {
-                Debug.Log(mod_id + ": IL_Player_UpdateAnimation: Index " + cursor.Index); // 636
-            }
-
+                instruction => instruction.MatchLdsfld<AnimationIndex>("HangFromBeam"),
+                instruction => instruction.MatchCall("ExtEnum`1<Player/AnimationIndex>", "op_Equality")))
+        {
             if (Option_BeamClimb) {
+                if (can_log_il_hooks) {
+                    Debug.Log(mod_id + ": IL_Player_UpdateAnimation: Index " + cursor.Index); // 636
+                }
+
                 cursor.Goto(cursor.Index + 4);
                 cursor.EmitDelegate<Func<Player, bool>>(player => {
                     // "call" orig();
@@ -2012,14 +2048,14 @@ public static class PlayerMod {
         }
 
         if (cursor.TryGotoNext(
-                    instruction => instruction.MatchLdsfld<AnimationIndex>("GetUpOnBeam"),
-                    instruction => instruction.MatchCall("ExtEnum`1<Player/AnimationIndex>", "op_Equality")
-                    )) {
-            if (can_log_il_hooks) {
-                Debug.Log(mod_id + ": IL_Player_UpdateAnimation: Index " + cursor.Index); // 1081
-            }
-
+                instruction => instruction.MatchLdsfld<AnimationIndex>("GetUpOnBeam"),
+                instruction => instruction.MatchCall("ExtEnum`1<Player/AnimationIndex>", "op_Equality")))
+        {
             if (Option_BeamClimb) {
+                if (can_log_il_hooks) {
+                    Debug.Log(mod_id + ": IL_Player_UpdateAnimation: Index " + cursor.Index); // 1081
+                }
+
                 cursor.Goto(cursor.Index + 4);
                 cursor.EmitDelegate<Func<Player, bool>>(player => {
                     if (player.Is_Blacklisted()) return true;
@@ -2043,14 +2079,14 @@ public static class PlayerMod {
         }
 
         if (cursor.TryGotoNext(
-                    instruction => instruction.MatchLdsfld<AnimationIndex>("StandOnBeam"),
-                    instruction => instruction.MatchCall("ExtEnum`1<Player/AnimationIndex>", "op_Equality")
-                    )) {
-            if (can_log_il_hooks) {
-                Debug.Log(mod_id + ": IL_Player_UpdateAnimation: Index " + cursor.Index); // 1563
-            }
-
+                instruction => instruction.MatchLdsfld<AnimationIndex>("StandOnBeam"),
+                instruction => instruction.MatchCall("ExtEnum`1<Player/AnimationIndex>", "op_Equality")))
+        {
             if (Option_BeamClimb) {
+                if (can_log_il_hooks) {
+                    Debug.Log(mod_id + ": IL_Player_UpdateAnimation: Index " + cursor.Index); // 1563
+                }
+
                 cursor.Goto(cursor.Index + 4);
                 cursor.EmitDelegate<Func<Player, bool>>(player => {
                     // "call" orig();
@@ -2075,14 +2111,14 @@ public static class PlayerMod {
         }
 
         if (cursor.TryGotoNext(
-                    instruction => instruction.MatchLdsfld<AnimationIndex>("ClimbOnBeam"),
-                    instruction => instruction.MatchCall("ExtEnum`1<Player/AnimationIndex>", "op_Equality")
-                    )) {
-            if (can_log_il_hooks) {
-                Debug.Log(mod_id + ": IL_Player_UpdateAnimation: Index " + cursor.Index); // 1766
-            }
-
+                instruction => instruction.MatchLdsfld<AnimationIndex>("ClimbOnBeam"),
+                instruction => instruction.MatchCall("ExtEnum`1<Player/AnimationIndex>", "op_Equality")))
+        {
             if (Option_BeamClimb) {
+                if (can_log_il_hooks) {
+                    Debug.Log(mod_id + ": IL_Player_UpdateAnimation: Index " + cursor.Index); // 1766
+                }
+
                 cursor.Goto(cursor.Index + 4);
                 cursor.EmitDelegate<Func<Player, bool>>(player => {
                     // "call" orig();
@@ -2106,16 +2142,17 @@ public static class PlayerMod {
             return;
         }
 
-        cursor.TryGotoNext(
-            instruction => instruction.MatchLdsfld<AnimationIndex>("GetUpToBeamTip"),
-            instruction => instruction.MatchCall("ExtEnum`1<Player/AnimationIndex>", "op_Equality")
-        );
-        if (cursor.TryGotoNext(instruction => instruction.MatchStfld<Player>("canJump"))) {
-            if (can_log_il_hooks) {
-                Debug.Log(mod_id + ": IL_Player_UpdateAnimation: Index " + cursor.Index); // 2484
-            }
-
+        if (cursor.TryGotoNext(
+                instruction => instruction.MatchLdsfld<AnimationIndex>("GetUpToBeamTip"),
+                instruction => instruction.MatchCall("ExtEnum`1<Player/AnimationIndex>", "op_Equality")) &&
+            cursor.TryGotoNext(
+                instruction => instruction.MatchStfld<Player>("canJump")))
+        {
             if (Option_BeamClimb) {
+                if (can_log_il_hooks) {
+                    Debug.Log(mod_id + ": IL_Player_UpdateAnimation: Index " + cursor.Index); // 2484
+                }
+
                 // case AnimationIndex.GetUpToBeamTip:
                 // prevent jumping during animation
                 cursor.Prev.OpCode = OpCodes.Ldc_I4_0; // player.canJump = 0
@@ -2128,14 +2165,14 @@ public static class PlayerMod {
         }
 
         if (cursor.TryGotoNext(
-                    instruction => instruction.MatchLdsfld<AnimationIndex>("BeamTip"),
-                    instruction => instruction.MatchCall("ExtEnum`1<Player/AnimationIndex>", "op_Equality")
-                    )) {
-            if (can_log_il_hooks) {
-                Debug.Log(mod_id + ": IL_Player_UpdateAnimation: Index " + cursor.Index); // 2662
-            }
-
+                instruction => instruction.MatchLdsfld<AnimationIndex>("BeamTip"),
+                instruction => instruction.MatchCall("ExtEnum`1<Player/AnimationIndex>", "op_Equality")))
+        {
             if (Option_BeamClimb) {
+                if (can_log_il_hooks) {
+                    Debug.Log(mod_id + ": IL_Player_UpdateAnimation: Index " + cursor.Index); // 2662
+                }
+
                 // don't drop off beam tip by leaning too much;
 
                 cursor.Goto(cursor.Index + 4);
@@ -2162,14 +2199,14 @@ public static class PlayerMod {
         }
 
         if (cursor.TryGotoNext(
-                    instruction => instruction.MatchLdsfld<AnimationIndex>("HangUnderVerticalBeam"),
-                    instruction => instruction.MatchCall("ExtEnum`1<Player/AnimationIndex>", "op_Equality")
-                    )) {
-            if (can_log_il_hooks) {
-                Debug.Log(mod_id + ": IL_Player_UpdateAnimation: Index " + cursor.Index); // 2827
-            }
-
+                instruction => instruction.MatchLdsfld<AnimationIndex>("HangUnderVerticalBeam"),
+                instruction => instruction.MatchCall("ExtEnum`1<Player/AnimationIndex>", "op_Equality")))
+        {
             if (Option_BeamClimb) {
+                if (can_log_il_hooks) {
+                    Debug.Log(mod_id + ": IL_Player_UpdateAnimation: Index " + cursor.Index); // 2827
+                }
+
                 cursor.Goto(cursor.Index + 4);
                 cursor.EmitDelegate<Func<Player, bool>>(player => {
                     // "call" orig();
@@ -2193,16 +2230,17 @@ public static class PlayerMod {
             return;
         }
 
-        cursor.TryGotoNext(
-            instruction => instruction.MatchLdsfld<AnimationIndex>("DeepSwim"),
-            instruction => instruction.MatchCall("ExtEnum`1<Player/AnimationIndex>", "op_Equality")
-            );
-        if (cursor.TryGotoNext(MoveType.After, instruction => instruction.MatchLdfld<InputPackage>("jmp"))) {
-            if (can_log_il_hooks) {
-                Debug.Log(mod_id + ": IL_Player_UpdateAnimation: Index " + cursor.Index); // 3223
-            }
-
+        if (cursor.TryGotoNext(
+                instruction => instruction.MatchLdsfld<AnimationIndex>("DeepSwim"),
+                instruction => instruction.MatchCall("ExtEnum`1<Player/AnimationIndex>", "op_Equality")) &&
+            cursor.TryGotoNext(MoveType.After,
+                instruction => instruction.MatchLdfld<InputPackage>("jmp")))
+        {
             if (Option_Swim) {
+                if (can_log_il_hooks) {
+                    Debug.Log(mod_id + ": IL_Player_UpdateAnimation: Index " + cursor.Index); // 3223
+                }
+
                 // case AnimationIndex.DeepSwim:
                 // prevent dashing under water by pressing jump;
                 // unless remix is used and dashes are free;
@@ -2228,16 +2266,17 @@ public static class PlayerMod {
             return;
         }
 
-        cursor.TryGotoNext(
-            instruction => instruction.MatchLdsfld<AnimationIndex>("Roll"),
-            instruction => instruction.MatchCall("ExtEnum`1<Player/AnimationIndex>", "op_Equality")
-            );
-        if (cursor.TryGotoNext(instruction => instruction.MatchStfld<Player>("standing"))) {
-            if (can_log_il_hooks) {
-                Debug.Log(mod_id + ": IL_Player_UpdateAnimation: Index " + cursor.Index); // 4828
-            }
-
+        if (cursor.TryGotoNext(
+                instruction => instruction.MatchLdsfld<AnimationIndex>("Roll"),
+                instruction => instruction.MatchCall("ExtEnum`1<Player/AnimationIndex>", "op_Equality")) &&
+            cursor.TryGotoNext(
+                instruction => instruction.MatchStfld<Player>("standing")))
+        {
             if (Option_StandUp) {
+                if (can_log_il_hooks) {
+                    Debug.Log(mod_id + ": IL_Player_UpdateAnimation: Index " + cursor.Index); // 4828
+                }
+
                 // case AnimationIndex.Roll:
                 // always stand up when roll has finished
                 // prevent chain rolling on slopes
@@ -2256,14 +2295,14 @@ public static class PlayerMod {
         }
 
         if (cursor.TryGotoNext(
-            instruction => instruction.MatchLdsfld<AnimationIndex>("BellySlide"),
-            instruction => instruction.MatchCall("ExtEnum`1<Player/AnimationIndex>", "op_Equality")
-            )) {
-            if (can_log_il_hooks) {
-                Debug.Log(mod_id + ": IL_Player_UpdateAnimation: Index " + cursor.Index); // 5036
-            }
-
+                instruction => instruction.MatchLdsfld<AnimationIndex>("BellySlide"),
+                instruction => instruction.MatchCall("ExtEnum`1<Player/AnimationIndex>", "op_Equality")))
+        {
             if (Option_BellySlide) {
+                if (can_log_il_hooks) {
+                    Debug.Log(mod_id + ": IL_Player_UpdateAnimation: Index " + cursor.Index); // 5036
+                }
+
                 // belly slide 
                 // backflip always possible 
                 // do a longer version by default

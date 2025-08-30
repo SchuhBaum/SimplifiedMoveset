@@ -1,5 +1,5 @@
 ## SimplifiedMoveset
-###### Version: 2.5.9
+###### Version: 2.6.0
 
 This is a mod for Rain World v1.10.
 
@@ -11,7 +11,7 @@ https://www.youtube.com/watch?v=Jp6UyUgoWB0
 
 ### Installation
 0. Update Rain World to version 1.10 if needed.
-1. Download the file `SimplifiedMoveset.zip` from [Releases](https://github.com/SchuhBaum/SimplifiedMoveset/releases/tag/v2.5.9).
+1. Download the file `SimplifiedMoveset.zip` from [Releases](https://github.com/SchuhBaum/SimplifiedMoveset/releases/tag/v2.6.0).
 2. Extract its content in the folder `[Steam]\SteamApps\common\Rain World\RainWorld_Data\StreamingAssets\mods`.
 3. Start the game as normal. In the main menu select `Remix` and enable the mod. 
 
@@ -26,6 +26,9 @@ See the file LICENSE-MIT.
 
 ### Changelog
 #### (Rain World v1.10)
+v2.6.0:
+- (swim) Fixed a bug where buoyancy was reset when using the MSC or Watcher DLC.
+
 v2.5.9:
 - Fixed two IL hooks that failed after the latest Rain Meadow update.
 
