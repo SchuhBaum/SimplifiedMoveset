@@ -1,7 +1,7 @@
 ## SimplifiedMoveset
 ###### Version: 2.7.0
 
-This is a mod for Rain World v1.10.
+This is a mod for Rain World v1.11.
 
 ### Description
 Various movement changes. The main idea is to remove or simplify timings, making it easier to perform advanced moves consistently. In addition, includes the ability to breath underwater and crawl on walls (disabled by default).  
