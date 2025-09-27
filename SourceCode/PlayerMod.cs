@@ -50,14 +50,15 @@ public static class PlayerMod {
         IL.Player.GrabUpdate -= IL_Player_GrabUpdate;
 
         IL.Player.GrabVerticalPole -= IL_Player_GrabVerticalPole;
+        IL.Player.LungUpdate -= IL_Player_LungUpdate;
         IL.Player.MovementUpdate -= IL_Player_MovementUpdate;
         IL.Player.SlugSlamConditions -= IL_Player_SlugSlamConditions;
-        IL.Player.TerrainImpact -= IL_Player_TerrainImpact;
 
+        IL.Player.TerrainImpact -= IL_Player_TerrainImpact;
         IL.Player.TongueUpdate -= IL_Player_TongueUpdate;
         IL.Player.Update -= IL_Player_Update;
-        IL.Player.UpdateAnimation -= IL_Player_UpdateAnimation;
 
+        IL.Player.UpdateAnimation -= IL_Player_UpdateAnimation;
         IL.Player.UpdateBodyMode -= IL_Player_UpdateBodyMode;
         IL.Player.WallJump -= IL_Player_WallJump;
 
@@ -153,8 +154,9 @@ public static class PlayerMod {
         }
 
         if (Option_Swim) {
-            IL.Player.GrabUpdate += IL_Player_GrabUpdate; // can eat stuff underwater
-            On.Player.UpdateMSC += Player_UpdateMSC; // don't let MSC reset buoyancy
+            IL.Player.GrabUpdate += IL_Player_GrabUpdate;   // can eat stuff underwater
+            IL.Player.LungUpdate += IL_Player_LungUpdate;   // remove Rivulet lungFac override
+            On.Player.UpdateMSC += Player_UpdateMSC;        // don't let MSC reset buoyancy
         }
 
         if (Option_TubeWorm) {
@@ -200,6 +202,13 @@ public static class PlayerMod {
     }
 
     public static bool IsJumpPressed(this Player player) => player.input[0].jmp && !player.input[1].jmp;
+
+    public static float IL_PlayerMod_KeepLungsFac(float old_value, Player player) { // Option_Swim
+        if (player.Is_Blacklisted() || player.slugcatStats == null) {
+            return old_value;
+        }
+        return player.slugcatStats.lungsFac;
+    }
 
     public static bool IsTileSolidOrSlope(this Player player, int chunk_index, int relative_x, int relative_y) {
         if (player.room is not Room room) return false;
@@ -1604,6 +1613,29 @@ public static class PlayerMod {
             }
             return;
         }
+        // LogAllInstructions(context);
+    }
+
+    private static void IL_Player_LungUpdate(ILContext context) { // Option_Swim
+        // LogAllInstructions(context);
+
+        ILCursor cursor = new(context);
+        if (cursor.TryGotoNext(instruction => instruction.MatchCall<Player>("get_slugcatStats"),
+                               instruction => instruction.MatchLdcR4(0.15f))) {
+            if (can_log_il_hooks) {
+                Debug.Log(mod_id + ": IL_Player_LungUpdate: Index " + cursor.Index);
+            }
+            cursor.Goto(cursor.Index+2);
+            cursor.Emit(OpCodes.Ldarg_0);
+            cursor.EmitDelegate<Func<float,Player,float>>(IL_PlayerMod_KeepLungsFac);
+
+        } else {
+            if (can_log_il_hooks) {
+                Debug.Log(mod_id + ": IL_Player_LungUpdate could not be applied.");
+            }
+            return;
+        }
+
         // LogAllInstructions(context);
     }
 
