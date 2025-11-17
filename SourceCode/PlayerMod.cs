@@ -18,8 +18,9 @@ public static class PlayerMod {
 
     public static readonly float lean_factor = 1f;
 
+    public static List<string> blacklisted_slugcats = new List<string>() { "Void", "Viy" };
     public static int[] player_blacklist = {};
-    public static bool Is_Blacklisted(this Player player) => player.Get_Attached_Fields() == null;
+    public static bool Is_Blacklisted(this Player player) => player.Get_Attached_Fields() == null || blacklisted_slugcats.Contains(player.slugcatStats.name.ToString());
 
     //
     // variables

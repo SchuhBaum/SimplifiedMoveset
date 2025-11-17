@@ -31,7 +31,7 @@ public class MainModOptions : OptionInterface {
 
     public static Configurable<bool> tube_worm = main_mod_options.config.Bind("tubeWorm", defaultValue: true, new ConfigurableInfo("Adds auto - aim grappling to beams. Changes affect Saint.", null, "", "Tube Worm"));
     public static Configurable<bool> wall_climb = main_mod_options.config.Bind("wallClimb", defaultValue: false, new ConfigurableInfo("Adds crawling on walls. Removes wall sliding. Normal jumps are prioritized for small obstacles instead of wall climbing / jumping.", null, "", "Wall Climb"));
-    public static Configurable<bool> wall_jump = main_mod_options.config.Bind("wallJump", defaultValue: true, new ConfigurableInfo("Only wall jump when facing away from the wall. Wall jumps are prioritized over using tube worms. Removes wall sliding when not holding down. Normal jumps are prioritized for small obstacles instead of wall climbing / jumping.", null, "", "Wall Jump"));
+    public static Configurable<bool> wall_jump = main_mod_options.config.Bind("wallJump", defaultValue: true, new ConfigurableInfo("Wall jump when facing away from walls. Wall jumps are prioritized over using tube worms. Removes wall sliding\nwhen not holding down. Normal jumps are prioritized for small obstacles instead of wall climbing / jumping.", null, "", "Wall Jump"));
 
 
     public static Configurable<bool> player0_blacklisted = main_mod_options.config.Bind("player0_blacklisted", defaultValue: false, new ConfigurableInfo("When true, all movement changes are ignored for Player 1.", null, "", "Player 1"));
