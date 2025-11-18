@@ -18,10 +18,6 @@ public static class PlayerMod {
 
     public static readonly float lean_factor = 1f;
 
-    public static List<string> blacklisted_slugcats = new List<string>() { "Void", "Viy" };
-    public static int[] player_blacklist = {};
-    public static bool Is_Blacklisted(this Player player) => player.Get_Attached_Fields() == null || blacklisted_slugcats.Contains(player.slugcatStats.name.ToString());
-
     //
     // variables
     //
@@ -31,6 +27,8 @@ public static class PlayerMod {
         _all_attached_fields.TryGetValue(player, out Player_Attached_Fields? attached_fields);
         return attached_fields;
     }
+
+    public static int[] player_blacklist = {};
 
     //
     // main
@@ -202,7 +200,9 @@ public static class PlayerMod {
         return (player_animation >= 6 && player_animation <= 12) || player.bodyMode == BodyModeIndex.ClimbingOnBeam;
     }
 
+    public static bool Is_Blacklisted(this Player player) => player.Get_Attached_Fields() == null;
     public static bool IsJumpPressed(this Player player) => player.input[0].jmp && !player.input[1].jmp;
+    public static bool IsVoidSlugcat(this Player player) => player.slugcatStats.name.ToString() == "Void";
 
     public static float IL_PlayerMod_KeepLungsFac(float old_value, Player player) { // Option_Swim
         if (player.Is_Blacklisted() || player.slugcatStats == null) {
@@ -1141,7 +1141,7 @@ public static class PlayerMod {
                 }
 
                 // same condition for body_chunk_0.vel.y as in the function IL_Player_Update();
-                if (Option_WallClimb && player.input[0].y != 0 && Math.Abs(body_chunk_0.vel.y) < 3f) {
+                if (Option_WallClimb && !player.IsVoidSlugcat() && player.input[0].y != 0 && Math.Abs(body_chunk_0.vel.y) < 3f) {
                     // climb up even when lower body part is hanging in the air;
                     if (player.input[0].y == 1 && !player.IsTileSolid(bChunk: 1, player.input[0].x, 0) && (body_chunk_1.pos.x < body_chunk_0.pos.x) == (player.input[0].x < 0)) {
                         body_chunk_0.pos.y += Mathf.Abs(body_chunk_0.pos.x - body_chunk_1.pos.x);
@@ -1188,14 +1188,12 @@ public static class PlayerMod {
     public static bool WallJump(Player player, Player_Attached_Fields attached_fields, int direction) {
         // "call" orig() by returning true;
         if (player.room is not Room room) return true;
+        if (!Option_WallJump) return true;
+        if (player.IsVoidSlugcat()) return true;
 
         // I think this was to prevent glitching hands when jumping off walls;
         // hand animation is only used for wall climb;
-        if (Option_WallClimb) {
-            attached_fields.initialize_hands = true;
-        }
-
-        if (!Option_WallJump) return true;
+        attached_fields.initialize_hands = true;
 
         BodyChunk body_chunk_0 = player.bodyChunks[0];
         BodyChunk body_chunk_1 = player.bodyChunks[1];
@@ -1750,7 +1748,7 @@ public static class PlayerMod {
                 cursor.RemoveRange(8); // 3326-3333
 
                 cursor.EmitDelegate<Func<Player, bool>>(player => {
-                    if (player.Is_Blacklisted()) return player.input[0].x != -Math.Sign(player.canWallJump); // vanilla case
+                    if (player.Is_Blacklisted() || player.IsVoidSlugcat()) return player.input[0].x != -Math.Sign(player.canWallJump); // vanilla case
 
                     // at this point canWallJump is already checked and != 0;
                     // return player.canWallJump != 0;
@@ -1762,7 +1760,7 @@ public static class PlayerMod {
                 cursor.RemoveRange(4); // 3336-3339
 
                 cursor.EmitDelegate<Action<Player>>(player => {
-                    if (player.Is_Blacklisted()) {
+                    if (player.Is_Blacklisted() || player.IsVoidSlugcat()) {
                         player.WallJump(Math.Sign(player.canWallJump)); // vanilla case
                         return;
                     }
@@ -1983,7 +1981,7 @@ public static class PlayerMod {
                 cursor.Goto(cursor.Index - 12);
                 cursor.RemoveRange(11);
                 cursor.EmitDelegate<Func<Player, bool>>(player => {
-                    if (player.Is_Blacklisted()) {
+                    if (player.Is_Blacklisted() || player.IsVoidSlugcat()) {
                         return player.bodyChunks[0].pos.y > player.bodyChunks[1].pos.y; // vanilla case
                     }
                     return player.bodyChunks[0].pos.y > player.bodyChunks[1].pos.y && Math.Abs(player.bodyChunks[0].vel.y) < 3f;
@@ -2011,7 +2009,7 @@ public static class PlayerMod {
                 cursor.Goto(cursor.Index - 12);
                 cursor.RemoveRange(11);
                 cursor.EmitDelegate<Func<Player, bool>>(player => {
-                    if (player.Is_Blacklisted()) {
+                    if (player.Is_Blacklisted() || player.IsVoidSlugcat()) {
                         return player.bodyChunks[0].pos.y > player.bodyChunks[1].pos.y; // vanilla case
                     }
                     return player.bodyChunks[0].pos.y > player.bodyChunks[1].pos.y && Math.Abs(player.bodyChunks[0].vel.y) < 3f;
@@ -2447,7 +2445,7 @@ public static class PlayerMod {
                 cursor.Goto(cursor.Index + 4);
                 cursor.EmitDelegate<Func<Player, bool>>(player => {
                     // call orig();
-                    if (player.Is_Blacklisted()) return true;
+                    if (player.Is_Blacklisted() || player.IsVoidSlugcat()) return true;
                     UpdateBodyMode_WallClimb(player);
                     return false;
                 });
@@ -2494,7 +2492,7 @@ public static class PlayerMod {
     //
 
     private static void Player_CheckInput(On.Player.orig_checkInput orig, Player player) { // Option_WallJump
-        if (player.Is_Blacklisted()) {
+        if (player.Is_Blacklisted() || player.IsVoidSlugcat()) {
             orig(player);
             return;
         }
@@ -2587,7 +2585,7 @@ public static class PlayerMod {
     }
 
     private static void Player_GraphicsModuleUpdated(On.Player.orig_GraphicsModuleUpdated orig, Player player, bool actually_viewed, bool eu) { // Option_WallClimb // Option_WallJump 
-        if (player.Is_Blacklisted()) {
+        if (player.Is_Blacklisted() || player.IsVoidSlugcat()) {
             orig(player, actually_viewed, eu);
             return;
         }
@@ -2630,7 +2628,7 @@ public static class PlayerMod {
         }
 
         // do a normal jump off beams when WallJump() is called;
-        if (Option_WallJump && player.animation == AnimationIndex.StandOnBeam && player.input[0].y > -1) {
+        if (Option_WallJump && !player.IsVoidSlugcat() && player.animation == AnimationIndex.StandOnBeam && player.input[0].y > -1) {
             player.lowerBodyFramesOffGround = 0;
         }
 
@@ -2645,7 +2643,7 @@ public static class PlayerMod {
         }
 
         // don't jump in the wrong direction when beam climbing
-        if (Option_WallJump && player.animation == AnimationIndex.ClimbOnBeam && player.input[0].x != 0) {
+        if (Option_WallJump && !player.IsVoidSlugcat() && player.animation == AnimationIndex.ClimbOnBeam && player.input[0].x != 0) {
             player.flipDirection = player.input[0].x;
         }
 
@@ -2858,7 +2856,7 @@ public static class PlayerMod {
         }
 
         // ledge grab 
-        else if (Option_WallJump && player.animation == AnimationIndex.LedgeGrab && (player.canWallJump == 0 || Math.Sign(player.canWallJump) == -Math.Sign(player.flipDirection))) {
+        else if (Option_WallJump && !player.IsVoidSlugcat() && player.animation == AnimationIndex.LedgeGrab && (player.canWallJump == 0 || Math.Sign(player.canWallJump) == -Math.Sign(player.flipDirection))) {
             player.canWallJump = player.flipDirection * -15; // you can do a (mid-air) wall jump off a ledge grab
         }
 
