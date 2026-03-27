@@ -2525,12 +2525,15 @@ public static class PlayerMod {
     }
 
     private static void Player_ClassMechanicsGourmand(On.Player.orig_ClassMechanicsGourmand orig, Player player) {
+        var oldGourmandExhausted = player.gourmandExhausted;
         var oldSlowMovementStun = player.slowMovementStun;
         var oldLungsExhausted = player.lungsExhausted;
+
         orig(player);
 
-        // don't exhaust from aerobicLevel;
-        if (!player.Is_Blacklisted() && player.SlugCatClass == MoreSlugcatsEnums.SlugcatStatsName.Gourmand && (double)player.aerobicLevel >= 0.95)
+        // Don't exhaust from aerobicLevel alone.
+        if (!player.Is_Blacklisted() && !oldGourmandExhausted
+            && player.SlugCatClass == MoreSlugcatsEnums.SlugcatStatsName.Gourmand && (double)player.aerobicLevel >= 0.95)
         {
             player.gourmandExhausted = false;
             player.slowMovementStun = oldSlowMovementStun;
@@ -2709,9 +2712,10 @@ public static class PlayerMod {
         }
 
         orig(player, spear);
-        if (!ModManager.MSC) return;
-        if (!player.isGourmand) return;
-        player.gourmandExhausted = true;
+
+        if (ModManager.MSC && player.isGourmand) {
+            player.gourmandExhausted = true;
+        }
     }
 
     private static void Player_ThrowObject(On.Player.orig_ThrowObject orig, Player player, int grasp_index, bool eu) { // Option_BellySlide // Option_SpearThrow

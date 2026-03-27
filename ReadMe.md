@@ -1,5 +1,5 @@
 ## SimplifiedMoveset
-###### Version: 2.7.3
+###### Version: 2.7.4
 
 This is a mod for Rain World v1.11.
 
@@ -11,7 +11,7 @@ https://www.youtube.com/watch?v=Jp6UyUgoWB0
 
 ### Installation
 0. Update Rain World to version 1.11 if needed.
-1. Download the file `SimplifiedMoveset.zip` from [Releases](https://github.com/SchuhBaum/SimplifiedMoveset/releases/tag/v2.7.3).
+1. Download the file `SimplifiedMoveset.zip` from [Releases](https://github.com/SchuhBaum/SimplifiedMoveset/releases/tag/v2.7.4).
 2. Extract its content in the folder `[Steam]\SteamApps\common\Rain World\RainWorld_Data\StreamingAssets\mods`.
 3. Start the game as normal. In the main menu select `Remix` and enable the mod. 
 
@@ -26,6 +26,9 @@ See the file LICENSE-MIT.
 
 ### Changelog
 #### (Rain World v1.11)
+v2.7.4:
+- (gourmand) Fixed a bug where throwing spears would not exhaust Gourmand.
+
 v2.7.3:
 - Partially reverted blacklisting `Void` and `Viy`. Now, only `Void` is
   blacklisted and only for the options `Wall Climb` and `Wall Jump`.
