@@ -91,18 +91,18 @@ public class MainModOptions : OptionInterface {
         base.Initialize();
 
         Tabs = new OpTab[1];
-        Tabs[0] = new OpTab(this, "Options");
+        Tabs[0] = new OpTab(this, MainMod.Translate("Options"));
         InitializeMarginAndPos();
 
         // Title
         AddNewLine();
-        AddTextLabel(mod_id + " Mod", big_text: true);
+        AddTextLabel(MainMod.Translate("SimplifiedMoveset Mod"), big_text: true);
         DrawTextLabels(ref Tabs[0]);
 
         // Subtitle
         AddNewLine(0.5f);
-        AddTextLabel("Version " + version, FLabelAlignment.Left);
-        AddTextLabel("by " + author, FLabelAlignment.Right);
+        AddTextLabel(string.Format(MainMod.Translate("Version {0}"), version), FLabelAlignment.Left);
+        AddTextLabel(string.Format(MainMod.Translate("by {0}"), author), FLabelAlignment.Right);
         DrawTextLabels(ref Tabs[0]);
 
         // Content //
@@ -135,7 +135,7 @@ public class MainModOptions : OptionInterface {
         AddNewLine();
         AddNewLine();
 
-        AddTextLabel("Player Blacklist:", FLabelAlignment.Left);
+        AddTextLabel(MainMod.Translate("Player Blacklist:"), FLabelAlignment.Left);
         DrawTextLabels(ref Tabs[0]);
 
         AddNewLine();
@@ -217,7 +217,7 @@ public class MainModOptions : OptionInterface {
 
     private void AddCheckBox(Configurable<bool> configurable, string text) {
         _check_box_configurables.Add(configurable);
-        _check_boxes_text_labels.Add(new OpLabel(new Vector2(), new Vector2(), text, FLabelAlignment.Left));
+        _check_boxes_text_labels.Add(new OpLabel(new Vector2(), new Vector2(), MainMod.Translate(text), FLabelAlignment.Left));
     }
 
     private void DrawCheckBoxes(ref OpTab tab) { // changes pos.y but not pos.x
@@ -231,7 +231,7 @@ public class MainModOptions : OptionInterface {
         for (int check_box_index = 0; check_box_index < _check_box_configurables.Count; ++check_box_index) {
             Configurable<bool> configurable = _check_box_configurables[check_box_index];
             OpCheckBox check_box = new(configurable, new Vector2(position_x, _position.y)) {
-                description = configurable.info?.description ?? ""
+                description = MainMod.Translate(configurable.info?.description ?? "")
             };
             tab.AddItems(check_box);
             position_x += CheckBoxWithSpacing;
