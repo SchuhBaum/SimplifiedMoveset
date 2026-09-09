@@ -1,5 +1,3 @@
-using RWCustom;
-using static Room;
 
 namespace SimplifiedMoveset;
 

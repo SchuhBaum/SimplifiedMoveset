@@ -1,9 +1,4 @@
-﻿using Menu.Remix.MixedUI;
-using System.Collections.Generic;
-using UnityEngine;
-using static SimplifiedMoveset.MainMod;
-using static SimplifiedMoveset.ProcessManagerMod;
-
+﻿
 namespace SimplifiedMoveset;
 
 public class MainModOptions : OptionInterface {

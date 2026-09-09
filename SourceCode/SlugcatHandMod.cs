@@ -1,9 +1,4 @@
-﻿using UnityEngine;
-
-using static Player;
-using static SimplifiedMoveset.MainMod;
-using static SimplifiedMoveset.PlayerMod;
-
+﻿
 namespace SimplifiedMoveset;
 
 internal static class SlugcatHandMod {

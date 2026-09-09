@@ -1,7 +1,4 @@
-﻿using UnityEngine;
-using static SimplifiedMoveset.BodyChunkMod;
-using static SimplifiedMoveset.MainMod;
-
+﻿
 namespace SimplifiedMoveset;
 
 internal static class BodyChunkConnectionMod {

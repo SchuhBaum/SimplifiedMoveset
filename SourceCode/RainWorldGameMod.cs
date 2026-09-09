@@ -1,5 +1,3 @@
-using UnityEngine;
-using static SimplifiedMoveset.MainMod;
 
 namespace SimplifiedMoveset;
 

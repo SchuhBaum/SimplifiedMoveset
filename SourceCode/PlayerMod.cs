@@ -1,14 +1,4 @@
-﻿using Mono.Cecil.Cil;
-using MonoMod.Cil;
-using MoreSlugcats;
-using RWCustom;
-using System;
-using System.Collections.Generic;
-using UnityEngine;
-using static Player;
-using static Room;
-using static SimplifiedMoveset.MainMod;
-
+﻿
 namespace SimplifiedMoveset;
 
 public static class PlayerMod {

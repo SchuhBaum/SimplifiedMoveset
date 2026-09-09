@@ -1,17 +1,4 @@
-﻿using Mono.Cecil.Cil;
-using MonoMod.Cil;
-using RWCustom;
-using System;
-using System.Collections.Generic;
-using UnityEngine;
-using static BodyChunk;
-using static Room;
-using static Room.SlopeDirection;
-using static Room.Tile;
-using static SimplifiedMoveset.MainMod;
-using static SimplifiedMoveset.PlayerMod;
-using static SimplifiedMoveset.RoomMod;
-
+﻿
 namespace SimplifiedMoveset;
 
 public static class BodyChunkMod {

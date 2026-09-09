@@ -1,9 +1,4 @@
-﻿using BepInEx;
-using MonoMod.Cil;
-using System.Security.Permissions;
-using UnityEngine;
-using static SimplifiedMoveset.MainModOptions;
-
+﻿
 // allows access to private members;
 #pragma warning disable CS0618
 [assembly: SecurityPermission(SecurityAction.RequestMinimum, SkipVerification = true)]
@@ -11,25 +6,15 @@ using static SimplifiedMoveset.MainModOptions;
 
 namespace SimplifiedMoveset;
 
-[BepInPlugin("SimplifiedMoveset", "SimplifiedMoveset", "2.7.4")]
+[BepInPlugin("SimplifiedMoveset", "SimplifiedMoveset", "2.7.5")]
 public class MainMod : BaseUnityPlugin {
     //
     // meta data
     //
 
-    public static string Translate(string text) {
-        if (string.IsNullOrEmpty(text)) return text;
-        // Short-string entries must remain on one physical line.
-        string key = text.Replace("\r\n", "\n").Replace("\n", "<LINE>");
-        string? translated = RWCustom.Custom.rainWorld?.inGameTranslator?.Translate(key);
-        return string.IsNullOrEmpty(translated) || translated == "!NO TRANSLATION!"
-            ? text
-            : translated!.Replace("<LINE>", "\n");
-    }
-
     public static readonly string mod_id = "SimplifiedMoveset";
     public static readonly string author = "SchuhBaum";
-    public static readonly string version = "2.7.4";
+    public static readonly string version = "2.7.5";
 
     //
     // options
@@ -140,6 +125,16 @@ public class MainMod : BaseUnityPlugin {
 
         Debug.Log("player.animation " + player.animation);
         Debug.Log("player.bodyMode " + player.bodyMode);
+    }
+
+    public static string Translate(string text) {
+        if (string.IsNullOrEmpty(text)) return text;
+        // Short-string entries must remain on one physical line.
+        string key = text.Replace("\r\n", "\n").Replace("\n", "<LINE>");
+        string? translated = Custom.rainWorld?.inGameTranslator?.Translate(key);
+        return string.IsNullOrEmpty(translated) || translated == "!NO TRANSLATION!"
+            ? text
+            : translated!.Replace("<LINE>", "\n");
     }
 
     //

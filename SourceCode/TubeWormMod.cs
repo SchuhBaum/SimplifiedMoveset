@@ -1,14 +1,4 @@
-﻿using Mono.Cecil.Cil;
-using MonoMod.Cil;
-using RWCustom;
-using System;
-using System.Collections.Generic;
-using UnityEngine;
-using static Player;
-using static Room;
-using static SimplifiedMoveset.MainMod;
-using static SimplifiedMoveset.PlayerMod;
-
+﻿
 namespace SimplifiedMoveset;
 
 public static class TubeWormMod {
