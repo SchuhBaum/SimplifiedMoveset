@@ -42,3 +42,4 @@ Version {0}|版本 {0}
 by {0}|作者：{0}
 Player Blacklist:|玩家黑名单：
 SimplifiedMoveset-description|多种运动改变。主要靠移除或简化计时，使玩家更容易完成高级技巧。
+SimplifiedMoveset-name|简化动作
