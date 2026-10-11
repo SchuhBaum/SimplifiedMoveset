@@ -4,13 +4,13 @@ namespace SimplifiedMoveset;
 public static class PlayerMod {
     //
     // parameters
-    //
 
     public static readonly float lean_factor = 1f;
 
     //
     // variables
-    //
+
+    public static ILHook? hook_IL_Player_RippleAbilityActivationButtonCondition = null;
 
     internal static readonly Dictionary<Player, Player_Attached_Fields> _all_attached_fields = new();
     public static Player_Attached_Fields? Get_Attached_Fields(this Player player) {
@@ -22,7 +22,6 @@ public static class PlayerMod {
 
     //
     // main
-    //
 
     internal static void On_Config_Changed() {
         // 
@@ -31,6 +30,9 @@ public static class PlayerMod {
         // but I can't add them as often as I want;
         // otherwise they get called multiple times;
         // 
+
+        hook_IL_Player_RippleAbilityActivationButtonCondition?.Dispose();
+        hook_IL_Player_RippleAbilityActivationButtonCondition = null;
 
         On.Player.ClassMechanicsGourmand -= Player_ClassMechanicsGourmand;
 
@@ -110,6 +112,19 @@ public static class PlayerMod {
 
         if (Option_BellySlide || Option_Crawl || Option_Roll_1 || Option_Roll_2) {
             IL.Player.TerrainImpact += IL_Player_TerrainImpact;
+        }
+
+        if (Option_BellySlide || Option_Roll_1) {
+            try {
+                var il_hook = new ILHook(
+                    typeof(Player).GetMethod(
+                        "get_RippleAbilityActivationButtonCondition",
+                        BindingFlags.Public | BindingFlags.Instance),
+                    IL_Player_RippleAbilityActivationButtonCondition);
+                hook_IL_Player_RippleAbilityActivationButtonCondition = il_hook;
+            } catch (Exception exception) {
+                Debug.Log($"{mod_id}: {exception}");
+            }
         }
 
         if (Option_BellySlide || Option_SpearThrow) {
@@ -1768,6 +1783,35 @@ public static class PlayerMod {
             }
             return;
         }
+        // LogAllInstructions(context);
+    }
+
+    // Option_BellySlide // Option_Roll_1
+    private static void
+    IL_Player_RippleAbilityActivationButtonCondition(
+        ILContext context)
+    {
+        // LogAllInstructions(context);
+        ILCursor cursor = new(context);
+
+        if (cursor.TryGotoNext(instr => instr.MatchLdsfld<AnimationIndex>("RocketJump")))
+        {
+            if (can_log_il_hooks) {
+                Debug.Log(mod_id + ": IL_Player_RippleAbilityActivationButtonCondition: Index " + cursor.Index);
+            }
+
+            // Remove the check for rocket jumps.
+            cursor.Goto(cursor.Index - 3);
+            cursor.RemoveRange(5);
+        }
+        else
+        {
+            if (can_log_il_hooks) {
+                Debug.Log(mod_id + ": IL_Player_RippleAbilityActivationButtonCondition could not be applied.");
+            }
+            return;
+        }
+
         // LogAllInstructions(context);
     }
 

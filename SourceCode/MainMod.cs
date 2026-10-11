@@ -6,7 +6,7 @@
 
 namespace SimplifiedMoveset;
 
-[BepInPlugin("SimplifiedMoveset", "SimplifiedMoveset", "2.7.5")]
+[BepInPlugin("SimplifiedMoveset", "SimplifiedMoveset", "2.7.6")]
 public class MainMod : BaseUnityPlugin {
     //
     // meta data
@@ -14,7 +14,7 @@ public class MainMod : BaseUnityPlugin {
 
     public static readonly string mod_id = "SimplifiedMoveset";
     public static readonly string author = "SchuhBaum";
-    public static readonly string version = "2.7.5";
+    public static readonly string version = "2.7.6";
 
     //
     // options
